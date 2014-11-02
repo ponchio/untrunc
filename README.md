@@ -29,7 +29,15 @@ Go into the directory where it's been unzipped:
 
     cd untrunc-master
 
-Compile the source code using this command (all one line):
+Reconfigure to link with Ubuntu's libav:
+
+    qmake CONFIG="system_libav"
+
+Compile the source code with the generated Makefile:
+
+    make
+
+Or compile the source code using this command (all one line):
 
     g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -L/usr/local/lib -lavformat -lavcodec -lavutil
 
