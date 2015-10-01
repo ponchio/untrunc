@@ -7,8 +7,11 @@
 #include <iostream>
 
 #include <assert.h>
+#ifdef OSX
+#include "osx_endian.h"
+#else
 #include <endian.h>
-
+#endif
 using namespace std;
 
 

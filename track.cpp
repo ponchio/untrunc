@@ -25,7 +25,11 @@
 #include <vector>
 #include <string.h>
 #include <assert.h>
+#ifdef OSX
+#include "osx_endian.h"
+#else
 #include <endian.h>
+#endif
 
 #define __STDC_LIMIT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1
