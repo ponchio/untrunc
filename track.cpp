@@ -232,8 +232,55 @@ int Codec::getLength(unsigned char *start, int maxlength) {
 
 		//found no way to guess size, probably the only way is to use some functions in ffmpeg
 		//to decode the stream
-		cout << "Unfortunately I found no way to guess size of mp4v packets. Sorry\n";
-		return -1;
+
+
+		/* ###
+		00 00 01 b[63] is the start of a video frame ( [63] is 6 or 3)
+		21 .c 4. 00 00 00 is the start of an audio frame ( . is don't care)
+		the plan is to use a search window to match either sequence to find distance to start of next frame
+		*/
+
+		/* puedo code
+		while (there are bytes to get)
+			if (window matches vid) 
+				if (there was already a match) 
+					return distance between matches
+				else
+					this is a first match
+			elseif (window matches aud and there was already a video start)
+				return distance between matches
+			else //no match move on
+				advance window one byte 
+		*/
+		int i, start_index = 0; 
+
+		for (i = 0 ; i < maxlength -6 ; i++)
+			{
+			if (start[i] == 0x00 && start[i+1] == 0x00 && start[i+2] == 0x01 && ((start[i+3] == 0xb6) || (start[i+3] == 0xb3))) //found a video
+			//if (start[i] == 0x01 && (start[i+1] == 0xb6 || start[i+1] == 0xb3)) 
+				{
+				//cout << "test point 4" << endl;
+				if(start_index)
+					{
+					//cout << "test point 0" << endl;
+					return (i - (start_index - 1));
+					}
+				else
+					{
+					//cout << "test point 3" << endl;
+					start_index = i + 1;	//hack for found at index 0			
+					}
+				}
+			if (start_index && (start[i] == 0x21 && (start[i+2] >= 0x40 && start[i+2] <= 0x4f) && start[i+3] == 0x00 && start[i+4] == 0x00 && start[i+5] == 0x00)) //found an audio
+				{
+				//cout << "test point 2" << endl;
+				return (i - (start_index - 1));
+				}
+			}
+		//cout << "test point 1" << endl;
+		return i;
+		//cout << "Unfortunately I found no way to guess size of mp4v packets. Sorry\n";
+		//return -1;
 
 	} else if(name == "avc1") {
 
@@ -323,7 +370,12 @@ bool Codec::isKeyframe(unsigned char *start, int maxlength) {
 	if(name == "avc1") {
 		//first byte of the NAL, the last 5 bits determine type (usually 5 for keyframe, 1 for intra frame)
 		return (start[4] & 0x1F) == 5;
-	} else
+	} 
+	else if(name == "mp4v"){
+		// first byte of mp4v key frames 
+		return (start[0] == 0x00 && start[1] == 0xb6) ;
+	}	
+	else
 		return false;
 }
 
