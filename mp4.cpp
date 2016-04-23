@@ -378,7 +378,7 @@ void Mp4::repair(string filename) {
 			if(length == -1 || length == 0) {
 				continue;
 			}
-			if(length >= maxlength)
+			if(length > maxlength)
 				continue;
 #ifdef VERBOSE1
 			if(length > 8)
