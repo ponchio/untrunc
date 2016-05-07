@@ -465,9 +465,10 @@ void Track::fixTimes() {
 		times.resize(offsets.size(), 160);
 		return;
 	}
+	uint32_t stdTime = times[1];
+	times.reserve(offsets.size());
 	while(times.size() < offsets.size())
-		times.insert(times.end(), times.begin(), times.end());
-	times.resize(offsets.size());
+		times.push_back(stdTime);
 
 	duration = 0;
 	for(unsigned int i = 0; i < times.size(); i++)
