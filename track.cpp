@@ -409,8 +409,8 @@ void Track::writeToAtoms() {
 	saveSampleTimes();
 	saveKeyframes();
 	saveSampleSizes();
-	saveSampleToChunk();
 	saveChunkOffsets();
+	saveSampleToChunk();
 
 	Atom *mdhd = trak->atomByName("mdhd");
 	mdhd->writeInt(duration, 16);
@@ -617,13 +617,47 @@ void Track::saveSampleSizes() {
 void Track::saveSampleToChunk() {
 	Atom *stsc = trak->atomByName("stsc");
 	assert(stsc);
+	
+	Atom *stco = trak->atomByName("stco");
+	int stco_len = (stco->content.size() - 8 ) / 4;
+	
 	stsc->content.resize(4 + // version
 						 4 + //number of entries
-						 12); //one sample per chunk.
-	stsc->writeInt(1, 4);
-	stsc->writeInt(1, 8); //first chunk (1 based)
-	stsc->writeInt(1, 12); //one sample per chunk
-	stsc->writeInt(1, 16); //id 1 (WHAT IS THIS!)
+						 12 * stco_len); //one sample per chunk.
+	
+	unsigned int c = 1, cc = 0;
+	int i = 0;
+	int ss = 0;
+	int ss_acc = 0, acc = 1;
+	for(unsigned int i = 1; i < offsets.size(); i++) {
+		if (offsets[i-1] + sizes[i-1] == offsets[i]) {
+			acc++;
+		} else {
+			if (ss_acc != acc) {
+				stsc->writeInt(c, 8 + 12*cc); //
+				stsc->writeInt(acc, 12 + 12*cc); //
+				stsc->writeInt(1, 16 + 12*cc);  //1
+				cc++;
+				ss_acc = acc;
+			}
+			c++;
+			acc = 1;
+		}
+	}
+
+	if (ss_acc != acc) {
+		stsc->writeInt(c, 8 + 12*cc); //
+		stsc->writeInt(acc, 12 + 12*cc); //
+		stsc->writeInt(1, 16 + 12*cc);  //1
+		cc++;
+		ss_acc = acc;
+	}
+
+	stsc->writeInt(cc, 4);
+
+	stsc->content.resize(4 + // version
+						 4 + //number of entries
+						 12 * cc); //one sample per chunk.
 }
 
 void Track::saveChunkOffsets() {
@@ -637,12 +671,27 @@ void Track::saveChunkOffsets() {
 	}
 	Atom *stco = trak->atomByName("stco");
 	assert(stco);
+
+	unsigned int c = 1;
+	unsigned int it_time = times[0];
+	unsigned int it_i;
+	for(unsigned int i = 1; i < offsets.size(); i++) {
+		if (offsets[i-1] + sizes[i-1] != offsets[i]) {
+			c++;
+		}
+	}
+
 	stco->content.resize(4 + //version
 						 4 + //number of entries
-						 4*offsets.size());
-	stco->writeInt(offsets.size(), 4);
-	for(unsigned int i = 0; i < offsets.size(); i++)
-		stco->writeInt(offsets[i], 8 + 4*i);
+						 4*c);
+	stco->writeInt(c, 4);
+	c = 0;  
+	for(unsigned int i = 0; i < offsets.size(); i++) {
+		if (i == 0 || (offsets[i-1] + sizes[i-1] != offsets[i])) {
+			stco->writeInt(offsets[i], 8 + 4*c);
+			c++;
+		}
+	}
 }
 
 
