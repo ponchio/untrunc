@@ -278,8 +278,7 @@ int Codec::getLength(unsigned char *start, int maxlength) {
 
 		//consume all nal units where type is != 1, 3, 5
 		unsigned char *pos = start;
-		bool found = false;
-		while(!found) {
+		while(1) {
 			pos = start + length;
 			assert(pos - start < maxlength - 4);
 			int l = be32toh(*(int *)pos);
@@ -288,8 +287,8 @@ int Codec::getLength(unsigned char *start, int maxlength) {
 
 			int nal_type = (pos[4] & 0x1f);
 			cout << "Intermediate nal type: " << nal_type << endl;
-			if(nal_type <= 5) found = true;
 
+			if(nal_type <= 5) break;
 			//if(nal_type <= 5 || nal_type >= 18) break;//wrong nal or not video
 			if(nal_type > 21) break; //unknown nal type
 			if(l + length + 8 >= maxlength) break; //out of boundary
