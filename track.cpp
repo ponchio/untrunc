@@ -75,7 +75,6 @@ void Codec::parse(Atom *trak, vector<int> &offsets, Atom *mdat) {
 	}
 }
 
-#define VERBOSE 1
 
 bool Codec::matchSample(unsigned char *start, int maxlength) {
 	int s = be32toh(*(int *)start);
@@ -257,7 +256,9 @@ int Codec::getLength(unsigned char *start, int maxlength) {
 		};
 		*/
 		int first_nal_type = (start[4] & 0x1f);
+#ifdef VERBOSE
 		cout << "Nal type: " << first_nal_type << endl;
+#endif
 		if(first_nal_type > 21) {
 			cout << "Unrecognized nal type: " << first_nal_type << endl;
 			return -1;
