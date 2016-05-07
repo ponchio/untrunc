@@ -576,13 +576,39 @@ vector<int> Track::getSampleToChunk(Atom *t, int nchunks){
 void Track::saveSampleTimes() {
 	Atom *stts = trak->atomByName("stts");
 	assert(stts);
+
+	unsigned int c = 0;
+	unsigned int it_time = times[0];
+	unsigned int it_i;
+
+	// first compute size of stts array
+	// we only have an entry in stts if a frame duration is different than the previous one
+	for(unsigned int i = 1; i < times.size(); i++) {
+		if ((i==1) || (times[i] != it_time) || (i == times.size() - 1)) {
+			c++;
+			it_time = times[i];
+		}
+	}
+
 	stts->content.resize(4 + //version
 						 4 + //entries
-						 8*times.size()); //time table
-	stts->writeInt(times.size(), 4);
-	for(unsigned int i = 0; i < times.size(); i++) {
-		stts->writeInt(1, 8 + 8*i);
-		stts->writeInt(times[i], 12 + 8*i);
+						 8*c); //time table
+	stts->writeInt(c, 4);
+
+	// then write data
+	it_time = times[0];
+	it_i = 0;
+	c = 0;
+	for(unsigned int i = 1; i <= times.size(); i++) {
+		if ((i==1) || ( i == times.size()) || (times[i] != it_time)) {
+			stts->writeInt(i - it_i, 8 + 8*c);
+			stts->writeInt(it_time, 12 + 8*c);
+			c++;
+			if (i != times.size()) {
+				it_time = times[i];
+				it_i = i;   
+			}
+		}
 	}
 }
 
