@@ -160,7 +160,7 @@ void Mp4::makeStreamable(string filename, string output) {
 	}
 }
 
-void Mp4::saveVideo(string filename) {
+void Mp4::saveVideo(string filename, int mdat_offset) {
 	/* we save all atom except:
 	  ctts: composition offset ( we use sample to time)
 	  cslg: because it is used only when ctts is present
@@ -195,11 +195,14 @@ void Mp4::saveVideo(string filename) {
 
 	root->updateLength();
 
+	if (mdat_offset == 0) {
+		mdat_offset = ftyp->length + moov->length;
+	} else if (ftyp->length + moov->length > mdat_offset) {
+		throw "Bad fixed offset";
+		exit(1);
+	}
 	//fix offsets
-	int offset = 8 + moov->length;
-	if(ftyp)
-		offset += ftyp->length; //not all mov have a ftyp.
-
+	int offset = mdat_offset - mdat->start;
 	for(unsigned int t = 0; t < tracks.size(); t++) {
 		Track &track = tracks[t];
 		for(unsigned int i = 0; i < track.offsets.size(); i++)
@@ -216,6 +219,18 @@ void Mp4::saveVideo(string filename) {
 	if(ftyp)
 		ftyp->write(file);
 	moov->write(file);
+	if (mdat_offset > ftyp->length + moov->length + 8) { // would need 8 for atom header...
+		Atom free;
+
+		free.start = ftyp->length + moov->length;
+		free.length = mdat_offset - free.start;
+		strcpy(free.name, "free");
+		memset(free.head, 0, sizeof(free.head));
+		memset(free.version, 0, sizeof(free.version));
+		free.content.resize(free.length - 8);
+		free.write(file);
+	}
+
 	mdat->write(file);
 }
 
@@ -363,7 +378,7 @@ void Mp4::repair(string filename) {
 			if(length == -1 || length == 0) {
 				continue;
 			}
-			if(length >= maxlength)
+			if(length > maxlength)
 				continue;
 #ifdef VERBOSE1
 			if(length > 8)
