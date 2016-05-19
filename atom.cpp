@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include <assert.h>
-#include <endian.h>
+#include "uendian.h"
 
 using namespace std;
 
