@@ -201,7 +201,7 @@ bool Codec::matchSample(unsigned char *start, int maxlength) {
 
 int Codec::getLength(unsigned char *start, int maxlength) {
 	if(name == "mp4a") {
-		AVFrame *frame = avcodec_alloc_frame();
+		AVFrame *frame = av_frame_alloc();
 		if(!frame)
 			throw string("Could not create AVFrame");
 		AVPacket avp;
@@ -217,7 +217,7 @@ int Codec::getLength(unsigned char *start, int maxlength) {
 	} else if(name == "mp4v") {
 
 		/*     THIS DOES NOT SEEM TO WORK FOR SOME UNKNOWN REASON. IT JUST CONSUMES ALL BYTES.
-  *     AVFrame *frame = avcodec_alloc_frame();
+  *     AVFrame *frame = av_frame_alloc();
 		if(!frame)
 			throw string("Could not create AVFrame");
 		AVPacket avp;
