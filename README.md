@@ -15,7 +15,7 @@ If you have an old Ubuntu version or other operational system, you might need to
 
 Install some pre-requisite libraries with this command:
 
-    sudo apt-get install libavformat-dev libavcodec-dev libavutil-dev
+    sudo apt-get install libavformat-dev libavcodec-dev libavutil-dev libqt4-dev make g++ libz-dev
 
 Download the source code from GitHub at https://github.com/ponchio/untrunc
 
