@@ -7,10 +7,9 @@
 #include <iostream>
 
 #include <assert.h>
-#include <endian.h>
+#include "endian.h"
 
 using namespace std;
-
 
 Atom::~Atom() {
     for(unsigned int i = 0; i < children.size(); i++)
