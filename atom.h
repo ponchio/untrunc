@@ -1,12 +1,12 @@
 #ifndef ATOM_H
 #define ATOM_H
-extern "C" {
-    #include <stdint.h>
-}
+
 #include <vector>
 #include <string>
+#include <cstdint>
 
 #include "file.h"
+
 class Atom {
 public:
     int64_t start;       //including 8 header bytes

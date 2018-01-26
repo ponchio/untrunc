@@ -21,12 +21,10 @@
 #ifndef FILE_H
 #define FILE_H
 
-extern "C" {
-	#include <stdint.h>
-}
-#include <stdio.h>
 #include <vector>
 #include <string>
+#include <cstdint>
+#include <cstdio>
 
 uint16_t swap16(uint16_t us);
 uint32_t swap32(uint32_t ui);

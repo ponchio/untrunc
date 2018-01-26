@@ -18,14 +18,22 @@
 
 														*/
 
-#include <assert.h>
-#include <string>
 #include <iostream>
+#include <cassert>
 
-#define __STDC_LIMIT_MACROS 1
-#define __STDC_CONSTANT_MACROS 1
+#ifndef __STDC_LIMIT_MACROS
+# define __STDC_LIMIT_MACROS	1
+#endif
+#ifndef __STDC_CONSTANT_MACROS
+# define __STDC_CONSTANT_MACROS	1
+#endif
+#include <cstdint>
+#ifndef INT64_C
+# define INT64_C(c)	(c ## LL)
+# define UINT64_C(c)	(c ## ULL)
+#endif
+
 extern "C" {
-#include <stdint.h>
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 }

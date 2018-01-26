@@ -18,51 +18,48 @@
 
 														*/
 
+#include <iostream>
+#include <cassert>
+
+#ifndef __STDC_LIMIT_MACROS
+# define __STDC_LIMIT_MACROS    1
+#endif
+#ifndef __STDC_CONSTANT_MACROS
+# define __STDC_CONSTANT_MACROS 1
+#endif
+#include <cstdint>
+#ifndef INT64_C
+# define INT64_C(c)     (c ## LL)
+# define UINT64_C(c)    (c ## ULL)
+#endif
+#include <cstdbool> // Define C11 bool used in internal header included below.
+
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+
+// WARNING: Including internal header!
+#if LIBAVCODEC_VERSION_MAJOR != 56  // Ubuntu 16.04 version.
+# include <config.h>
+#endif
+// XXX Horrible Hack: Suppress C99 keywords that are not in C++, like 'restrict' and '_Atomic'! XXX
+#undef restrict     // Harmless; don't restrict memory access.
+#define restrict
+#undef _Atomic      // Atomics are only included in headers, but never actually used in our code.
+#define _Atomic
+// XXX Horrible Hack: There are variables named 'new' and 'class' inside! XXX
+#define new     extern_new
+#define class   extern_class
+#include <libavcodec/h264dec.h>
+#undef class
+#undef new
+#undef _Atomic
+#undef restrict
+}
+
 #include "track.h"
 #include "atom.h"
 
-#include <iostream>
-#include <vector>
-#include <string.h>
-#include <assert.h>
-#include <endian.h>
-
-#define __STDC_LIMIT_MACROS 1
-#define __STDC_CONSTANT_MACROS 1
-
-extern "C" {
-#ifndef INT64_C
-#define INT64_C(c) (c ## LL)
-#define UINT64_C(c) (c ## ULL)
-#endif
-
-#include <stdint.h>
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-
-//Horrible hack: there is a variabled named 'new' and 'class' inside!
-#if LIBAVCODEC_VERSION_MAJOR != 56 //ubuntu 16.04 version
-#include <config.h>
-#undef restrict
-//#define restrict __restrict__
-#define restrict
-#define new extern_new
-#define class extern_class
-#include <libavcodec/h264dec.h>
-#undef new
-#undef class
-#undef restrict
-
-#else
-define new extern_new
-#define class extern_class
-#include <libavcodec/h264dec.h>
-#undef new
-#undef class
-#endif
-
-}
 
 using namespace std;
 

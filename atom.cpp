@@ -1,13 +1,9 @@
 #include "AP_AtomDefinitions.h"
 #include "atom.h"
-#include "file.h"
 
-#include <string>
 #include <map>
 #include <iostream>
-
-#include <assert.h>
-#include <endian.h>
+#include <cassert>
 
 using namespace std;
 

@@ -23,9 +23,9 @@
 
 #include <vector>
 #include <string>
-#include <stdio.h>
 
 #include "track.h"
+
 class Atom;
 class File;
 class AVFormatContext;
