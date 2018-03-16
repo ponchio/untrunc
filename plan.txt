@@ -1,0 +1,30 @@
+For each track we can:
+
+1) guess beginning (with decent confidence)
+2) guess length
+
+For movie:
+
+1) guess start
+
+We can solve when (1 stream)
+
+guess beginning
+or
+guess length (and can guess start)
+
+We can solve when (2 streams)
+
+both guess beginning
+or
+both guess length (only if interleaved!)
+or
+guess beginning and length in one (only if strictly interleaved!)
+or
+both guess length and guess movie start
+
+
+Fail when:
+
+from example: if all packets has some start (and
+

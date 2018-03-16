@@ -304,7 +304,16 @@ void Mp4::repair(string filename) {
 		try {
 			atom->parseHeader(file);
 		} catch(string) {
-			throw string("Failed to parse atoms in truncated file");
+			cerr << "Failed to parse atoms in truncated file\nLooking for MDAT";
+
+			int length = 1<<16;
+			unsigned char *buffer = mdat->getFragment(0, length);
+			for(int i = 0; i < length-4; i++) {
+				if(*(int*)(buffer + i) == 0x7461646D) {
+					strcpy(atom->name, "mdat");
+					file.seek(i+4);
+				}
+			}
 		}
 
 		if(atom->name != string("mdat")) {
@@ -341,7 +350,7 @@ void Mp4::repair(string filename) {
 	vector<int> audiotimes;
 	unsigned long count = 0;
 	off_t offset = 0;
-	while(offset < mdat->contentSize()) {
+	while(offset < mdat->contentSize()-8) {
 
 		//unsigned char *start = &(mdat->content[offset]);
 		int64_t maxlength = mdat->contentSize() - offset;
@@ -362,7 +371,7 @@ void Mp4::repair(string filename) {
 			offset += 0x1000;
 			continue;
 		} */
-		uint next =  mdat->readInt(offset + 4);
+//		uint next =  mdat->readInt(offset + 4);
 
 #ifdef VERBOSE1
 		cout << "Offset: " << offset << " ";
@@ -379,7 +388,9 @@ void Mp4::repair(string filename) {
 		bool found = false;
 		for(unsigned int i = 0; i < tracks.size(); i++) {
 			Track &track = tracks[i];
+#ifdef VERBOSE
 			cout << "Track codec: " << track.codec.name << endl;
+#endif
 			//sometime audio packets are difficult to match, but if they are the only ones....
 			int duration =0;
 			if(tracks.size() > 1 && !track.codec.matchSample(start, maxlength)) continue;

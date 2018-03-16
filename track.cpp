@@ -106,11 +106,11 @@ bool Codec::matchSample(unsigned char *start, int maxlength) {
 	if(name == "avc1") {
 
 		//this works only for a very specific kind of video
-		//#define SPECIAL_VIDEO
+#define SPECIAL_VIDEO
 #ifdef SPECIAL_VIDEO
 		int s2 = swap32(((int *)start)[1]);
-		if(s != 0x00000002 || (s2 != 0x09300000 && s2 != 0x09100000)) return false;
-		return true;
+		if(s == 0x00000002 && (s2 == 0x09300000 || s2 == 0x09100000)) return true;
+		return false;
 #endif
 
 
@@ -202,9 +202,16 @@ bool Codec::matchSample(unsigned char *start, int maxlength) {
 
 	} else if(name == "samr") {
 		return start[0] == 0x3c;
+
 	} else if(name == "twos") {
 		//weird audio codec: each packet is 2 signed 16b integers.
+#ifdef SPECIAL_VIDEO
+		int s2 = swap32(((int *)start)[1]);
+		if(s != 0x00000002 || (s2 != 0x09300000 && s2 != 0x09100000)) return true;
+		return false;
+#endif
 		cerr << "This audio codec is EVIL, there is no hope to guess it.\n";
+
 		exit(0);
 		return true;
 	} else if(name == "apcn") {
@@ -372,7 +379,7 @@ bool getNalInfo(H264sps &sps, uint32_t maxlength, uint8_t *buffer, NalInfo &info
 		return false;
 	}
 	info.length = len + 4;
-	cout << "Length: " << info.length << "\n";
+	//cout << "Length: " << info.length << "\n";
 
 	buffer += 4;
 	if(*buffer & (1 << 7)) {
@@ -380,10 +387,10 @@ bool getNalInfo(H264sps &sps, uint32_t maxlength, uint8_t *buffer, NalInfo &info
 		return false; //forbidden first bit;
 	}
 	info.ref_idc = *buffer >> 5;
-	cout << "Ref idc: " << info.ref_idc << "\n";
+	//cout << "Ref idc: " << info.ref_idc << "\n";
 
 	info.nal_type = *buffer & 0x1f;
-	cout << "Nal type: " << info.nal_type << "\n";
+	//cout << "Nal type: " << info.nal_type << "\n";
 	if(info.nal_type != 1 && info.nal_type != 5)
 		return true;
 
@@ -413,7 +420,7 @@ bool getNalInfo(H264sps &sps, uint32_t maxlength, uint8_t *buffer, NalInfo &info
 	int offset = 0;
 	info.first_mb = golomb(start, offset);
 	//TODO is there a max number (so we could validate?)
-	cout << "First mb: " << info.first_mb << endl; "\n";
+	//cout << "First mb: " << info.first_mb << endl; "\n";
 
 	info.slice_type = golomb(start, offset);
 	if(info.slice_type > 9) {
@@ -421,7 +428,7 @@ bool getNalInfo(H264sps &sps, uint32_t maxlength, uint8_t *buffer, NalInfo &info
 		return false;
 	}
 	info.pps_id = golomb(start, offset);
-	cout << "pic paramter set id: " << info.pps_id << "\n";
+	//cout << "pic paramter set id: " << info.pps_id << "\n";
 	//pps id: should be taked from master context (h264_slice.c:1257
 
 	//assume separate coloud plane flag is 0
@@ -430,29 +437,29 @@ bool getNalInfo(H264sps &sps, uint32_t maxlength, uint8_t *buffer, NalInfo &info
 	//assuming same sps for all frames:
 	//SPS *sps = (SPS *)(h->ps.sps_list[0]->data);
 	info.frame_num = readBits(sps.log2_max_frame_num, start, offset);
-	cout << "Frame num: " << info.frame_num << "\n";
+	//cout << "Frame num: " << info.frame_num << "\n";
 
 	//read 2 flags
 	info.field_pic_flag = 0;
 	info.bottom_pic_flag = 0;
 	if(sps.frame_mbs_only_flag) {
 		info.field_pic_flag = readBits(1, start, offset);
-		cout << "field: " << info.field_pic_flag << "\n";
+		//cout << "field: " << info.field_pic_flag << "\n";
 		if(info.field_pic_flag) {
 			info.bottom_pic_flag = readBits(1, start, offset);
-			cout << "bottom: " << info.bottom_pic_flag << "\n";
+			//cout << "bottom: " << info.bottom_pic_flag << "\n";
 		}
 	}
 	info.idr_pic_flag = (info.nal_type == 5)? 1 : 0;
 	if (info.nal_type == 5 ) {
 		info.idr_pic_id = golomb(start, offset);
-		cout << "Idr pic: " << info.idr_pic_id << "\n";
+		//cout << "Idr pic: " << info.idr_pic_id << "\n";
 	}
 
 	//if pic order cnt type == 0
 	if(sps.poc_type == 0) {
 		info.poc_lsb = readBits(sps.log2_max_poc_lsb, start, offset);
-		cout << "Poc lsb: " << info.poc_lsb << "\n";
+		//cout << "Poc lsb: " << info.poc_lsb << "\n";
 	}
 	//ignoring the delta_poc for the moment.
 	return true;
@@ -561,10 +568,11 @@ int Codec::getLength(unsigned char *start, int maxlength, int &duration) {
 		bool seen_slice = false;
 
 		while(1) {
-			cout << "\n";
+			//cout << "\n";
 			NalInfo info;
 			bool ok = getNalInfo(sps, maxlength, pos, info);
-			if(!ok) return length;
+			if(!ok)
+				return length;
 
 			switch(info.nal_type) {
 			case 1:
@@ -613,7 +621,7 @@ int Codec::getLength(unsigned char *start, int maxlength, int &duration) {
 				break;
 			default:
 				if(seen_slice) {
-					cerr << "New access unit since seen picture\n";
+					//cerr << "New access unit since seen picture\n";
 					return length;
 				}
 				break;
@@ -621,7 +629,7 @@ int Codec::getLength(unsigned char *start, int maxlength, int &duration) {
 			pos += info.length;
 			length += info.length;
 			maxlength -= info.length;
-			cout << "Partial length: " << length << "\n";
+		//	cout << "Partial length: " << length << "\n";
 		}
 		return length;
 

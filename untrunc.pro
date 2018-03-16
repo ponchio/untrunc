@@ -35,7 +35,8 @@ LIBS += ../libav-12.2/libavformat/libavformat.a \
 
 #INCLUDEPATH += -I/usr/local/lib
 #LIBS += -L/usr/local/lib -lavformat -lavcodec -lavutil
-DEFINES += _FILE_OFFSET_BITS=64 VERBOSE VERBOSE1
+DEFINES += _FILE_OFFSET_BITS=64
+#VERBOSE VERBOSE1
 
 LIBS += -lz
 
@@ -43,3 +44,6 @@ LIBS += -lz
 #LIBS += /usr/lib/x86_64-linux-gnu/libavcodec.a \
 #        /usr/lib/x86_64-linux-gnu/libavformat.a \
 #        /usr/lib/x86_64-linux-gnu/libavutil.a
+
+DISTFILES += \
+    plan.txt
