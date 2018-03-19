@@ -295,16 +295,18 @@ void Mp4::repair(string filename) {
 	if(!file.open(filename))
 		throw "Could not open file: " + filename;
 
-	//find mdat. fails with krois and a few other.
-	//TODO check for multiple mdat, or just look for the first one.
+	//This will only load the file in chunks to speedup loading
 	BufferedAtom *mdat = new BufferedAtom(filename);
+
+	//Looking for mdat atom.
 	while(1) {
 
 		Atom *atom = new Atom;
 		try {
 			atom->parseHeader(file);
+
 		} catch(string) {
-			cerr << "Failed to parse atoms in truncated file\nLooking for MDAT";
+			cerr << "Failed to parse atoms in truncated file\nLooking for MDAT string";
 
 			int length = 1<<16;
 			unsigned char *buffer = mdat->getFragment(0, length);
@@ -330,7 +332,6 @@ void Mp4::repair(string filename) {
 
 		mdat->file_begin = file.pos();
 		mdat->file_end = file.length() - file.pos();
-		//mdat->content = file.read(file.length() - file.pos());
 		break;
 	}
 
@@ -338,7 +339,7 @@ void Mp4::repair(string filename) {
 	for(unsigned int i = 0; i < tracks.size(); i++)
 		tracks[i].clear();
 
-	//mp4a is more reliable than avc1.
+	//mp4a is more reliable than avc1, swap tracks.
 	if(tracks.size() > 1 && tracks[1].codec.name == "mp4a") {
 		Track tmp = tracks[0];
 		tracks[0] = tracks[1];
@@ -350,28 +351,17 @@ void Mp4::repair(string filename) {
 	vector<int> audiotimes;
 	unsigned long count = 0;
 	off_t offset = 0;
-	while(offset < mdat->contentSize()-8) {
+	while(offset < mdat->contentSize() - 8) { //reserve some space for the packet
 
-		//unsigned char *start = &(mdat->content[offset]);
-		int64_t maxlength = mdat->contentSize() - offset;
-		if(maxlength > 1600000) maxlength = 1600000;
+		int64_t maxlength = std::min((int64_t)1600000, mdat->contentSize() - offset);
 		unsigned char *start = mdat->getFragment(offset, maxlength);
 
 		uint begin =  mdat->readInt(offset);
 
-
-		if(begin == 0) {
+		if(begin == 0) { //skip zeroes!
 			offset += 4;
 			continue;
 		}
-
-		//Skip zeros to next 000 AARRGH this sometimes is not very correct, unless it's all zeros.
-		/*        if(begin == 0) {
-			offset &= 0xfffff000;
-			offset += 0x1000;
-			continue;
-		} */
-//		uint next =  mdat->readInt(offset + 4);
 
 #ifdef VERBOSE1
 		cout << "Offset: " << offset << " ";
@@ -393,24 +383,28 @@ void Mp4::repair(string filename) {
 #endif
 			//sometime audio packets are difficult to match, but if they are the only ones....
 			int duration =0;
+			//TODO join match, length and keyframe
 			if(tracks.size() > 1 && !track.codec.matchSample(start, maxlength)) continue;
 			int length = track.codec.getLength(start, maxlength, duration);
-			if(length < -1 || length > 1600000) {
-				cout << endl << "Invalid length. " << length << ". Wrong match in track: " << i << endl;
-				continue;
-			}
+
 			if(length == -1 || length == 0) {
 				continue;
 			}
-			if(length >= maxlength)
+
+			if(length < -1 || length > maxlength) {
+				cout << endl << "Invalid length. " << length << ". Wrong match in track: " << i << endl;
 				continue;
+			}
+
 #ifdef VERBOSE1
 			if(length > 8)
 				cout << ": found as " << track.codec.name << endl;
 #endif
 			bool keyframe = track.codec.isKeyframe(start, maxlength);
+
 			if(keyframe)
 				track.keyframes.push_back(track.offsets.size());
+
 			track.offsets.push_back(offset);
 			track.sizes.push_back(length);
 			offset += length;

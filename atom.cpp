@@ -50,7 +50,7 @@ void Atom::parse(File &file) {
 
 void Atom::write(File &file) {
     //1 write length
-    int start = file.pos();
+	off64_t start = file.pos();
 
     file.writeInt(length);
     file.writeChar(name, 4);
@@ -58,7 +58,7 @@ void Atom::write(File &file) {
         file.write(content);
     for(unsigned int i = 0; i < children.size(); i++)
         children[i]->write(file);
-    int end = file.pos();
+	off64_t end = file.pos();
     assert(end - start == length);
 }
 
