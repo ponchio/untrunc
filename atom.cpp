@@ -20,7 +20,11 @@ Atom::~Atom() {
 void Atom::parseHeader(File &file) {
     start = file.pos();
     length = file.readInt();
-    file.readChar(name, 4);
+    bool ok = file.readChar(name, 4);
+	if(!ok) {
+		cerr << "Failed parsing header!\n";
+		throw string("Unexpected end of file while parsing header?");
+	}
 
     if(length == 1) {
         length = file.readInt64() - 8;
@@ -258,8 +262,18 @@ void Atom::writeInt(int value, int64_t offset) {
 	*(int *)&(content[offset]) = swap32(value);
 }
 
+
+int64_t Atom::readInt64(int64_t offset) {
+	return swap64(*(int64_t *)&(content[offset]));
+}
+
+void Atom::writeInt64(int64_t value, int64_t offset) {
+    assert(content.size() >= offset + 8);
+	*(int64_t *)&(content[offset]) = swap64(value);
+}
+
 void Atom::readChar(char *str, int64_t offset, int64_t length) {
-    for(int i = 0; i < length; i++)
+    for(int64_t i = 0; i < length; i++)
         str[i] = content[offset + i];
 
     str[length] = 0;
@@ -269,6 +283,8 @@ void Atom::readChar(char *str, int64_t offset, int64_t length) {
 BufferedAtom::BufferedAtom(string filename): buffer(NULL) {
     if(!file.open(filename))
         throw "Could not open file.";
+	file_begin = 0;
+	file_end = file.length();
 }
 
 BufferedAtom::~BufferedAtom() {
@@ -289,7 +305,15 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
             buffer_end = file_end - file_begin;
         buffer = new unsigned char[buffer_end - buffer_begin];
         file.seek(file_begin + buffer_begin);
-        file.readChar((char *)buffer, buffer_end - buffer_begin);
+        bool ok = file.readChar((char *)buffer, buffer_end - buffer_begin);
+		if(!ok) {
+			cerr << "Failed getting fragment\n";
+			cerr << "pos: " << file_begin + buffer_begin << endl;
+			cerr << "size: " << size << " actual: " << buffer_end - buffer_begin << endl;
+			cerr << "file size: " << file.length();
+			cerr << "Offset: " << offset << endl;
+			throw string("Failed reading fragment!");
+		}
         return buffer;
     }
 	if(buffer_begin <= offset && buffer_end >= offset + size)
@@ -321,23 +345,32 @@ int BufferedAtom::readInt(int64_t offset) {
 
 void BufferedAtom::write(File &output) {
     //1 write length
-    int start = output.pos();
+    int64_t start = output.pos();
 
     output.writeInt(length);
     output.writeChar(name, 4);
     char buff[1<<20];
-    int offset = file_begin;
+    int64_t offset = file_begin;
     file.seek(file_begin);
     while(offset < file_end) {
-        int toread = 1<<20;
+        int64_t toread = 1<<20;
         if(toread + offset > file_end)
             toread = file_end - offset;
-        file.readChar(buff, toread);
+        bool ok = file.readChar(buff, toread);
+		if(!ok) {
+			cerr << "File begin: " << file_begin << endl;
+			cerr << "File end: " << file_end << endl;
+			cerr << "Offset: " << offset << endl;
+			cerr << "toread: " << toread << endl;
+			cerr << "File length: " << file.length() << endl;
+			cerr << "Filed writing!\n";
+			throw string("Failed writing buffered atom.");
+		}
         offset += toread;
         output.writeChar(buff,toread);
     }
     for(unsigned int i = 0; i < children.size(); i++)
         children[i]->write(output);
-    int end = output.pos();
+    int64_t end = output.pos();
     assert(end - start == length);
 }

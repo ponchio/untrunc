@@ -306,16 +306,21 @@ void Mp4::repair(string filename) {
 			atom->parseHeader(file);
 
 		} catch(string) {
-			cerr << "Failed to parse atoms in truncated file\nLooking for MDAT string";
+			cerr << "Failed to parse atoms in truncated file\nLooking for MDAT string\n";
 
 			int length = 1<<16;
 			unsigned char *buffer = mdat->getFragment(0, length);
+			bool found = false;
 			for(int i = 0; i < length-4; i++) {
 				if(*(int*)(buffer + i) == 0x7461646D) {
 					strcpy(atom->name, "mdat");
 					file.seek(i+4);
+					found = true;
+					break;
 				}
 			}
+			if(!found)
+				throw string("Could not find MDAT atom");
 		}
 
 		if(atom->name != string("mdat")) {
@@ -331,7 +336,7 @@ void Mp4::repair(string filename) {
 		memcpy(mdat->version, atom->version, 4);
 
 		mdat->file_begin = file.pos();
-		mdat->file_end = file.length() - file.pos();
+		mdat->file_end = file.length();// why?! - file.pos();
 		break;
 	}
 

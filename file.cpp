@@ -101,10 +101,10 @@ int64_t File::readInt64() {
 	return swap64(value);
 }
 
-void File::readChar(char *dest, size_t n) {
+bool File::readChar(char *dest, size_t n) {
     size_t len = fread(dest, sizeof(char), n, file);
-    if(len != n)
-        throw string("Could not read chars");
+    return len == n;
+//        throw string("Could not read chars");
 }
 
 vector<unsigned char> File::read(size_t n) {

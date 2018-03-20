@@ -67,7 +67,7 @@ define new extern_new
 using namespace std;
 
 
-void Codec::parse(Atom *trak, vector<int> &offsets, Atom *mdat) {
+void Codec::parse(Atom *trak, vector<int64_t> &offsets, Atom *mdat) {
 	Atom *stsd = trak->atomByName("stsd");
 	int entries = stsd->readInt(4);
 	if(entries != 1)
@@ -635,8 +635,16 @@ int Codec::getLength(unsigned char *start, int maxlength, int &duration) {
 
 	} else if(name == "samr") { //lenght is multiple of 32, we split packets.
 		return 32;
-	} else if(name == "twos") { //lenght is multiple of 32, we split packets.
-		return 4;
+	} else if(name == "twos") { 
+		for(int i = 4; i < maxlength - 8; i += 4) {
+			int s = swap32(*(int *)(start + i));
+			int s2 = swap32(*(int *)(start + i+4));
+			if(s == 0x00000002 && (s2 == 0x09300000 || s2 == 0x09100000)) {
+				cout << "Length: " << i << endl;
+				return i;
+			}
+		}
+		return maxlength - 8;
 	} else if(name == "apcn") {
 		return swap32(*(int *)start);
 	} else if(name == "lpcm") {
@@ -920,16 +928,37 @@ void Track::saveSampleTimes() {
 void Track::saveSampleTimes() {
 	Atom *stts = trak->atomByName("stts");
 	assert(stts);
+	
+	if(codec.name == "twos") {
+		//sum sizes up:
+		stts->content.resize(4 + //version
+							 4 + //entries
+							 8); //time table
+		int tot = 0;
+		for(int s: sizes)
+			tot += s/4;
+
+		stts->writeInt(1, 4);
+		stts->writeInt(tot, 8);
+		stts->writeInt(1, 12);
+		return;
+	}
+	
+	//4: number of entries
+	//Table with: 4: sample count, 4: sample duration
 
 	unsigned int c = 0;
-	unsigned int it_time = times[0];
+	
+	if(times.size()) {
+		unsigned int it_time = times[0];
 
-	// first compute size of stts array
-	// we only have an entry in stts if a frame duration is different than the previous one
-	for(unsigned int i = 1; i < times.size(); i++) {
-		if ((i==1) || (times[i] != it_time) || (i == times.size() - 1)) {
-			c++;
-			it_time = times[i];
+		// first compute size of stts array
+		// we only have an entry in stts if a frame duration is different than the previous one
+		for(unsigned int i = 1; i < times.size(); i++) {
+			if ((i==1) || (times[i] != it_time) || (i == times.size() - 1)) {
+				c++;
+				it_time = times[i];
+			}
 		}
 	}
 
@@ -939,16 +968,20 @@ void Track::saveSampleTimes() {
 	stts->writeInt(c, 4);
 
 	// then write data
-	it_time = times[0];
-	unsigned int it_i = 0;
-	c = 0;
-	for(unsigned int i = 1; i <= times.size(); i++) {
-		if ((i==1) || ( i == times.size()) || (times[i] != it_time)) {
-			stts->writeInt(i - it_i, 8 + 8*c);
-			stts->writeInt(it_time, 12 + 8*c);
-			c++;
-			it_time = times[i];
-			it_i = i;
+	
+	if(times.size()) {
+	
+		unsigned int it_time = times[0];
+		unsigned int it_i = 0;
+		c = 0;
+		for(unsigned int i = 1; i <= times.size(); i++) {
+			if ((i==1) || ( i == times.size()) || (times[i] != it_time)) {
+				stts->writeInt(i - it_i, 8 + 8*c);
+				stts->writeInt(it_time, 12 + 8*c);
+				c++;
+				it_time = times[i];
+				it_i = i;
+			}
 		}
 	}
 }
@@ -971,31 +1004,63 @@ void Track::saveKeyframes() {
 void Track::saveSampleSizes() {
 	Atom *stsz = trak->atomByName("stsz");
 	assert(stsz);
-	stsz->content.resize(4 + //version
-						 4 + //default size
-						 4 + //entries
-						 4*sizes.size()); //size table
-	stsz->writeInt(0, 4);
-	stsz->writeInt(sizes.size(), 8);
-	for(unsigned int i = 0; i < sizes.size(); i++) {
-		stsz->writeInt(sizes[i], 12 + 4*i);
+
+	
+	if(codec.name == "twos") {
+		
+		stsz->content.resize(4 + //version
+							 4 + //default size
+							 4 + //entries
+							 0); //size table
+		
+		stsz->writeInt(4, 4);
+		//total number of samples:
+		int tot = 0;
+		for(int s: sizes)
+			tot += s/4;
+		stsz->writeInt(tot, 8);
+		
+	} else {
+		stsz->content.resize(4 + //version
+							 4 + //default size
+							 4 + //entries
+							 4*sizes.size()); //size table
+		
+		stsz->writeInt(0, 4);
+		stsz->writeInt(sizes.size(), 8);
+		for(unsigned int i = 0; i < sizes.size(); i++) {
+			stsz->writeInt(sizes[i], 12 + 4*i);
+		}
 	}
 }
 
 void Track::saveSampleToChunk() {
 	Atom *stsc = trak->atomByName("stsc");
 	assert(stsc);
-	stsc->content.resize(4 + // version
-						 4 + //number of entries
-						 12); //one sample per chunk.
-	stsc->writeInt(1, 4);
-	stsc->writeInt(1, 8); //first chunk (1 based)
-	stsc->writeInt(1, 12); //one sample per chunk
-	stsc->writeInt(1, 16); //id 1 (WHAT IS THIS!)
+	if(codec.name == "twos") {
+		assert(sizes.size() > 0);
+		stsc->content.resize(4 + // version
+							 4 + //number of entries
+							 12); //one sample per chunk.
+		stsc->writeInt(1, 4);
+		stsc->writeInt(1, 8); //first chunk (1 based)
+		//stsc->writeInt(sizes[0]/4, 12); //one sample per chunk
+		stsc->writeInt(24024, 12);
+		stsc->writeInt(1, 16); //id 1 
+		
+	} else {
+		stsc->content.resize(4 + // version
+							 4 + //number of entries
+							 12); //one sample per chunk.
+		stsc->writeInt(1, 4);
+		stsc->writeInt(1, 8); //first chunk (1 based)
+		stsc->writeInt(1, 12); //one sample per chunk
+		stsc->writeInt(1, 16); //id 1: description of the codec for this id found in stsd
+	}
 }
 
 void Track::saveChunkOffsets() {
-	Atom *co64 = trak->atomByName("co64");
+/*	Atom *co64 = trak->atomByName("co64");
 	if(co64) {
 		trak->prune("co64");
 		Atom *stbl = trak->atomByName("stbl");
@@ -1010,7 +1075,23 @@ void Track::saveChunkOffsets() {
 						 4*offsets.size());
 	stco->writeInt(offsets.size(), 4);
 	for(unsigned int i = 0; i < offsets.size(); i++)
-		stco->writeInt(offsets[i], 8 + 4*i);
+		stco->writeInt(offsets[i], 8 + 4*i); */
+	
+	Atom *stco = trak->atomByName("stco");
+	if(stco) {
+		trak->prune("stco");
+		Atom *stbl = trak->atomByName("stbl");
+		Atom *new_stco = new Atom;
+		memcpy(new_stco->name, "co64", 5);
+		stbl->children.push_back(new_stco);
+	}
+	Atom *co64 = trak->atomByName("co64");
+	co64->content.resize(4 + //version
+						 4 + //number of entries
+						 8*offsets.size());
+	co64->writeInt(offsets.size(), 4);
+	for(unsigned int i = 0; i < offsets.size(); i++)
+		co64->writeInt64(offsets[i], 8 + 8*i);
 }
 
 

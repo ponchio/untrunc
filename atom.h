@@ -44,8 +44,11 @@ public:
 
     virtual int readInt(int64_t offset);
     void writeInt(int value, int64_t offset);
-    void readChar(char *str, int64_t offset, int64_t length);
 
+    virtual int64_t readInt64(int64_t offset);
+    void writeInt64(int64_t value, int64_t offset);
+
+    void readChar(char *str, int64_t offset, int64_t length);
 };
 
 class BufferedAtom: public Atom {
@@ -64,6 +67,7 @@ public:
     void updateLength();
 
     int readInt(int64_t offset);
+
     void write(File &file);
 
 };

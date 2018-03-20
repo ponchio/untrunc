@@ -30,7 +30,7 @@ INCLUDEPATH += ../libav-12.2
 LIBS += ../libav-12.2/libavformat/libavformat.a \
 ../libav-12.2/libavcodec/libavcodec.a \
 ../libav-12.2/libavutil/libavutil.a \
-../libav-12.2/libavresample/libavresample.a
+../libav-12.2/libavresample/libavresample.a -lbz2
 
 
 #INCLUDEPATH += -I/usr/local/lib

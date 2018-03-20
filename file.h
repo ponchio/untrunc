@@ -46,7 +46,7 @@ public:
 
 	int readInt();
 	int64_t readInt64();
-	void readChar(char *dest, size_t n);
+	bool readChar(char *dest, size_t n);
 	std::vector<unsigned char> read(size_t n);
 
 	int writeInt(int n);

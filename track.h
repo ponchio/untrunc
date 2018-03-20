@@ -31,7 +31,7 @@ class AVCodec;
 class Codec {
 public:
     std::string name;
-    void parse(Atom *trak, std::vector<int> &offsets, Atom *mdat);
+    void parse(Atom *trak, std::vector<int64_t> &offsets, Atom *mdat);
     bool matchSample(unsigned char *start, int maxlength);
 	int getLength(unsigned char *start, int maxlength, int &duration);
     bool isKeyframe(unsigned char *start, int maxlength);
@@ -50,7 +50,7 @@ public:
     Codec codec;
 
     std::vector<int> times;
-    std::vector<int> offsets;
+    std::vector<int64_t> offsets;
     std::vector<int> sizes;
     std::vector<int> keyframes; //0 based!
 
