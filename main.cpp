@@ -69,6 +69,9 @@ int main(int argc, char *argv[]) {
             mp4.repair(corrupt);
             mp4.saveVideo(corrupt + "_fixed.mp4");
         }
+    } catch (const char* s) {
+        cerr << s << endl;
+        return -1;
     } catch(string e) {
         cerr << e << endl;
         return -1;
