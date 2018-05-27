@@ -27,14 +27,25 @@
 #ifndef __STDC_CONSTANT_MACROS
 # define __STDC_CONSTANT_MACROS 1
 #endif
-#include <cstdint>
+#if (__cplusplus >= 201103L)
+# include <cstdint>
+#else
+extern "C" {
+# include <stdint.h>
+};
+#endif
 #ifndef INT64_C
 # define INT64_C(c)     (c ## LL)
 # define UINT64_C(c)    (c ## ULL)
 #endif
-#include <cstdbool> // Define C11 bool used in internal header included below.
 
 extern "C" {
+#undef __bool_true_false_are_defined    // Prevent #define of bool, true & false.
+#define __bool_true_false_are_defined   1
+#ifndef _Bool
+# define _Bool  bool
+#endif
+
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 

@@ -3,7 +3,13 @@
 
 #include <vector>
 #include <string>
-#include <cstdint>
+#if (__cplusplus >= 201103L)
+# include <cstdint>
+#else
+extern "C" {
+# include <stdint.h>
+};
+#endif
 
 #include "file.h"
 

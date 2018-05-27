@@ -23,7 +23,13 @@
 
 #include <vector>
 #include <string>
-#include <cstdint>
+#if (__cplusplus >= 201103L)
+# include <cstdint>
+#else
+extern "C" {
+# include <stdint.h>
+};
+#endif
 #include <cstdio>
 
 uint16_t swap16(uint16_t us);
