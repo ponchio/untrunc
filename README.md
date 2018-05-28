@@ -86,9 +86,10 @@ On macOS add the following (tested on OSX 10.12.6):
 - add `-framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration`.
 
 
-## Arch package
+## Linux packages
 
-Jose1711 kindly provides an arch package here: https://aur.archlinux.org/packages/untrunc-git/
+* Arch Linux: https://aur.archlinux.org/packages/untrunc-git/
+* NixOS: https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/video/untrunc/default.nix
 
 ## Docker container
 
