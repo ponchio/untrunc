@@ -1,5 +1,5 @@
 # pull base image
-FROM ubuntu
+FROM debian
 
 # install packaged dependencies
 RUN apt-get update
