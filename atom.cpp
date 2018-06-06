@@ -284,6 +284,8 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
     if(buffer == NULL) {
 
         buffer_begin = offset;
+        // Read more bytes than requested, so the buffer can be reused on
+        // small offset increases.
         buffer_end = offset + 2*size;
         if(buffer_end + file_begin > file_end)
             buffer_end = file_end - file_begin;
@@ -292,7 +294,7 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
         file.readChar((char *)buffer, buffer_end - buffer_begin);
         return buffer;
     }
-    if(buffer_begin >= offset && buffer_end >= offset + size)
+    if(buffer_begin <= offset && buffer_end >= offset + size)
         return buffer + (offset - buffer_begin);
 
     //reallocate and reread
@@ -314,7 +316,10 @@ void BufferedAtom::updateLength() {
 
 int BufferedAtom::readInt(int64_t offset) {
     if(!buffer || offset < buffer_begin || offset > (buffer_end - 4)) {
-        buffer = getFragment(offset, 1<<16);
+        int64_t bufsize = 1<<16;
+        if(offset + bufsize > file_end - file_begin)
+            bufsize = (file_end - file_begin) - offset;
+        buffer = getFragment(offset, bufsize);
     }
     return *(int *)(buffer + offset - buffer_begin);
 }

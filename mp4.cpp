@@ -341,7 +341,7 @@ void Mp4::repair(string filename) {
 	vector<int> audiotimes;
 	unsigned long count = 0;
 	off_t offset = 0;
-	while(offset < mdat->contentSize()) {
+	while(offset <= mdat->contentSize() - 4) {
 
 		//unsigned char *start = &(mdat->content[offset]);
 		int64_t maxlength = mdat->contentSize() - offset;
