@@ -1,12 +1,18 @@
 #ifndef ATOM_H
 #define ATOM_H
-extern "C" {
-    #include <stdint.h>
-}
+
 #include <vector>
 #include <string>
+#if (__cplusplus >= 201103L)
+# include <cstdint>
+#else
+extern "C" {
+# include <stdint.h>
+};
+#endif
 
 #include "file.h"
+
 class Atom {
 public:
     int64_t start;       //including 8 header bytes

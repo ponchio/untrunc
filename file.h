@@ -21,12 +21,16 @@
 #ifndef FILE_H
 #define FILE_H
 
-extern "C" {
-	#include <stdint.h>
-}
-#include <stdio.h>
 #include <vector>
 #include <string>
+#if (__cplusplus >= 201103L)
+# include <cstdint>
+#else
+extern "C" {
+# include <stdint.h>
+};
+#endif
+#include <cstdio>
 
 uint16_t swap16(uint16_t us);
 uint32_t swap32(uint32_t ui);
