@@ -1,2 +1,3 @@
 *.o
 untrunc
+/libav-0.8.7/

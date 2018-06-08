@@ -86,6 +86,26 @@ On macOS add the following (tested on OSX 10.12.6):
 - add `-framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration`.
 
 
+## Installing on OSX
+
+
+Download the source code from GitHub at https://github.com/ponchio/untrunc and unzip the source code.
+    
+Download [libav, 0.8.7 version](http://libav.org/releases/libav-0.8.7.tar.xz) from [libav download page](http://libav.org/download.html) and unzip into the untrunc source code library. Then:
+
+    cd untrunc-master
+
+Build the library
+
+    cd libav-0.8.7
+    ./configure
+    make
+    cd ../
+
+Build untrunc
+
+    g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -I./libav-0.8.7 -L./libav-0.8.7/libavformat -lavformat -L./libav-0.8.7/libavcodec -lavcodec -L./libav-0.8.7/libavutil -lavutil -lpthread -lz -lbz2 -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration
+
 ## Arch package
 
 Jose1711 kindly provides an arch package here: https://aur.archlinux.org/packages/untrunc-git/

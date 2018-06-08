@@ -25,7 +25,7 @@
 #include <vector>
 #include <string.h>
 #include <assert.h>
-#include <endian.h>
+#include "endian.h"
 
 #define __STDC_LIMIT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1

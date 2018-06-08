@@ -20,7 +20,7 @@
 
 #include "file.h"
 #include <string>
-#include <endian.h>
+#include "endian.h"
 
 using namespace std;
 
