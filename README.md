@@ -34,6 +34,19 @@ Compile the source code using this command (all one line):
 
     g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -L/usr/local/lib -lavformat -lavcodec -lavutil
 
+## Installing on Mac
+
+Download the source code from GitHub at https://github.com/ponchio/untrunc and unzip the source code.
+
+    cd untrunc-master
+
+Install libav using homebrew
+
+    brew install libav
+
+Build untrunc
+
+    g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -L/usr/local/lib -lavformat -lavcodec -lavutil
 
 ## Installing on other operating systems (Manual Libav installation)
 

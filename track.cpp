@@ -25,7 +25,7 @@
 #include <vector>
 #include <string.h>
 #include <assert.h>
-#include <endian.h>
+#include "uendian.h"
 
 #define __STDC_LIMIT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1
@@ -480,7 +480,7 @@ int Codec::getLength(unsigned char *start, int maxlength, int &duration) {
 	} else if(name == "mp4v") {
 
 		/*     THIS DOES NOT SEEM TO WORK FOR SOME UNKNOWN REASON. IT JUST CONSUMES ALL BYTES.
-  *     AVFrame *frame = avcodec_alloc_frame();
+  *     AVFrame *frame = av_frame_alloc();
 		if(!frame)
 			throw string("Could not create AVFrame");
 		AVPacket avp;
