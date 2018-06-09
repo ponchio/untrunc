@@ -369,7 +369,7 @@ bool getNalInfo(H264sps &sps, uint32_t maxlength, uint8_t *buffer, NalInfo &info
 
 	if(len + 4 > maxlength) {
 		cout << "Buffer size exceeded\n";
-		return false;
+		len = maxlength - 4;
 	}
 	info.length = len + 4;
 	cout << "Length: " << info.length << "\n";

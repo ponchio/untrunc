@@ -2,6 +2,8 @@
 #include "atom.h"
 #include "file.h"
 
+#include <cstring>
+#include <algorithm>
 #include <string>
 #include <map>
 #include <iostream>
@@ -278,18 +280,21 @@ BufferedAtom::~BufferedAtom() {
 unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
     if(offset < 0)
         throw "Offset set before beginning of buffer";
-    if(offset + size > file_end - file_begin)
-        throw "Out of buffer";
+    int64_t file_size = file_end - file_begin;
+    if (file_size < 0)
+        throw "File size is negative";
 
     if(buffer == NULL) {
 
         buffer_begin = offset;
         buffer_end = offset + 2*size;
         if(buffer_end + file_begin > file_end)
-            buffer_end = file_end - file_begin;
+            buffer_end = file_size;
         buffer = new unsigned char[buffer_end - buffer_begin];
         file.seek(file_begin + buffer_begin);
-        file.readChar((char *)buffer, buffer_end - buffer_begin);
+        int64_t bytes_to_read = std::min(buffer_end - buffer_begin, file_size);
+        file.readChar((char *)buffer, bytes_to_read);
+        memset(buffer + bytes_to_read, 0, (buffer_end - buffer_begin) - bytes_to_read); // zero out of bounds bytes
         return buffer;
     }
     if(buffer_begin >= offset && buffer_end >= offset + size)
