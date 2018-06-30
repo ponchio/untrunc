@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     }
     if(argc == i) {
         usage();
-        return -1;
+        return 2;   // Invalid argument.
     }
 
     string ok = argv[i];
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         }
     } catch(string e) {
         cerr << e << endl;
-        return -1;
+        return 1;   // Failure.
     }
     return 0;
 }
