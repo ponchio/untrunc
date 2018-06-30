@@ -93,9 +93,9 @@ ARG LIBAV_SRC_CONF="--enable-libgsm --enable-libopencore-amrnb --enable-libopenc
 
 # LIBAV_SRC_SITE: Configure the site to retrieve the AV library sources from.
 # (can be overruled with: --build-arg "LIBAV_SRC_SITE=*")
-# - "origin"  = The original site of the AV library's project.
-# - "github"  = The mirror on GitHub of the AV library's project.
-# - ""        = <unset/empty> = The default site.
+# - origin      The original site of the AV library's project,
+# - github      The mirror on GitHub of the AV library's project,
+# - ""          The default site.
 #ARG LIBAV_SRC_SITE="origin"
 #ARG LIBAV_SRC_SITE="github"
 
@@ -235,85 +235,7 @@ RUN printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr ' ' '-'; \
     && mkdir -p /usr/local/share/untrunc \
     && { [ -z "${LIBAV_PKGS_INS}" ] || printf '%s' "${LIBAV_PKGS_INS# }" > /usr/local/share/untrunc/untrunc-pkgs.txt; } \
     && { printf "%$(( ${COLUMNS:-80} - 4 ))s\n\n" "" | tr ' ' '-'; };
-# Alternative Code:
-#        LIBAV_PKGS="dev_libavformat dev_libavcodec dev_libavutil ins_libavformat[1-9] ins_libavcodec[1-9] ins_libavutil[1-9]"; \
-#        LIBAV_PKGS=""; \
-#        for option in ${LIBAV_SRC_CONF}; do \
-#            case "${option}" in \
-#                --enable-libgsm)            LIBAV_PKGS="${LIBAV_PKGS}"' libgsm[1-9]';; \
-#                --enable-libopencore-amrnb) LIBAV_PKGS="${LIBAV_PKGS}"' libopencore-amrnb';; \
-#                --enable-libopencore-amrwb) LIBAV_PKGS="${LIBAV_PKGS}"' libopencore-amrwb';; \
-#                --enable-libvo-amrwbenc)    LIBAV_PKGS="${LIBAV_PKGS}"' libvo-amrwbenc';; \
-#                --enable-libmp3lame)        LIBAV_PKGS="${LIBAV_PKGS}"' libmp3lame';; \
-#                --enable-libopenjpeg)       LIBAV_PKGS="${LIBAV_PKGS}"' libopenjp2-[7-9]';; \
-#                --enable-libopenmpt)        LIBAV_PKGS="${LIBAV_PKGS}"' libopenmpt';; \
-#                --enable-libopus)           LIBAV_PKGS="${LIBAV_PKGS}"' libopus';; \
-#                --enable-libsnappy)         LIBAV_PKGS="${LIBAV_PKGS}"' dev_libsnappy ins_libsnappy[1-9]';; \
-#                --enable-libsoxr)           LIBAV_PKGS="${LIBAV_PKGS}"' libsoxr';; \
-#                --enable-libspeex)          LIBAV_PKGS="${LIBAV_PKGS}"' dev_libspeex ins_libspeex[1-9]';; \
-#                --enable-libtheora)         LIBAV_PKGS="${LIBAV_PKGS}"' libtheora';; \
-#                --enable-libtwolame)        LIBAV_PKGS="${LIBAV_PKGS}"' libtwolame';; \
-#                --enable-libvorbis)         LIBAV_PKGS="${LIBAV_PKGS}"' libvorbis';; \
-#                --enable-libvpx)            LIBAV_PKGS="${LIBAV_PKGS}"' dev_libvpx ins_libvpx[1-9]';; \
-#                --enable-libwavpack)        LIBAV_PKGS="${LIBAV_PKGS}"' dev_libwavpack ins_libwavpack[1-9]';; \
-#                --enable-libwebp)           LIBAV_PKGS="${LIBAV_PKGS}"' dev_libwebp ins_libwebp[5-9] ins_libwebpmux[1-9] ins_libwebpdemux[1-9]';; \
-#                --enable-libx264)           LIBAV_PKGS="${LIBAV_PKGS}"' dev_libx264 dev_opencl ins_libx264-[1-9]';; \
-#                --enable-libx265)           LIBAV_PKGS="${LIBAV_PKGS}"' dev_libx265 dev_libnuma ins_libx265-[1-9]';; \
-#            esac; \
-#        done; \
-# END Alternative Code.
 
-#RUN printf "\n================\n"; \
-#    printf "Directory /etc/:\n"; \
-#    ls -Fgl /etc/; \
-#    printf "\n================\n"; \
-#    printf "Directory /etc/apt/:\n"; \
-#    ls -Fgl /etc/apt/; \
-#    printf "\n================\n"; \
-#    printf "Directory /etc/apt/apt.conf.d/:\n"; \
-#    ls -Fgl /etc/apt/apt.conf.d/; \
-#    printf "\n================\n"; \
-#    printf "Directory /etc/dpkg/:\n"; \
-#    ls -Fgl /etc/dpkg/; \
-#    printf "\n================\n"; \
-#    printf "Directory /etc/dpkg/dpkg.cfg.d/:\n"; \
-#    ls -Fgl /etc/dpkg/dpkg.cfg.d/; \
-#    printf "\n================\n"; \
-#    printf "Apt Configuration:\n"; \
-#    for f in /etc/apt/apt.conf /etc/apt/apt.conf.d/*; do \
-#        if [ -f "$f" ]; then \
-#            printf -- "- Apt Config File %s:\n" "$f"; \
-#            cat "$f"; \
-#        fi; \
-#    done; \
-#    printf "\n================\n"; \
-#    printf "DPkg Configuration:\n"; \
-#    for f in /etc/dpkg/dpkg.conf /etc/dpkg/dpkg.cfg /etc/dpkg/dpkg.cfg.d/*; do \
-#        if [ -f "$f" ]; then \
-#            printf -- "- Dpkg Config File %s:\n" "$f"; \
-#            cat "$f"; \
-#        fi; \
-#    done; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /tmp/:\n"; \
-#    du -ckd1 /tmp/; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /var/tmp/:\n"; \
-#    du -ckd1 /var/tmp/; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /var/lib/apt/lists/:\n"; \
-#    du -ckd1 /var/lib/apt/lists/; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /usr/share/doc/:\n"; \
-#    du -ckd1 /usr/share/doc/; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /usr/share/man/:\n"; \
-#    du -ckd1 /usr/share/man/; \
-#    printf "\n================\n"; \
-#    printf "Archives:\n"; \
-#    find /usr/lib*/ -type f -name "*.a" -ls; \
-#    printf "\n================\n"; \
-#    true;
 
 
 # Build the AV library.
@@ -445,25 +367,6 @@ RUN printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr ' ' '-'; \
        fi \
     && mv -f untrunc /usr/local/bin/ \
     && { printf "%$(( ${COLUMNS:-80} - 4 ))s\n\n" "" | tr ' ' '-'; };
-# Replacement Code:
-#    && if [ "${LIBAV}" = "dev" ] || ! grep -qs '^[[:blank:]]*#[[:blank:]]*include[[:blank:]]*["<]\(config\|h26[^>"]*\)\.h[>"]' * > /dev/null; then \
-#    && if [ "${LIBAV}" = "dev" ] || ! grep -qs '^[[:blank:]]*#[[:blank:]]*define[[:blank:]]\{1,\}\(class\|new\)[[:space:]]' * > /dev/null; then \
-#
-#            g++ -o untrunc *.cpp -lavformat -lavcodec -lavutil; \
-#            g++ -o untrunc $(pkg-config --cflags --static libavformat libavcodec libavutil) *.cpp $(pkg-config --libs --static libavformat libavcodec libavutil); \
-#
-#            g++ -o untrunc -static $(pkg-config --cflags --static libavformat libavcodec libavutil) -idirafter "${LIBAV_DIR}/" *.cpp $(pkg-config --libs --static libavformat libavcodec libavutil); \
-#
-#            LIBAV_RESAMPLE="avresample"; \
-#            if [ -n "$(find /usr/lib*/      -type f -name 'libswresample*' ! -iname '*.pc')" ]; then LIBAV_RESAMPLE="swresample"; fi; \
-#            g++ -o untrunc -idirafter "${LIBAV_DIR}/" *.cpp -lavformat -lavcodec -l${LIBAV_RESAMPLE} -lavutil -lpthread -lm -ldl -lz -lbz2 -llzma; \
-#            g++ -o untrunc $(pkg-config --cflags --static libavformat libavcodec libavutil) -idirafter "${LIBAV_DIR}/" *.cpp $(pkg-config --libs --static libavformat libavcodec libavutil); \
-#
-#            LIBAV_RESAMPLE="avresample"; \
-#            if [ -n "$(find /usr/local/lib/ -type f -name 'libswresample*' ! -iname '*.pc')" ]; then LIBAV_RESAMPLE="swresample"; fi; \
-#            g++ -o untrunc -I/usr/local/include -I"${LIBAV_DIR}" *.cpp -L/usr/local/lib -lavformat -lavcodec -l${LIBAV_RESAMPLE} -lavutil -lpthread -lm -lz -lbz2 -llzma; \
-#            g++ -o untrunc $(pkg-config --cflags --static libavformat libavcodec libavutil) -I"${LIBAV_DIR}" *.cpp $(pkg-config --libs --static libavformat libavcodec libavutil); \
-# END Replacement Code.
 
 
 
@@ -513,77 +416,6 @@ RUN printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr ' ' '-'; \
     fi \
     && { rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* /usr/share/man/* || true; } \
     && { printf "%$(( ${COLUMNS:-80} - 4 ))s\n\n" "" | tr ' ' '-'; };
-#Extra Code:
-#        && { rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* /usr/share/man/* || true; } \
-#        printf "%s\n" "# Don't install recommended nor suggested packages." \
-#            'APT::Install-Recommends "false";' \
-#            'APT::Install-Suggests "false";' \
-#            > /etc/apt/apt.conf.d/docker-no-suggests; \
-#        printf "%s\n" "# Don't install static library archives." \
-#            'path-exclude=/usr/lib*.a' \
-#            'path-include=/usr/lib*_nonshared.a' \
-#            'path-include=/usr/lib*/libc.a' \
-#            'path-include=/usr/lib*/libc[_-]*.a' \
-#            'path-include=/usr/lib*/libpthread*.a' \
-#            'path-include=/usr/lib*/libgcc*.a' \
-#            > /etc/dpkg/dpkg.cfg.d/docker-no-static-libraries; \
-#END Extra Code
-
-#RUN printf "\n================\n"; \
-#    printf "Directory /etc/:\n"; \
-#    ls -Fgl /etc/; \
-#    printf "\n================\n"; \
-#    printf "Directory /etc/apt/:\n"; \
-#    ls -Fgl /etc/apt/; \
-#    printf "\n================\n"; \
-#    printf "Directory /etc/apt/apt.conf.d/:\n"; \
-#    ls -Fgl /etc/apt/apt.conf.d/; \
-#    printf "\n================\n"; \
-#    printf "Directory /etc/dpkg/:\n"; \
-#    ls -Fgl /etc/dpkg/; \
-#    printf "\n================\n"; \
-#    printf "Directory /etc/dpkg/dpkg.cfg.d/:\n"; \
-#    ls -Fgl /etc/dpkg/dpkg.cfg.d/; \
-#    printf "\n================\n"; \
-#    printf "Apt Configuration:\n"; \
-#    apt-config dump; \
-#    printf "\n================\n"; \
-#    printf "Apt Configuration:\n"; \
-#    for f in /etc/apt/apt.conf /etc/apt/apt.conf.d/*; do \
-#        if [ -f "$f" ]; then \
-#            printf -- "- Apt Config File %s:\n" "$f"; \
-#            cat "$f"; \
-#        fi; \
-#    done; \
-#    printf "\n================\n"; \
-#    printf "DPkg Configuration:\n"; \
-#    for f in /etc/dpkg/dpkg.conf /etc/dpkg/dpkg.cfg /etc/dpkg/dpkg.cfg.d/*; do \
-#        if [ -f "$f" ]; then \
-#            printf -- "- Dpkg Config File %s:\n" "$f"; \
-#            cat "$f"; \
-#        fi; \
-#    done; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /tmp/:\n"; \
-#    du -ckd1 /tmp/; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /var/tmp/:\n"; \
-#    du -ckd1 /var/tmp/; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /var/lib/apt/lists/:\n"; \
-#    du -ckd1 /var/lib/apt/lists/; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /usr/share/doc/:\n"; \
-#    du -ckd1 /usr/share/doc/; \
-#    printf "\n================\n"; \
-#    printf "Disk Usage of /usr/share/man/:\n"; \
-#    du -ckd1 /usr/share/man/; \
-#    printf "\n================\n"; \
-#    printf "Archives:\n"; \
-#    find /usr/lib*/ -type f -name "*.a" -ls; \
-#    printf "\n================\n"; \
-#    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* /usr/share/man/* || true; \
-#    true;
 
 # Run without root privilages.
 USER untrunc
