@@ -15,18 +15,19 @@
     Suite 330, Boston, MA 02111-1307, USA.  Or www.fsf.org
 
     Copyright 2010 Federico Ponchio
-                                                                                
+
                                                         */
 
 #include "mp4.h"
-#include "atom.h"
 
 #include <iostream>
 #include <string>
+
 using namespace std;
 
+
 void usage() {
-	cerr << "Usage: untrunc [-a -i] <ok.mp4> [<corrupt.mp4>]\n\n";
+    cerr << "Usage: untrunc [-a -i] <ok.mp4> [<corrupt.mp4>]\n\n";
 }
 
 int main(int argc, char *argv[]) {
