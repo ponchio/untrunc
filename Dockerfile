@@ -31,20 +31,25 @@ LABEL org.opencontainers.image.authors="Federico Ponchio <ponchio@gmail.com>"
 
 # LIBAV: Configure AV library to use.
 # (can be overruled with: --build-arg "LIBAV=*")
-#   - dev | ""        OS development packages,
+#   - dev             OS development packages,
 #   - dev-headers     OS development packages with internal header files,
 #   - libav-<vers>    Libav  version <vers> build from source (like: "libav-12.3"),
-#   - ffmpeg-<vers>   FFmpeg version <vers> build from source (like: "ffmpeg-4.0.1").
+#   - ffmpeg-<vers>   FFmpeg version <vers> build from source (like: "ffmpeg-4.0.1"),
+#   - libav           Libav  build from sources from git master,
+#   - ffmpeg          FFmpeg build from sources from git master,
+#   - ""              The default AV library = dev.
 # Build results for Untrunc production image:
 #   - ubuntu parent image           :  81 MiB,
 #   - dev / dev-headers             : 264 MiB,  4:15 min,
 #   - libav-12.3 only, no extra libs:  96 MiB,  5:15 min,
-#   - libav-12.3 + 3GP,MP3,H264,H265: 108 MiB,  6:10 min,
+#   - libav-12.3 + 3GP,MP3,H264,H265: 108 MiB,  6:15 min,
 #   - ffmpeg-4.0.1  + all extra libs: 131 MiB, 10:30 min.
 #ARG LIBAV="dev"
 #ARG LIBAV="dev-headers"
 ARG LIBAV="libav-12.3"
 #ARG LIBAV="ffmpeg-4.0.1"
+#ARG LIBAV="libav"
+#ARG LIBAV="ffmpeg"
 
 
 # LIBAV_SRC_CONF: Configure the AV library options to use when building from source.
@@ -263,12 +268,18 @@ RUN printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr ' ' '-'; \
         esac; \
         printf "LIBAV_SRC_SITE = '%s'\n" "${LIBAV_SRC_SITE:-github}"; \
         if [ "${LIBAV_SRC_SITE}" = "origin" ]; then \
-            wget -O - --progress=dot:mega "https://${LIBAV%%-*}.org/releases/${LIBAV}.tar.xz" | tar -xJ; \
+            case "${LIBAV}" in \
+                libav   | ffmpeg)   wget -O - --progress=dot:mega "https://${LIBAV%%-*}.org/releases/${LIBAV%%-*}-snapshot.tar.bz2" | tar -xj;; \
+                libav-* | ffmpeg-*) wget -O - --progress=dot:mega "https://${LIBAV%%-*}.org/releases/${LIBAV}.tar.xz" | tar -xJ;; \
+                *)                  false;;
+            esac; \
         else \
-            case "${LIBAV%%-*}" in \
-                libav)  LIBAV_REPO="libav";   LIBAV_VERS="v${LIBAV#*-}";; \
-                ffmpeg) LIBAV_REPO="FFmpeg";  LIBAV_VERS="n${LIBAV#*-}";; \
-                *)      false;; \
+            case "${LIBAV}" in \
+                libav)      LIBAV_REPO="libav";   LIBAV_VERS="master";; \
+                libav-*)    LIBAV_REPO="libav";   LIBAV_VERS="v${LIBAV#*-}";; \
+                ffmpeg)     LIBAV_REPO="FFmpeg";  LIBAV_VERS="master";; \
+                ffmpeg-*)   LIBAV_REPO="FFmpeg";  LIBAV_VERS="n${LIBAV#*-}";; \
+                *)          false;; \
             esac \
             && { wget -O - --progress=dot:mega "https://github.com/${LIBAV_REPO}/${LIBAV_REPO}/archive/${LIBAV_VERS}.tar.gz" | tar -xz; } \
             && { [ -d "${LIBAV}" ] || { ln -s "${LIBAV_REPO}-${LIBAV_VERS}" "${LIBAV}"; printf "%s = '%s-%s'\n" "${LIBAV}" "${LIBAV_REPO}" "${LIBAV_VERS}"; }; }; \

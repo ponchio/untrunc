@@ -34,12 +34,14 @@ before_install:
   #   + dev-headers     OS development packages with internal header files,
   #   + libav-<vers>    Libav  version <vers> build from source (like: "libav-12.3"),
   #   + ffmpeg-<vers>   FFmpeg version <vers> build from source (like: "ffmpeg-4.0.1"),
+  #   + libav           Libav  build from sources from git master,
+  #   + ffmpeg          FFmpeg build from sources from git master,
   #   + ""              Dockerfile default.
   # Build results for Untrunc production image:
   #   + ubuntu parent image           :  81 MiB,
   #   + dev / dev-headers             : 264 MiB,  4:15 min,
   #   + libav-12.3 only, no extra libs:  96 MiB,  5:15 min,
-  #   + libav-12.3 + 3GP,MP3,H264,H265: 108 MiB,  6:10 min,
+  #   + libav-12.3 + 3GP,MP3,H264,H265: 108 MiB,  6:15 min,
   #   + ffmpeg-4.0.1  + all extra libs: 131 MiB, 10:30 min.
   - >
     IMAGE_LIBAV="";
