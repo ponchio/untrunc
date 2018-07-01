@@ -271,7 +271,7 @@ RUN printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr ' ' '-'; \
             case "${LIBAV}" in \
                 libav   | ffmpeg)   wget -O - --progress=dot:mega "https://${LIBAV%%-*}.org/releases/${LIBAV%%-*}-snapshot.tar.bz2" | tar -xj;; \
                 libav-* | ffmpeg-*) wget -O - --progress=dot:mega "https://${LIBAV%%-*}.org/releases/${LIBAV}.tar.xz" | tar -xJ;; \
-                *)                  false;;
+                *)                  false;; \
             esac; \
         else \
             case "${LIBAV}" in \
@@ -378,6 +378,10 @@ RUN printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr ' ' '-'; \
        fi \
     && mv -f untrunc /usr/local/bin/ \
     && { printf "%$(( ${COLUMNS:-80} - 4 ))s\n\n" "" | tr ' ' '-'; };
+
+
+# Execute docker-untrunc.
+ENTRYPOINT ["/usr/local/bin/untrunc"]
 
 
 
