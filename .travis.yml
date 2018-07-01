@@ -45,6 +45,7 @@ before_install:
   #   + ffmpeg-4.0.1  + all extra libs: 131 MiB, 10:30 min.
   - >
     IMAGE_LIBAV="";
+    [ "${TRAVIS_PULL_REQUEST}" = "false" ] || IMAGE_LIBAV="${IMAGE_LIBAV:-dev-headers}";
     [ -z "${IMAGE_LIBAV}" ] || BUILD_ARGS="${BUILD_ARGS} --build-arg LIBAV='${IMAGE_LIBAV}'";
   # The AV library configuration [--enable-*, "" (=default)], when building from source [libav-<version>, ffmpeg-<version>].
   - >
