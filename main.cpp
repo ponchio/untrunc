@@ -27,33 +27,92 @@
 using namespace std;
 
 
-void usage() {
-    cerr << "Usage: untrunc [-a -i] <ok.mp4> [<corrupt.mp4>]\n\n";
-}
+namespace {
+    enum ExitStatus {
+        STATUS_SUCCESS          = 0,
+        STATUS_FAILURE          = 1,
+        STATUS_INVALID_ARGUMENT = 2
+    };
 
-int main(int argc, char *argv[]) {
+    void printUsage() {
+        cerr << "Usage: untrunc [-h -i -a] <ok.mp4> [<corrupt.mp4>]\n\n";
+    }
 
-    bool info = false;
+    void printHelp() {
+        cout << "Untrunc\n"
+                "Description:\n"
+                "  Restores a damaged (truncated) mp4, m4v, mov, 3gp video.\n"
+                "  Provided you have a similar not broken video. And some luck.\n"
+                "Usage: untrunc [-h -i -a] <ok.mp4> [<corrupt.mp4>]\n"
+                "  -h, --help    This help text.\n"
+                "  -i, --info    Information on <ok.mp4>.\n"
+                "  -a, --analyze Interactively analyze <ok.mp4> (press key to continue).\n"
+                "\n";
+    }
+};
+
+
+int main(int argc, const char *argv[]) {
+
+    bool help    = false;
+    bool info    = false;
     bool analyze = false;
-    int i = 1;
-    for(; i < argc; i++) {
-        string arg(argv[i]);
-        if(arg[0] == '-') {
-            if(arg[1] == 'i') info = true;
-            if(arg[1] == 'a') analyze = true;
-        } else
-            break;
+
+    // Parse command-line arguments.
+    int argidx = 1;
+    for(; argidx < argc; argidx++) {
+        string arg = argv[argidx];
+        if(arg.size() < 2 || arg[0] != '-')
+            break;      // Not an option.
+        if(arg == "--")
+            break;      // End-of-Options.
+        bool invalid = false;
+        if(arg[1] != '-') {
+            // Short option format.
+            for(unsigned i = 1; i < arg.size(); i++) {
+                switch (arg[i]) {
+                case 'h': help    = true; break;
+                case 'i': info    = true; break;
+                case 'a': analyze = true; break;
+                default:  invalid = true; break;
+                }
+            }
+        } else {
+            // Long option format.
+            if     (arg == "--help")    help    = true;
+            else if(arg == "--info")    info    = true;
+            else if(arg == "--analyze") analyze = true;
+            else                        invalid = true;
+        }
+        if(invalid) {
+            cerr << "Error: Invalid option '" << arg << "' in argument " << argidx << '\n';
+            printUsage();
+            return STATUS_INVALID_ARGUMENT;
+        }
     }
-    if(argc == i) {
-        usage();
-        return 2;   // Invalid argument.
+    if(argidx >= argc) {
+        bool invalid = !help | info | analyze;
+        if(invalid) {
+            cerr << "Error: Missing argument " << argc << '\n';
+            printUsage();
+            return STATUS_INVALID_ARGUMENT;
+        }
+        printHelp();
+        return STATUS_SUCCESS;
+    }
+    // Get file argument(s).
+    string ok      = argv[argidx++];
+    string corrupt = (argidx < argc)? argv[argidx++] : "";
+    if(argidx < argc) {
+        cerr << "Error: Extra argument " << argidx << ((argc - argidx > 1)? "...":"") << '\n';
+        printUsage();
+        return STATUS_INVALID_ARGUMENT;
     }
 
-    string ok = argv[i];
-    string corrupt;
-    i++;
-    if(i < argc)
-        corrupt = argv[i];
+
+    // Do the untrunc thing.
+    if(help)
+        printHelp();
 
     cout << "Reading: " << ok << endl;
     Mp4 mp4;
@@ -67,13 +126,14 @@ int main(int argc, char *argv[]) {
         if(analyze) {
             mp4.analyze();
         }
-        if(corrupt.size()) {
+        if(!corrupt.empty()) {
+            cout << "Reading: " << corrupt << endl;
             mp4.repair(corrupt);
             mp4.saveVideo(corrupt + "_fixed.mp4");
         }
     } catch(string e) {
-        cerr << e << endl;
-        return 1;   // Failure.
+        cerr << "Error: " << e << endl;
+        return STATUS_FAILURE;
     }
-    return 0;
+    return STATUS_SUCCESS;
 }
