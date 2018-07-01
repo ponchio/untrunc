@@ -1,5 +1,94 @@
+language: shell
 sudo: required
 services:
   - docker
+
+before_install:
+  # OCI annotation of the Docker image.
+  # Done here, from outside the Dockerfile,
+  # - so external commands can be used to retrieve the label information and
+  # - so no label will be set if there is no label information.
+  - >
+    IMAGE_VERSION="$(git describe --abbrev=8 2> /dev/null || git describe --tags --abbrev=8 2> /dev/null)";
+    [ -z "${IMAGE_VERSION}"  ] || BUILD_LABELS="${BUILD_LABELS} --label org.opencontainers.image.version=${IMAGE_VERSION}";
+  - >
+    IMAGE_REVISION="${TRAVIS_COMMIT}";
+    [ -n "${IMAGE_REVISION}" ] || IMAGE_REVISION="$(git log -n 1 --format='format:%H' 2> /dev/null)";
+    [ -z "${IMAGE_REVISION}" ] || BUILD_LABELS="${BUILD_LABELS} --label org.opencontainers.image.revision=${IMAGE_REVISION}";
+  - >
+    IMAGE_CREATED="$(date -u '+%Y-%m-%dT%TZ')";
+    [ -z "${IMAGE_CREATED}"  ] || BUILD_LABELS="${BUILD_LABELS}"' --label org.opencontainers.image.created="'"${IMAGE_CREATED}"'"';
+  # Tag the Docker-executable when git pushing to master and git tagging (annotated tag -> release).
+  - >
+    if [ -n "${TRAVIS_TAG}" ] && [ "${TRAVIS_BRANCH}" = "${TRAVIS_TAG:-master}" ] && [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+        IMAGE_TAG="${TRAVIS_TAG}";
+    fi
+  # Build the image till build stage: build-env, construction, production, "" (=till last=default).
+  - >
+    IMAGE_BLDSTAGE="";
+    [ -z "${IMAGE_BLDSTAGE}" ] || BUILD_ARGS="--target ${IMAGE_BLDSTAGE} ${BUILD_ARGS}";
+  - printf "IMAGE_TAG        = '%s'\nIMAGE_BLDSTAGE   = '%s'\nIMAGE_VERSION    = '%s'\nIMAGE_REVISION   = '%s'\nIMAGE_CREATED    = '%s'\n" "${IMAGE_TAG}" "${IMAGE_BLDSTAGE}" "${IMAGE_VERSION}" "${IMAGE_REVISION}" "${IMAGE_CREATED}"
+
+  # The AV library to use:
+  #   + dev             OS development packages,
+  #   + dev-headers     OS development packages with internal header files,
+  #   + libav-<vers>    Libav  version <vers> build from source (like: "libav-12.3"),
+  #   + ffmpeg-<vers>   FFmpeg version <vers> build from source (like: "ffmpeg-4.0.1"),
+  #   + libav           Libav  build from sources from git master,
+  #   + ffmpeg          FFmpeg build from sources from git master,
+  #   + ""              Dockerfile default.
+  # Build results for Untrunc production image:
+  #   + ubuntu parent image           :  81 MiB,
+  #   + dev / dev-headers             : 264 MiB,  4:15 min,
+  #   + libav-12.3 only, no extra libs:  96 MiB,  5:15 min,
+  #   + libav-12.3 + 3GP,MP3,H264,H265: 108 MiB,  6:15 min,
+  #   + ffmpeg-4.0.1  + all extra libs: 131 MiB, 10:30 min.
+  - >
+    IMAGE_LIBAV="";
+    [ -z "${IMAGE_LIBAV}" ] || BUILD_ARGS="${BUILD_ARGS} --build-arg LIBAV=${IMAGE_LIBAV}";
+  # The AV library configuration [--enable-*, "" (=default)], when building from source [libav-<version>, ffmpeg-<version>].
+  - >
+    IMAGE_LIBAV_CONF="";
+    [ "${TRAVIS_PULL_REQUEST}" = "false" ] || IMAGE_LIBAV_CONF="${IMAGE_LIBAV_CONF:---enable-gpl}";
+    [ -z "${IMAGE_LIBAV_CONF}" ] || BUILD_ARGS="${BUILD_ARGS} --build-arg LIBAV_SRC_CONF=${IMAGE_LIBAV_CONF}";
+  # The site to get the AV library sources from [origin, github, "" (=default)], when building from source [libav-<version>, ffmpeg-<version>].
+  - >
+    IMAGE_LIBAV_SITE="";
+    [ -z "${IMAGE_LIBAV_SITE}" ] || BUILD_ARGS="${BUILD_ARGS} --build-arg LIBAV_SRC_SITE=${IMAGE_LIBAV_SITE}";
+  - printf "IMAGE_LIBAV      = '%s'\nIMAGE_LIBAV_CONF = '%s'\nIMAGE_LIBAV_SITE = '%s'\n" "${IMAGE_LIBAV}" "${IMAGE_LIBAV_CONF}" "${IMAGE_LIBAV_SITE}"
+
+  # Build the Docker image.
+  - printf "BUILD_ARGS       = '%s'\nBUILD_LABELS     = '%s'\n" "${BUILD_ARGS}" "${BUILD_LABELS}"
+  # Build Docker image from current git branch.
+  - docker image build -t untrunc${IMAGE_TAG:+":${IMAGE_TAG}"} ${BUILD_ARGS} ${BUILD_LABELS} .
+  # Build Docker image from git master.
+  #- docker image build -t untrunc${IMAGE_TAG:+":${IMAGE_TAG}"} ${BUILD_ARGS} ${BUILD_LABELS} https://github.com/ponchio/untrunc.git#master
+
+  # Inspect Docker image.
+  - docker image inspect -f '{{json .ContainerConfig.Labels}}' untrunc${IMAGE_TAG:+":${IMAGE_TAG}"}
+  - docker image ls
+  #- docker container run --rm -t --entrypoint=/bin/sh untrunc${IMAGE_TAG:+":${IMAGE_TAG}"} -c 'printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr " " "-"; printf "Working Directory:\n"; pwd; printf "\nEnvironment:\n"; env | sort; printf "\nUntrunc Binary:\n"; ls -lk /usr/local/bin/untrunc; if [ -f "/usr/local/share/untrunc/untrunc-info.txt" ]; then printf "\nUntrunc Info:\n"; cat /usr/local/share/untrunc/untrunc-info.txt; fi; if [ -f "/usr/local/share/untrunc/untrunc-pkgs.txt" ]; then printf "\nUntrunc Packages:\n"; cat /usr/local/share/untrunc/untrunc-pkgs.txt; fi; printf "%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr " " "-";';
+
+  # Remove dangling docker images that are either not tagged, not part of pushes to git master or part of pull requests.
+  - >
+    if [ -z "${IMAGE_TAG}" ] || [ "${TRAVIS_BRANCH}" != "${TRAVIS_TAG:-master}" ] || [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
+        docker image prune -f;
+    fi;
+
 script:
-  - docker build -t untrunc .  
+  # Test the Docker-executable "docker-untrunc".
+  # Get info on all video files in subdirectory 'test/'.
+  - |
+    setStatus() { return ${1:-0}; };
+    cwd="$(pwd)";
+    rc=0;
+    for f in tests/*.{mp4,m4v,mov,3gp}; do
+        [ "${f%.*}" = 'tests/*' ] && continue;
+        printf "\nTesting '%s'...\n" "${f}";
+        docker container run --rm -v "${cwd}/tests:/tests:ro" -t untrunc${IMAGE_TAG:+":${IMAGE_TAG}"} -i "/${f}";
+        rc=$?;
+        [ $rc -eq 0 ] || break;
+    done;
+    setStatus $rc;
+
+# vim:set sw=2 sts=2 et:
