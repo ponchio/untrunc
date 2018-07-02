@@ -1,12 +1,36 @@
+//==================================================================//
+/*
+    Untrunc - atom.h
+
+    Untrunc is GPL software; you can freely distribute,
+    redistribute, modify & use under the terms of the GNU General
+    Public License; either version 2 or its successor.
+
+    Untrunc is distributed under the GPL "AS IS", without
+    any warranty; without the implied warranty of merchantability
+    or fitness for either an expressed or implied particular purpose.
+
+    Please see the included GNU General Public License (GPL) for
+    your rights and further details; see the file COPYING. If you
+    cannot, write to the Free Software Foundation, 59 Temple Place
+    Suite 330, Boston, MA 02111-1307, USA.  Or www.fsf.org
+
+    Copyright 2010 Federico Ponchio
+                                                                    */
+//==================================================================//
+
 #ifndef ATOM_H
 #define ATOM_H
+
 extern "C" {
     #include <stdint.h>
-}
+};
 #include <vector>
 #include <string>
 
 #include "file.h"
+
+
 class Atom {
 public:
     int64_t start;       //including 8 header bytes
@@ -22,7 +46,7 @@ public:
         length = 0;
         start = 0;
     }
-	virtual ~Atom();
+    virtual ~Atom();
 
     void parseHeader(File &file); //read just name and length
     void parse(File &file);
@@ -45,8 +69,8 @@ public:
     virtual int readInt(int64_t offset);
     void writeInt(int value, int64_t offset);
     void readChar(char *str, int64_t offset, int64_t length);
-
 };
+
 
 class BufferedAtom: public Atom {
 public:
@@ -65,7 +89,6 @@ public:
 
     int readInt(int64_t offset);
     void write(File &file);
-
 };
 
 #endif // ATOM_H

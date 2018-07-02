@@ -1,17 +1,36 @@
+//==================================================================//
+/*
+    Untrunc - atom.cpp
+
+    Untrunc is GPL software; you can freely distribute,
+    redistribute, modify & use under the terms of the GNU General
+    Public License; either version 2 or its successor.
+
+    Untrunc is distributed under the GPL "AS IS", without
+    any warranty; without the implied warranty of merchantability
+    or fitness for either an expressed or implied particular purpose.
+
+    Please see the included GNU General Public License (GPL) for
+    your rights and further details; see the file COPYING. If you
+    cannot, write to the Free Software Foundation, 59 Temple Place
+    Suite 330, Boston, MA 02111-1307, USA.  Or www.fsf.org
+
+    Copyright 2010 Federico Ponchio
+                                                                    */
+//==================================================================//
+
 #include "AP_AtomDefinitions.h"
 #include "atom.h"
-#include "file.h"
 
-#include <string>
 #include <map>
 #include <iostream>
 
-#include <assert.h>
-#include <endian.h>
+#include <cassert>
 
 using namespace std;
 
 
+// Atom
 Atom::~Atom() {
     for(unsigned int i = 0; i < children.size(); i++)
         delete children[i];
@@ -116,7 +135,7 @@ void Atom::print(int offset) {
         //lets just read the first entry
         int entries = readInt(4);
         cout << indent << " Entries: " << entries << endl;
-		for(int i = 0; i < entries && i < 30; i++)
+        for(int i = 0; i < entries && i < 30; i++)
             cout << indent << " samples: " << readInt(8 + 8*i) << " for: " << readInt(12 + 8*i) << endl;
 
     } else if(name == string("stss")) { //sync sample: (keyframes)
@@ -168,7 +187,7 @@ AtomDefinition definition(char *id) {
             def[knownAtoms[i].known_atom_name] = knownAtoms[i];
     }
     if(!def.count(id)) {
-       //return a fake definition
+        //return a fake definition
         return def["<()>"];
     }
     return def[id];
@@ -250,12 +269,12 @@ void Atom::updateLength() {
 }
 
 int Atom::readInt(int64_t offset) {
-	return swap32(*(int *)&(content[offset]));
+    return swap32(*(int *)&(content[offset]));
 }
 
 void Atom::writeInt(int value, int64_t offset) {
     assert(content.size() >= offset + 4);
-	*(int *)&(content[offset]) = swap32(value);
+    *(int *)&(content[offset]) = swap32(value);
 }
 
 void Atom::readChar(char *str, int64_t offset, int64_t length) {
@@ -266,6 +285,8 @@ void Atom::readChar(char *str, int64_t offset, int64_t length) {
 }
 
 
+
+// BufferedAtom
 BufferedAtom::BufferedAtom(string filename): buffer(NULL) {
     if(!file.open(filename))
         throw "Could not open file.";
@@ -282,7 +303,6 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
         throw "Out of buffer";
 
     if(buffer == NULL) {
-
         buffer_begin = offset;
         buffer_end = offset + 2*size;
         if(buffer_end + file_begin > file_end)
@@ -341,3 +361,4 @@ void BufferedAtom::write(File &output) {
     int end = output.pos();
     assert(end - start == length);
 }
+
