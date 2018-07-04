@@ -71,7 +71,9 @@ void Atom::parse(File &file) {
 
 void Atom::write(File &file) {
     //1 write length
+#ifndef NDEBUG
     int start = file.pos();
+#endif
 
     file.writeInt(length);
     file.writeChar(name, 4);
@@ -79,8 +81,11 @@ void Atom::write(File &file) {
         file.write(content);
     for(unsigned int i = 0; i < children.size(); i++)
         children[i]->write(file);
+
+#ifndef NDEBUG
     int end = file.pos();
     assert(end - start == length);
+#endif
 }
 
 void Atom::print(int offset) {
@@ -207,7 +212,7 @@ namespace {
         return def_unknown;
     }
 }; //namespace
- 
+
 bool Atom::isParent(const char *id) {
     AtomDefinition def = definition(id);
     return def.container_state == PARENT_ATOM;// || def.container_state == DUAL_STATE_ATOM;
@@ -285,15 +290,18 @@ void Atom::updateLength() {
 }
 
 int Atom::readInt(int64_t offset) {
+    assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
     return swap32(*(int *)&(content[offset]));
 }
 
 void Atom::writeInt(int value, int64_t offset) {
-    assert(content.size() >= offset + 4);
+    assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
     *(int *)&(content[offset]) = swap32(value);
 }
 
 void Atom::readChar(char *str, int64_t offset, int64_t length) {
+    assert(str != NULL);
+    assert(offset >= 0 && length >= 0 && content.size() >= uint64_t(offset) + uint64_t(length));
     for(int i = 0; i < length; i++)
         str[i] = content[offset + i];
 
@@ -363,7 +371,9 @@ int BufferedAtom::readInt(int64_t offset) {
 
 void BufferedAtom::write(File &output) {
     //1 write length
+#ifndef NDEBUG
     int start = output.pos();
+#endif
 
     output.writeInt(length);
     output.writeChar(name, 4);
@@ -380,7 +390,10 @@ void BufferedAtom::write(File &output) {
     }
     for(unsigned int i = 0; i < children.size(); i++)
         children[i]->write(output);
+
+#ifndef NDEBUG
     int end = output.pos();
     assert(end - start == length);
+#endif
 }
 
