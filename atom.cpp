@@ -31,6 +31,8 @@ using namespace std;
 
 
 // Atom
+Atom::Atom() : start(0), length(0), name(""), head(""), version("") {}
+
 Atom::~Atom() {
     for(unsigned int i = 0; i < children.size(); i++)
         delete children[i];
@@ -287,13 +289,19 @@ void Atom::readChar(char *str, int64_t offset, int64_t length) {
 
 
 // BufferedAtom
-BufferedAtom::BufferedAtom(string filename): buffer(NULL) {
+BufferedAtom::BufferedAtom(string filename)
+  : buffer(NULL),
+    buffer_begin(0),
+    buffer_end(0),
+    file_begin(0),
+    file_end(0)
+{
     if(!file.open(filename))
         throw "Could not open file.";
 }
 
 BufferedAtom::~BufferedAtom() {
-    if(buffer) delete []buffer;
+    delete[] buffer;
 }
 
 unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
@@ -316,7 +324,7 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
         return buffer + (offset - buffer_begin);
 
     //reallocate and reread
-    delete []buffer;
+    delete[] buffer;
     buffer = NULL;
     return getFragment(offset, size);
 }

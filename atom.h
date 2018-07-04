@@ -24,7 +24,7 @@
 
 extern "C" {
     #include <stdint.h>
-};
+}
 #include <vector>
 #include <string>
 
@@ -35,17 +35,13 @@ class Atom {
 public:
     int64_t start;       //including 8 header bytes
     int64_t length;      //including 8 header bytes
-    char name[5];
+    char name[8];
     char head[4];
     char version[4];
     std::vector<unsigned char> content;
     std::vector<Atom *> children;
 
-    Atom(): start(0), length(-1) {
-        name[0] = name[1] = name[2] = name[3] = name[4] = 0;
-        length = 0;
-        start = 0;
-    }
+    Atom();
     virtual ~Atom();
 
     void parseHeader(File &file); //read just name and length
@@ -72,14 +68,15 @@ public:
 };
 
 
-class BufferedAtom: public Atom {
+class BufferedAtom : public Atom {
+private:
+    unsigned char *buffer;
+    int64_t buffer_begin;
+    int64_t buffer_end;
 public:
     File file;
     int64_t file_begin;
     int64_t file_end;
-    unsigned char *buffer;
-    int64_t buffer_begin;
-    int64_t buffer_end;
 
     BufferedAtom(std::string filename);
     ~BufferedAtom();
