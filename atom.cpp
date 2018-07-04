@@ -224,7 +224,7 @@ bool Atom::isVersioned(const char *id) {
 }
 
 
-vector<Atom *> Atom::atomsByName(string name) {
+vector<Atom *> Atom::atomsByName(string name) const {
     vector<Atom *> atoms;
     for(unsigned int i = 0; i < children.size(); i++) {
         if(children[i]->name == name)
@@ -234,7 +234,7 @@ vector<Atom *> Atom::atomsByName(string name) {
     }
     return atoms;
 }
-Atom *Atom::atomByName(std::string name) {
+Atom *Atom::atomByName(std::string name) const {
     for(unsigned int i = 0; i < children.size(); i++) {
         if(children[i]->name == name)
             return children[i];

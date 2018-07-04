@@ -49,14 +49,14 @@ public:
     virtual void write(File &file);
     void print(int offset);
 
-    std::vector<Atom *> atomsByName(std::string name);
-    Atom *atomByName(std::string name);
+    std::vector<Atom *> atomsByName(std::string name) const;
+    Atom *atomByName(std::string name) const;
     void replace(Atom *original, Atom *replacement);
 
     void prune(std::string name);
     virtual void updateLength();
 
-    virtual int64_t contentSize() { return content.size(); }
+    virtual int64_t contentSize() const { return content.size(); }
 
     static bool isParent   (const char *id);
     static bool isDual     (const char *id);
@@ -80,12 +80,15 @@ public:
 
     BufferedAtom(std::string filename);
     ~BufferedAtom();
-    unsigned char *getFragment(int64_t offset, int64_t size);
-    int64_t contentSize() { return file_end - file_begin; }
-    void updateLength();
 
-    int readInt(int64_t offset);
-    void write(File &file);
+    virtual void write(File &file);
+    
+    unsigned char *getFragment(int64_t offset, int64_t size);
+    virtual void updateLength();
+
+    virtual int64_t contentSize() const { return file_end - file_begin; }
+
+    virtual int readInt(int64_t offset);
 };
 
 #endif // ATOM_H
