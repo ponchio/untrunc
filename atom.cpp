@@ -182,33 +182,47 @@ void Atom::print(int offset) {
         children[i]->print(offset+1);
 }
 
-AtomDefinition definition(char *id) {
-    map<string, AtomDefinition> def;
-    if(def.size() == 0) {
-        for(int i = 0; i < 174; i++)
-            def[knownAtoms[i].known_atom_name] = knownAtoms[i];
-    }
-    if(!def.count(id)) {
-        //return a fake definition
-        return def["<()>"];
-    }
-    return def[id];
-}
 
-bool Atom::isParent(char *id) {
+namespace {
+    AtomDefinition definition(const char *id) {
+        static const AtomDefinition def_unknown = KnownAtoms[0];
+        static map<string, AtomDefinition> def;
+        if(def.empty()) {
+            for(unsigned int i = 1; i < sizeof(KnownAtoms)/sizeof(KnownAtoms[0]); ++i) {
+#if 1
+                //for each atom name include the last of multiple definitions
+                def[KnownAtoms[i].known_atom_name] = KnownAtoms[i];
+#else
+                //for each atom name include only the first of multiple definitions
+                def.insert(make_pair(string(KnownAtoms[i].known_atom_name), KnownAtoms[i]));
+#endif
+            }
+        }
+
+        if(id) {
+            map<string, AtomDefinition>::const_iterator it = def.find(id);
+            if(it != def.end())
+                return it->second;
+        }
+        return def_unknown;
+    }
+}; //namespace
+ 
+bool Atom::isParent(const char *id) {
     AtomDefinition def = definition(id);
     return def.container_state == PARENT_ATOM;// || def.container_state == DUAL_STATE_ATOM;
 }
 
-bool Atom::isDual(char *id) {
+bool Atom::isDual(const char *id) {
     AtomDefinition def = definition(id);
     return def.container_state == DUAL_STATE_ATOM;
 }
 
-bool Atom::isVersioned(char *id) {
+bool Atom::isVersioned(const char *id) {
     AtomDefinition def = definition(id);
     return def.box_type == VERSIONED_ATOM;
 }
+
 
 vector<Atom *> Atom::atomsByName(string name) {
     vector<Atom *> atoms;

@@ -58,9 +58,9 @@ public:
 
     virtual int64_t contentSize() { return content.size(); }
 
-    static bool isParent(char *id);
-    static bool isDual(char *id);
-    static bool isVersioned(char *id);
+    static bool isParent   (const char *id);
+    static bool isDual     (const char *id);
+    static bool isVersioned(const char *id);
 
     virtual int readInt(int64_t offset);
     void writeInt(int value, int64_t offset);

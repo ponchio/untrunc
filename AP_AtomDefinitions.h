@@ -86,7 +86,7 @@ typedef struct {
 
 // Derived from AtomDefs.h:
 // Changed entries are commented with "//UNTRUNC:".
-AtomDefinition knownAtoms[] = {
+const AtomDefinition KnownAtoms[] = {
   //name    parent atom(s)      container         number                box_type
   {"<()>",  {"_ANY_LEVEL"},     UNKNOWN_ATOM_TYPE, UKNOWN_REQUIREMENTS, UNKNOWN_ATOM },     //our unknown atom (self-defined)
   {"ftyp",  {"FILE_LEVEL"},     CHILD_ATOM,       REQUIRED_ONCE,        SIMPLE_ATOM },
@@ -262,8 +262,8 @@ AtomDefinition knownAtoms[] = {
   {"mean",  {"----"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
   {"name",  {"----"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
   {"esds",  {"SAMPLE_DESC"},    CHILD_ATOM,       REQUIRED_ONE,         SIMPLE_ATOM },      //multiple parents; keep 3rd from end; manual return
-  {"(..)",  {"ilst"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },      //multiple parents; keep 2nd from end; manual return
-  {"data",  {"ITUNES_METADATA"}, CHILD_ATOM,      PARENT_SPECIFIC,      VERSIONED_ATOM }    //multiple parents
+  //{"(..)",  {"ilst"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },      //multiple parents; keep 2nd from end; manual return
+  //{"data",  {"ITUNES_METADATA"}, CHILD_ATOM,      PARENT_SPECIFIC,      VERSIONED_ATOM }    //multiple parents
 
 };
 
