@@ -23,7 +23,7 @@
 #define ATOM_H
 
 extern "C" {
-    #include <stdint.h>
+#include <stdint.h>
 }
 #include <vector>
 #include <string>
@@ -69,12 +69,7 @@ public:
 
 
 class BufferedAtom : public Atom {
-private:
-    unsigned char *buffer;
-    int64_t buffer_begin;
-    int64_t buffer_end;
 public:
-    File file;
     int64_t file_begin;
     int64_t file_end;
 
@@ -82,13 +77,19 @@ public:
     ~BufferedAtom();
 
     virtual void write(File &file);
-    
+
     unsigned char *getFragment(int64_t offset, int64_t size);
     virtual void updateLength();
 
     virtual int64_t contentSize() const { return file_end - file_begin; }
 
     virtual int readInt(int64_t offset);
+
+protected:
+    File file;
+    unsigned char *buffer;
+    int64_t buffer_begin;
+    int64_t buffer_end;
 };
 
 #endif // ATOM_H

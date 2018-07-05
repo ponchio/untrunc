@@ -31,7 +31,7 @@ using namespace std;
 
 
 // Atom
-Atom::Atom() : start(0), length(0), name(""), head(""), version("") {}
+Atom::Atom() : start(0), length(0), name(""), head(""), version("") { }
 
 Atom::~Atom() {
     for(unsigned int i = 0; i < children.size(); i++)
@@ -63,7 +63,7 @@ void Atom::parse(File &file) {
         assert(file.pos() == start + length);
 
     } else {
-        content = file.read(length -8); //lenght includes header
+        content = file.read(length -8); //length includes header
         if(content.size() < length -8)
             throw string("Failed reading atom content: ") + name;
     }
@@ -77,7 +77,7 @@ void Atom::write(File &file) {
 
     file.writeInt(length);
     file.writeChar(name, 4);
-    if(content.size())
+    if(!content.empty())
         file.write(content);
     for(unsigned int i = 0; i < children.size(); i++)
         children[i]->write(file);
@@ -239,7 +239,8 @@ vector<Atom *> Atom::atomsByName(string name) const {
     }
     return atoms;
 }
-Atom *Atom::atomByName(std::string name) const {
+
+Atom *Atom::atomByName(string name) const {
     for(unsigned int i = 0; i < children.size(); i++) {
         if(children[i]->name == name)
             return children[i];
@@ -260,7 +261,7 @@ void Atom::replace(Atom *original, Atom *replacement) {
 }
 
 void Atom::prune(string name) {
-    if(!children.size()) return;
+    if(children.empty()) return;
 
     length = 8;
 
@@ -291,12 +292,12 @@ void Atom::updateLength() {
 
 int Atom::readInt(int64_t offset) {
     assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
-    return swap32(*(int *)&(content[offset]));
+    return swap32(*reinterpret_cast<uint32_t *>(&content[offset]));
 }
 
 void Atom::writeInt(int value, int64_t offset) {
     assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
-    *(int *)&(content[offset]) = swap32(value);
+    *reinterpret_cast<uint32_t *>(&content[offset]) = swap32(value);
 }
 
 void Atom::readChar(char *str, int64_t offset, int64_t length) {
@@ -304,19 +305,18 @@ void Atom::readChar(char *str, int64_t offset, int64_t length) {
     assert(offset >= 0 && length >= 0 && content.size() >= uint64_t(offset) + uint64_t(length));
     for(int i = 0; i < length; i++)
         str[i] = content[offset + i];
-
-    str[length] = 0;
+    str[length] = '\0';
 }
 
 
 
 // BufferedAtom
 BufferedAtom::BufferedAtom(string filename)
-  : buffer(NULL),
+  : file_begin(0),
+    file_end(0),
+    buffer(NULL),
     buffer_begin(0),
-    buffer_end(0),
-    file_begin(0),
-    file_end(0)
+    buffer_end(0)
 {
     if(!file.open(filename))
         throw "Could not open file.";
@@ -366,7 +366,7 @@ int BufferedAtom::readInt(int64_t offset) {
     if(!buffer || offset < buffer_begin || offset > (buffer_end - 4)) {
         buffer = getFragment(offset, 1<<16);
     }
-    return *(int *)(buffer + offset - buffer_begin);
+    return *reinterpret_cast<int *>(buffer + offset - buffer_begin);
 }
 
 void BufferedAtom::write(File &output) {
@@ -386,7 +386,7 @@ void BufferedAtom::write(File &output) {
             toread = file_end - offset;
         file.readChar(buff, toread);
         offset += toread;
-        output.writeChar(buff,toread);
+        output.writeChar(buff, toread);
     }
     for(unsigned int i = 0; i < children.size(); i++)
         children[i]->write(output);
