@@ -30,6 +30,37 @@
 using namespace std;
 
 
+namespace {
+    static inline uint32_t id2Key(const char *id) {
+        const unsigned char *uid = reinterpret_cast<const unsigned char*>(id);
+        return ((uint32_t(uid[0]) << 24) | (uint32_t(uid[1]) << 16) | (uint32_t(uid[2]) << 8) | uint32_t(uid[3]));
+    }
+
+    AtomDefinition definition(const char *id) {
+        static const AtomDefinition def_unknown = KnownAtoms[0];
+        static map<uint32_t, AtomDefinition> def;
+        if(def.empty()) {
+            for(unsigned int i = 1; i < sizeof(KnownAtoms)/sizeof(KnownAtoms[0]); ++i) {
+#if 1
+                //for each atom name include the last of multiple definitions
+                def[id2Key(KnownAtoms[i].known_atom_name)] = KnownAtoms[i];
+#else
+                //for each atom name include only the first of multiple definitions
+                def.insert(make_pair(id2Key(KnownAtoms[i].known_atom_name), KnownAtoms[i]));
+#endif
+            }
+        }
+
+        if(id) {
+            map<uint32_t, AtomDefinition>::const_iterator it = def.find(id2Key(id));
+            if(it != def.end())
+                return it->second;
+        }
+        return def_unknown;
+    }
+}; //namespace
+
+
 // Atom
 Atom::Atom() : start(0), length(0), name(""), head(""), version("") { }
 
@@ -72,7 +103,7 @@ void Atom::parse(File &file) {
 void Atom::write(File &file) {
     //1 write length
 #ifndef NDEBUG
-    int start = file.pos();
+    off_t begin = file.pos();
 #endif
 
     file.writeInt(length);
@@ -83,8 +114,8 @@ void Atom::write(File &file) {
         children[i]->write(file);
 
 #ifndef NDEBUG
-    int end = file.pos();
-    assert(end - start == length);
+    off_t end = file.pos();
+    assert(end - begin == length);
 #endif
 }
 
@@ -93,26 +124,22 @@ void Atom::print(int offset) {
 
     cout << string(offset, '-') << name << " [" << start << ", " << length << "]\n";
     if(name == string("mvhd") || name == string("mdhd")) {
-        for(int i = 0; i < offset; i++)
-            cout << " ";
         //timescale: time units per second
         //duration: in time units
-        cout << indent << " Timescale: " << readInt(12) << " Duration: " << readInt(16) << endl;
+        cout << indent << " Timescale: " << readInt(12) << " Duration: " << readInt(16) << '\n';
 
     } else if(name == string("tkhd")) {
-        for(int i = 0; i < offset; i++)
-            cout << " ";
         //track id:
-        //duration
-        cout << indent << " Trak: " << readInt(12) << " Duration: "  << readInt(20) << endl;
+        //duration:
+        cout << indent << " Trak: " << readInt(12) << " Duration: "  << readInt(20) << '\n';
 
     } else if(name == string("hdlr")) {
         char type[5];
         readChar(type, 8, 4);
-        cout << indent << " Type: " << type << endl;
+        cout << indent << " Type: " << type << '\n';
 
     } else if(name == string("dref")) {
-        cout << indent << " Entries: " << readInt(4) << endl;
+        cout << indent << " Entries: " << readInt(4) << '\n';
 
     } else if(name == string("stsd")) { //sample description: (which codec...)
         //lets just read the first entry
@@ -136,82 +163,63 @@ void Atom::print(int offset) {
         //00 04 -> length of picture parameter set
         //28 EE 16 20 -> picture parameter set. (28 ee 04 62),  (28 ee 1e 20)
 
-        cout << indent << " Entries: " << readInt(4) << " codec: " << type << endl;
+        cout << indent << " Entries: " << readInt(4) << " codec: " << type << '\n';
 
     } else if(name == string("stts")) { //run length compressed duration of samples
         //lets just read the first entry
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << endl;
+        cout << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 30; i++)
-            cout << indent << " samples: " << readInt(8 + 8*i) << " for: " << readInt(12 + 8*i) << endl;
+            cout << indent << " samples: " << readInt(8 + 8*i) << " for: " << readInt(12 + 8*i) << '\n';
 
     } else if(name == string("stss")) { //sync sample: (keyframes)
         //lets just read the first entry
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << endl;
+        cout << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 10; i++)
-            cout << indent << " Keyframe: " << readInt(8 + 4*i) << endl;
+            cout << indent << " Keyframe: " << readInt(8 + 4*i) << '\n';
 
 
     } else if(name == string("stsc")) { //samples to chucnk:
         //lets just read the first entry
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << endl;
-        for(int i = 0; i < entries && i < 10; i++)
-            cout << indent << " chunk: " << readInt(8 + 12*i) << " nsamples: " << readInt(12 + 12*i) << " id: " << readInt(16 + 12*i) << endl;
+        cout << indent << " Entries: " << entries << '\n';
+        for(int i = 0; i < entries && i < 10; i++) {
+            cout << indent  << " chunk: "     << readInt( 8 + 12*i)
+                            << " nsamples: "  << readInt(12 + 12*i)
+                            << " id: "        << readInt(16 + 12*i)
+                            << '\n';
+        }
 
     } else if(name == string("stsz")) { //sample size atoms
         int entries = readInt(8);
         int sample_size = readInt(4);
-        cout << indent << " Sample size: " << sample_size << " Entries: " << entries << endl;
+        cout << indent << " Sample size: " << sample_size << " Entries: " << entries << '\n';
         if(sample_size == 0) {
             for(int i = 0; i < entries && i < 10; i++)
-                cout << indent << " Size " << readInt(12 + i*4) << endl;
+                cout << indent << " Size " << readInt(12 + i*4) << '\n';
         }
 
     } else if(name == string("stco")) { //sample chunk offset atoms
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << endl;
+        cout << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 10; i++)
-            cout << indent << " chunk: " << readInt(8 + i*4) << endl;
+            cout << indent << " chunk: " << readInt(8 + i*4) << '\n';
 
     } else if(name == string("co64")) {
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << endl;
+        cout << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 10; i++)
-            cout << indent << " chunk: " << readInt(12 + i*8) << endl;
+            cout << indent << " chunk: " << readInt(12 + i*8) << '\n';
 
     }
 
     for(unsigned int i = 0; i < children.size(); i++)
         children[i]->print(offset+1);
+
+    cout.flush();
 }
 
-
-namespace {
-    AtomDefinition definition(const char *id) {
-        static const AtomDefinition def_unknown = KnownAtoms[0];
-        static map<string, AtomDefinition> def;
-        if(def.empty()) {
-            for(unsigned int i = 1; i < sizeof(KnownAtoms)/sizeof(KnownAtoms[0]); ++i) {
-#if 1
-                //for each atom name include the last of multiple definitions
-                def[KnownAtoms[i].known_atom_name] = KnownAtoms[i];
-#else
-                //for each atom name include only the first of multiple definitions
-                def.insert(make_pair(string(KnownAtoms[i].known_atom_name), KnownAtoms[i]));
-#endif
-            }
-        }
-
-        if(id) {
-            map<string, AtomDefinition>::const_iterator it = def.find(id);
-            if(it != def.end())
-                return it->second;
-        }
-        return def_unknown;
-    }
-}; //namespace
 
 bool Atom::isParent(const char *id) {
     AtomDefinition def = definition(id);
@@ -332,23 +340,23 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
     if(offset + size > file_end - file_begin)
         throw "Out of buffer";
 
-    if(buffer == NULL) {
-        buffer_begin = offset;
-        buffer_end = offset + 2*size;
-        if(buffer_end + file_begin > file_end)
-            buffer_end = file_end - file_begin;
-        buffer = new unsigned char[buffer_end - buffer_begin];
-        file.seek(file_begin + buffer_begin);
-        file.readChar((char *)buffer, buffer_end - buffer_begin);
-        return buffer;
-    }
-    if(buffer_begin >= offset && buffer_end >= offset + size)
-        return buffer + (offset - buffer_begin);
+    if(buffer) {
+        if(buffer_begin >= offset && buffer_end >= offset + size)
+            return buffer + (offset - buffer_begin);
 
-    //reallocate and reread
-    delete[] buffer;
-    buffer = NULL;
-    return getFragment(offset, size);
+        //reallocate and reread
+        delete[] buffer;
+        buffer = NULL;
+    }
+
+    buffer_begin = offset;
+    buffer_end = offset + 2*size;
+    if(buffer_end + file_begin > file_end)
+        buffer_end = file_end - file_begin;
+    buffer = new unsigned char[buffer_end - buffer_begin];
+    file.seek(file_begin + buffer_begin);
+    file.readChar((char *)buffer, buffer_end - buffer_begin);
+    return buffer;
 }
 
 void BufferedAtom::updateLength() {
@@ -372,16 +380,16 @@ int BufferedAtom::readInt(int64_t offset) {
 void BufferedAtom::write(File &output) {
     //1 write length
 #ifndef NDEBUG
-    int start = output.pos();
+    off_t begin = output.pos();
 #endif
 
     output.writeInt(length);
     output.writeChar(name, 4);
     char buff[1<<20];
-    int offset = file_begin;
+    int64_t offset = file_begin;
     file.seek(file_begin);
     while(offset < file_end) {
-        int toread = 1<<20;
+        int64_t toread = 1<<20;
         if(toread + offset > file_end)
             toread = file_end - offset;
         file.readChar(buff, toread);
@@ -392,8 +400,8 @@ void BufferedAtom::write(File &output) {
         children[i]->write(output);
 
 #ifndef NDEBUG
-    int end = output.pos();
-    assert(end - start == length);
+    off_t end = output.pos();
+    assert(end - begin == length);
 #endif
 }
 

@@ -78,9 +78,9 @@ enum {
 typedef struct {
   const char*       known_atom_name;
   const char*       known_parent_atoms[5]; //max known to be tested
-  unsigned int      container_state;
-  int               presence_requirements;
-  unsigned int      box_type;
+  unsigned char     container_state;
+  signed char       presence_requirements;
+  unsigned char     box_type;
 } AtomDefinition;
 
 
