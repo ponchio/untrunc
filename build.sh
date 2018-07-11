@@ -26,6 +26,8 @@ LibAvConfigureOpts="--disable-programs --disable-doc --disable-avdevice --disabl
 UntruncExtraLibs="-lbz2"
 # Verbosity: 0=None, 1=Error, 2=Warning, 3=Info, 4=Debug, >4=Internal
 Verbosity=1
+BuildLibAvOnly=0
+BuildUntruncOnly=0
 
 
 
@@ -61,6 +63,8 @@ Usage:
                     instead of the development sources from git.
   options:
     --help, -h      This help text.
+    --libav-only    Build only the AV library and not Untrunc.
+    --untrunc-only  Build only Untrunc itself and not the AV library.
     --verbosity=<n> Set verbosity level to <n> (default: ${Verbosity}):
                     0=None, 1=Error, 2=Warning, 3=Info, 4=Debug.
     --quiet, -q     Set verbosity level to 1 - errors only.
@@ -152,6 +156,8 @@ for option; do
                             if case " ${LibAvConfigureOpts} " in (*--quiet*) false;; (*) true;; esac; then
                                 LibAvConfigureOpts="--quiet ${LibAvConfigureOpts}"
                             fi;;
+        --libav-only)       BuildLibAvOnly=1;;
+        --untrunc-only)     BuildUntruncOnly=1;;
         libav  | libav-*)   LibAv="${option}";;
         ffmpeg | ffmpeg-*)  LibAv="${option}";;
         *)                  log 1 "Unknown option '%s'.\n" "${option}"; usage 2;;
@@ -159,6 +165,8 @@ for option; do
 done
 Verbosity=${optionVerbosity}
 log 4 "Verbosity          = '%s'." "${Verbosity}"
+log 4 "BuildLibAvOnly     = '%s'," "${BuildLibAvOnly}"
+log 4 "BuildUntruncOnly   = '%s'," "${BuildUntruncOnly}"
 log 4 "LibAv              = '%s'." "${LibAv}"
 log 4 "LibAvConfigureOpts = '%s'." "${LibAvConfigureOpts}"
 
@@ -167,38 +175,40 @@ log 4 "LibAvConfigureOpts = '%s'." "${LibAvConfigureOpts}"
 ####################
 # Build AV Library #
 ####################
-cd .. || die "Cannot leave Untrunc source directory '%s'." "${UntruncWorkDir}/.."
 ret=0
+if [ $BuildUntruncOnly -eq 0 ]; then
+    cd .. || die "Cannot leave Untrunc source directory '%s'." "${UntruncWorkDir}/.."
 
 
-# Get the AV library.
-if case "${LibAv}" in (*-*) true;; (*) false;; esac; then
-    # Use release sources from a release tar-ball.
-    wget -N https://${LibAv%%-*}.org/releases/${LibAv}.tar.xz && tar -xJf ${LibAv}.tar.xz
-    ret=$?
-elif [ -d "./${LibAv}/.git" ]; then
-    # Update existing repository.
-    cd -- "${LibAv}" && git pull --rebase=preserve --prune
-    ret=$?
-else
-    # Use development sources from a git repository.
-    case "${LibAv}" in
-        ffmpeg) # git release tags: n3.4, n3.4.1, n3.4.2, n4.0, n4.0.1, n4.1, etc.
-            git clone --branch master --depth 3 --shallow-submodules https://github.com/FFmpeg/FFmpeg.git ffmpeg
-            #git clone --branch master --depth 3 --shallow-submodules https://git.ffmpeg.org/ffmpeg.git ffmpeg
-            ;;
-        libav)  # git release tags: v12, v12.1, v12.2, v12.3, etc.
-            git clone --branch master --depth 3 --shallow-submodules https://github.com/libav/libav.git
-            #git clone --branch master --depth 3 --shallow-submodules https://git.libav.org/libav.git
-            ;;
-        *)  # should never happen.
-            false
-            ;;
-    esac
-    ret=$?
-    # Update existing repository if it was already cloned.
-    [ $ret -ne 0 ] && cd -- "${LibAv}" && git pull --rebase=preserve --prune
-fi
+    # Get the AV library.
+    if case "${LibAv}" in (*-*) true;; (*) false;; esac; then
+        # Use release sources from a release tar-ball.
+        wget -N https://${LibAv%%-*}.org/releases/${LibAv}.tar.xz && tar -xJf ${LibAv}.tar.xz
+        ret=$?
+    elif [ -d "./${LibAv}/.git" ]; then
+        # Update existing repository.
+        cd -- "${LibAv}" && git pull --rebase=preserve --prune
+        ret=$?
+    else
+        # Use development sources from a git repository.
+        case "${LibAv}" in
+            ffmpeg) # git release tags: n3.4, n3.4.1, n3.4.2, n4.0, n4.0.1, n4.1, etc.
+                git clone --branch master --depth 3 --shallow-submodules https://github.com/FFmpeg/FFmpeg.git ffmpeg
+                #git clone --branch master --depth 3 --shallow-submodules https://git.ffmpeg.org/ffmpeg.git ffmpeg
+                ;;
+            libav)  # git release tags: v12, v12.1, v12.2, v12.3, etc.
+                git clone --branch master --depth 3 --shallow-submodules https://github.com/libav/libav.git
+                #git clone --branch master --depth 3 --shallow-submodules https://git.libav.org/libav.git
+                ;;
+            *)  # should never happen.
+                false
+                ;;
+        esac
+        ret=$?
+        # Update existing repository if it was already cloned.
+        [ $ret -ne 0 ] && cd -- "${LibAv}" && git pull --rebase=preserve --prune
+    fi
+fi; # BuildUntruncOnly
 
 
 # Check that the AV library is reachable from Untrunc.
@@ -208,32 +218,35 @@ cd -- "${UntruncWorkDir}"
 cd -- "${libAvDir}" || die "No source library '%s'." "${LibAv}"
 
 
-# Use an external assembler?
-if { ! type nasm > /dev/null 2>&1; } && { ! type yasm > /dev/null 2>&1; }; then
-    if   grep -qs "disable-x86asm" ./configure 2> /dev/null 1>&2; then
-        LibAvConfigureOpts="${LibAvConfigureOpts} --disable-x86asm"
-    elif grep -qs "disable-yasm"   ./configure 2> /dev/null 1>&2; then
-        LibAvConfigureOpts="${LibAvConfigureOpts} --disable-yasm"
-    else
-        die 1 "Could not disable external assembler for library '%s'." "${LibAv}"
+if [ $BuildUntruncOnly -eq 0 ]; then
+    # Use an external assembler?
+    if { ! type nasm > /dev/null 2>&1; } && { ! type yasm > /dev/null 2>&1; }; then
+        if   grep -qs "disable-x86asm" ./configure 2> /dev/null 1>&2; then
+            LibAvConfigureOpts="${LibAvConfigureOpts} --disable-x86asm"
+        elif grep -qs "disable-yasm"   ./configure 2> /dev/null 1>&2; then
+            LibAvConfigureOpts="${LibAvConfigureOpts} --disable-yasm"
+        else
+            die 1 "Could not disable external assembler for library '%s'." "${LibAv}"
+        fi
     fi
-fi
 
 
-# Build the AV library.
-optionsStr=""
-for option in ${LibAvConfigureOpts}; do
-    optionsStr="${optionsStr} ${option#--}"
-done
-printf "\n\nBuilding '%s' (config:%s).\n" "${LibAv}" "${optionsStr}"
-printf "%s\n" "${SepLine}"
-ret=0
-#[ $ret -eq 0 ] && { make clean; printf "%s\n" "${SepLine}"; }
-[ $ret -eq 0 ] && { ./configure ${LibAvConfigureOpts}; ret=$?; }
-[ $ret -eq 0 ] && printf "%s\n" "${SepLine}"
-[ $ret -eq 0 ] && { nice make -j 8 -l 50; ret=$?; }
-printf "%s\n" "${SepLine}"
-[ $ret -eq 0 ] || { cd -- "${UntruncWorkDir}"; die $ret "Failed to build library '%s'." "${LibAv}"; }
+    # Build the AV library.
+    optionsStr=""
+    for option in ${LibAvConfigureOpts}; do
+        optionsStr="${optionsStr} ${option#--}"
+    done
+    printf "\n\nBuilding '%s' (config:%s).\n" "${LibAv}" "${optionsStr}"
+    printf "%s\n" "${SepLine}"
+    ret=0
+    #[ $ret -eq 0 ] && { make clean; printf "%s\n" "${SepLine}"; }
+    [ $ret -eq 0 ] && { ./configure ${LibAvConfigureOpts}; ret=$?; }
+    [ $ret -eq 0 ] && printf "%s\n" "${SepLine}"
+    [ $ret -eq 0 ] && { nice make -j 8 -l 50; ret=$?; }
+    printf "%s\n" "${SepLine}"
+    [ $ret -eq 0 ] || { cd -- "${UntruncWorkDir}"; die $ret "Failed to build library '%s'." "${LibAv}"; }
+fi; # BuildUntruncOnly
+
 
 
 
@@ -243,75 +256,76 @@ printf "%s\n" "${SepLine}"
 cd -- "${UntruncWorkDir}" || die "No Untrunc source directory '%s'." "${UntruncWorkDir}"
 
 
-# Select resample library.
-libAvResample=""
-# The AV library may contain both swresample (prefered) and avresample.
-for libAvResample in "swresample" "avresample" ""; do
-    [ -d "${libAvDir}/lib${libAvResample}" ] && break
-done
-[ -n "${libAvResample}" ] || die 1 "Unknown resample library for '%s'." "${LibAv}"
-
-
-# Add extra libraries to link with the executable.
-libAvCfgBuildDir=""
-for libAvCfgBuildDir in "ffbuild" "avbuild" ""; do
-    [ -d "${libAvDir}/${libAvCfgBuildDir}" ] && break
-done
-[ -n "${libAvCfgBuildDir}" ] && libAvCfgBuildDir="${libAvCfgBuildDir}/"
-libAvExtraLibs=""
-if   [ -f "${libAvDir}/${libAvCfgBuildDir}config.sh"  ]; then
-    # Get extra libraries from config shell script.
-    . ${libAvDir}/${libAvCfgBuildDir}config.sh
-    libAvExtraLibs="${extralibs_avutil} ${extralibs_avcodec} ${extralibs_avformat} ${extralibs_avresample} ${extralibs_swresample}"
-elif [ -f "${libAvDir}/${libAvCfgBuildDir}config.mak" ]; then
-    # Get extra libraries from config make script.
-    for libAvNm in "avutil" "avcodec" "avformat" "avresample" "swresample" ""; do
-        elibs="$(grep "^[[:blank:]]*EXTRALIBS${libAvNm:+"-${libAvNm}"}[[:blank:]]*=" "${libAvDir}/${libAvCfgBuildDir}config.mak")"
-        elibs="${elibs#*=}"
-        log 4 "libAvNm = '%s' -> 'EXTRALIBS%s' -> '%s'." "${libAvNm}" "${libAvNm:+"-${libAvNm}"}" "${elibs}"
-        libAvExtraLibs="${libAvExtraLibs} ${elibs}"
+if [ $BuildLibAvOnly -eq 0 ]; then
+    # Select resample library.
+    libAvResample=""
+    # The AV library may contain both swresample (prefered) and avresample.
+    for libAvResample in "swresample" "avresample" ""; do
+        [ -d "${libAvDir}/lib${libAvResample}" ] && break
     done
-fi
-if [ -n "${libAvExtraLibs}" ]; then
-    # Use the extra libraries from the AV library.
-    UntruncExtraLibs=""
-else
-    # Use the default extra libraries.
-    # These defaults are for older AV libraries.
-    # Newer AV libraries are expected to supply a config.sh file.
-    log 2 "Warning: Guessing the extra libraries to link with."
-    libAvExtraLibs="-pthread -lm -lz"
-    if case "${OS_TYPE:-"$(uname)"}" in ([Dd]arwin*) true;; (*) false;; esac; then
-        # macOS libraries for hardware acceleration (VideoDecodeAcceleration has been superseded by VideoToolBox).
-        libAvExtraLibs="${libAvExtraLibs} -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration"
-        # macOS libraries for avdevice when AVFoundation/AVFoundation.h exists.
-        #libAvExtraLibs="${libAvExtraLibs} -framework Foundation -framework AVFoundation -framework CoreVideo -framework CoreMedia"
+    [ -n "${libAvResample}" ] || die 1 "Unknown resample library for '%s'." "${LibAv}"
+
+
+    # Add extra libraries to link with the executable.
+    libAvCfgBuildDir=""
+    for libAvCfgBuildDir in "ffbuild" "avbuild" ""; do
+        [ -d "${libAvDir}/${libAvCfgBuildDir}" ] && break
+    done
+    [ -n "${libAvCfgBuildDir}" ] && libAvCfgBuildDir="${libAvCfgBuildDir}/"
+    libAvExtraLibs=""
+    if   [ -f "${libAvDir}/${libAvCfgBuildDir}config.sh"  ]; then
+        # Get extra libraries from config shell script.
+        . ${libAvDir}/${libAvCfgBuildDir}config.sh
+        libAvExtraLibs="${extralibs_avutil} ${extralibs_avcodec} ${extralibs_avformat} ${extralibs_avresample} ${extralibs_swresample}"
+    elif [ -f "${libAvDir}/${libAvCfgBuildDir}config.mak" ]; then
+        # Get extra libraries from config make script.
+        for libAvNm in "avutil" "avcodec" "avformat" "avresample" "swresample" ""; do
+            elibs="$(grep "^[[:blank:]]*EXTRALIBS${libAvNm:+"-${libAvNm}"}[[:blank:]]*=" "${libAvDir}/${libAvCfgBuildDir}config.mak")"
+            elibs="${elibs#*=}"
+            log 4 "libAvNm = '%s' -> 'EXTRALIBS%s' -> '%s'." "${libAvNm}" "${libAvNm:+"-${libAvNm}"}" "${elibs}"
+            libAvExtraLibs="${libAvExtraLibs} ${elibs}"
+        done
     fi
-fi
-optionPrefix=""
-for option in ${libAvExtraLibs}; do
-    [ "${option}" = "-framework" ] && { optionPrefix="${option} "; continue; }
-    if case " ${UntruncExtraLibs} " in (*" ${option} "*) false;; (*) true;; esac; then
-        UntruncExtraLibs="${UntruncExtraLibs} ${optionPrefix}${option}"
+    if [ -n "${libAvExtraLibs}" ]; then
+        # Use the extra libraries from the AV library.
+        UntruncExtraLibs=""
+    else
+        # Use the default extra libraries.
+        # These defaults are for older AV libraries.
+        # Newer AV libraries are expected to supply a config.sh file.
+        log 2 "Warning: Guessing the extra libraries to link with."
+        libAvExtraLibs="-pthread -lm -lz"
+        if case "${OS_TYPE:-"$(uname)"}" in ([Dd]arwin*) true;; (*) false;; esac; then
+            # macOS libraries for hardware acceleration (VideoDecodeAcceleration has been superseded by VideoToolBox).
+            libAvExtraLibs="${libAvExtraLibs} -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration"
+            # macOS libraries for avdevice when AVFoundation/AVFoundation.h exists.
+            #libAvExtraLibs="${libAvExtraLibs} -framework Foundation -framework AVFoundation -framework CoreVideo -framework CoreMedia"
+        fi
     fi
     optionPrefix=""
-done
-log 4 "libAvExtraLibs     = '%s'." "${libAvExtraLibs}"
-log 4 "UntruncExtraLibs   = '%s'." "${UntruncExtraLibs}"
+    for option in ${libAvExtraLibs}; do
+        [ "${option}" = "-framework" ] && { optionPrefix="${option} "; continue; }
+        if case " ${UntruncExtraLibs} " in (*" ${option} "*) false;; (*) true;; esac; then
+            UntruncExtraLibs="${UntruncExtraLibs} ${optionPrefix}${option}"
+        fi
+        optionPrefix=""
+    done
+    log 4 "libAvExtraLibs     = '%s'." "${libAvExtraLibs}"
+    log 4 "UntruncExtraLibs   = '%s'." "${UntruncExtraLibs}"
 
 
-# Build Untrunc program.
-optionsStr=""
-for option in ${UntruncExtraLibs}; do
-    optionsStr="${optionsStr} ${option#-l}"
-done
-printf "\n\nBuilding Untrunc (extra-libs:%s).\n" "${optionsStr}"
-printf "%s\n" "${SepLine}"
-[ $ret -eq 0 ] && rm ./untrunc 2> /dev/null
-[ $ret -eq 0 ] && { g++ -o untrunc -I${libAvDir} file.cpp main.cpp track.cpp atom.cpp mp4.cpp -L${libAvDir}/libavformat -lavformat -L${libAvDir}/libavcodec -lavcodec -L${libAvDir}/lib${libAvResample} -l${libAvResample} -L${libAvDir}/libavutil -lavutil ${UntruncExtraLibs}; ret=$?; }
-#[ $ret -eq 0 ] && { g++ -std=c++98 -o untrunc -I${libAvDir} file.cpp main.cpp track.cpp atom.cpp mp4.cpp -L${libAvDir}/libavformat -lavformat -L${libAvDir}/libavcodec -lavcodec -L${libAvDir}/lib${libAvResample} -l${libAvResample} -L${libAvDir}/libavutil -lavutil ${UntruncExtraLibs}; ret=$?; }
-printf "%s\n" "${SepLine}"
-[ $ret -eq 0 ] || die $ret "Failed to build Untrunc with library '%s'." "${LibAv}"
+    # Build Untrunc program.
+    optionsStr=""
+    for option in ${UntruncExtraLibs}; do
+        optionsStr="${optionsStr} ${option#-l}"
+    done
+    printf "\n\nBuilding Untrunc (extra-libs:%s).\n" "${optionsStr}"
+    printf "%s\n" "${SepLine}"
+    [ $ret -eq 0 ] && rm ./untrunc 2> /dev/null
+    [ $ret -eq 0 ] && { g++ -o untrunc -I${libAvDir} *.cpp -L${libAvDir}/libavformat -lavformat -L${libAvDir}/libavcodec -lavcodec -L${libAvDir}/lib${libAvResample} -l${libAvResample} -L${libAvDir}/libavutil -lavutil ${UntruncExtraLibs}; ret=$?; }
+    printf "%s\n" "${SepLine}"
+    [ $ret -eq 0 ] || die $ret "Failed to build Untrunc with library '%s'." "${LibAv}"
+fi; # BuildLibAvOnly
 
 # Fin.
 exit $ret
