@@ -73,7 +73,7 @@ public:
     int64_t file_begin;
     int64_t file_end;
 
-    BufferedAtom(std::string filename);
+    explicit BufferedAtom(std::string filename);
     ~BufferedAtom();
 
     virtual void write(File &file);
