@@ -30,6 +30,7 @@
 
     The Original code base has been abandoned.
     All new work is done in the Upstream fork.
+    Note: AtomicParsley sources use tabs with a Tab Stop of 2 !
                                                                     */
 //==================================================================//
 /*
@@ -89,54 +90,78 @@ typedef struct {
 const AtomDefinition KnownAtoms[] = {
   //name    parent atom(s)      container         number                box_type
   {"<()>",  {"_ANY_LEVEL"},     UNKNOWN_ATOM_TYPE, UKNOWN_REQUIREMENTS, UNKNOWN_ATOM },     //our unknown atom (self-defined)
+
   {"ftyp",  {"FILE_LEVEL"},     CHILD_ATOM,       REQUIRED_ONCE,        SIMPLE_ATOM },
+
   {"moov",  {"FILE_LEVEL"},     PARENT_ATOM,      REQUIRED_ONCE,        SIMPLE_ATOM },
+
   {"mdat",  {"FILE_LEVEL"},     CHILD_ATOM,       OPTIONAL_MANY,        SIMPLE_ATOM },
+
   {"pdin",  {"FILE_LEVEL"},     CHILD_ATOM,       OPTIONAL_ONCE,        VERSIONED_ATOM },
+
   {"moof",  {"FILE_LEVEL"},     PARENT_ATOM,      OPTIONAL_MANY,        SIMPLE_ATOM },
   {"mfhd",  {"moof"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
   {"traf",  {"moof"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },
   {"tfhd",  {"traf"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
   {"trun",  {"traf"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
+
   {"mfra",  {"FILE_LEVEL"},     PARENT_ATOM,      OPTIONAL_ONCE,        SIMPLE_ATOM },
   {"tfra",  {"mfra"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"mfro",  {"mfra"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
+
   {"free",  {"_ANY_LEVEL"},     CHILD_ATOM,       OPTIONAL_MANY,        SIMPLE_ATOM },
   {"skip",  {"_ANY_LEVEL"},     CHILD_ATOM,       OPTIONAL_MANY,        SIMPLE_ATOM },
+
   {"uuid",  {"_ANY_LEVEL"},     CHILD_ATOM,       REQUIRED_ONCE,        EXTENDED_ATOM },
+
   {"mvhd",  {"moov"},           CHILD_ATOM,       REQUIRED_ONCE,        VERSIONED_ATOM },
   {"iods",  {"moov"},           CHILD_ATOM,       OPTIONAL_ONCE,        VERSIONED_ATOM },
   {"drm ",  {"moov"},           CHILD_ATOM,       OPTIONAL_ONCE,        VERSIONED_ATOM },   // 3gp/MobileMP4
   {"trak",  {"moov"},           PARENT_ATOM,      OPTIONAL_MANY,        SIMPLE_ATOM },
+
   {"tkhd",  {"trak"},           CHILD_ATOM,       OPTIONAL_MANY,        VERSIONED_ATOM },
   {"tref",  {"trak"},           PARENT_ATOM,      OPTIONAL_MANY,        SIMPLE_ATOM },
   {"mdia",  {"trak"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },
+
   {"tapt",  {"trak"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },
   {"clef",  {"tapt"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"prof",  {"tapt"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"enof",  {"tapt"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
+
   {"mdhd",  {"mdia"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"minf",  {"mdia"},           PARENT_ATOM,      REQUIRED_ONE,         SIMPLE_ATOM },
+
   {"hdlr",  {"mdia", "meta", "minf"}, CHILD_ATOM, REQUIRED_ONE,         VERSIONED_ATOM },   //minf parent present in chapterized
+
   {"vmhd",  {"minf"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"smhd",  {"minf"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"hmhd",  {"minf"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"nmhd",  {"minf"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"gmhd",  {"minf"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },   //present in chapterized
+
   {"dinf",  {"minf", "meta"},   PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },      //required in minf
+
   {"dref",  {"dinf"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },   //UNTRUNC: container DUAL_STATE_ATOM -> CHILD_ATOM, nunmber REQUIRED_ONE -> REQ_FAMILIAL_ONE
+
   {"url ",  {"dinf"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },   //UNTRUNC: parent "dref" -> "dinf", number OPTIONAL_MANY -> REQ_FAMILIAL_ONE
   {"urn ",  {"dinf"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },   //UNTRUNC: parent "dref" -> "dinf", number OPTIONAL_MANY -> REQ_FAMILIAL_ONE
+  //{"alis",  {"dref"},           CHILD_ATOM,       OPTIONAL_MANY,        VERSIONED_ATOM },   //UNTRUNC: Removed Entry
+  //{"cios",  {"dref"},           CHILD_ATOM,       OPTIONAL_MANY,        VERSIONED_ATOM },   //UNTRUNC: Removed Entry
+
   {"stbl",  {"minf"},           PARENT_ATOM,      REQUIRED_ONE,         SIMPLE_ATOM },
   {"stts",  {"stbl"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
   {"ctts",  {"stbl"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"cslg",  {"stbl"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },   //UNTRUNC: New Entry
   {"stsd",  {"stbl"},           DUAL_STATE_ATOM,  REQUIRED_ONE,         VERSIONED_ATOM },
+
   {"stsz",  {"stbl"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"stz2",  {"stbl"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
+
   {"stsc",  {"stbl"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
+
   {"stco",  {"stbl"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"co64",  {"stbl"},           CHILD_ATOM,       REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
+
   {"stss",  {"stbl"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"stsh",  {"stbl"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"stdp",  {"stbl"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
@@ -145,14 +170,21 @@ const AtomDefinition KnownAtoms[] = {
   {"sbgp",  {"stbl", "traf"},   CHILD_ATOM,       OPTIONAL_MANY,        VERSIONED_ATOM },
   {"sbgp",  {"stbl"},           CHILD_ATOM,       OPTIONAL_MANY,        VERSIONED_ATOM },
   {"stps",  {"stbl"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
+
   {"edts",  {"trak"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },
   {"elst",  {"edts"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
+
   {"udta",  {"moov", "trak"},   PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },
+
   {"meta",  {"FILE_LEVEL", "moov", "trak", "udta"}, DUAL_STATE_ATOM, OPTIONAL_ONE, VERSIONED_ATOM }, //optionally contains info
+
   {"mvex",  {"moov"},           PARENT_ATOM,      OPTIONAL_ONCE,        SIMPLE_ATOM },
   {"mehd",  {"mvex"},           CHILD_ATOM,       OPTIONAL_ONCE,        VERSIONED_ATOM },
   {"trex",  {"mvex"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
+
+  //{"stsl",  {"????"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },   //contained by a sample entry box
   {"subs",  {"stbl", "traf"},   CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
+
   {"xml ",  {"meta"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"bxml",  {"meta"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"iloc",  {"meta"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
@@ -160,18 +192,21 @@ const AtomDefinition KnownAtoms[] = {
   {"ipro",  {"meta"},           PARENT_ATOM,      OPTIONAL_ONE,         VERSIONED_ATOM },
   {"iinf",  {"meta"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },   //UNTRUNC: container DUAL_STATE_ATOM -> CHILD_ATOM
   {"infe",  {"meta"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },   //UNTRUNC: parent "iinf" -> "meta"
+
   {"sinf",  {"ipro", "drms", "drmi"}, PARENT_ATOM, REQUIRED_ONE,        SIMPLE_ATOM },      //parent atom is also "Protected Sample Entry"
   {"frma",  {"sinf"},           CHILD_ATOM,       REQUIRED_ONE,         SIMPLE_ATOM },
   {"imif",  {"sinf"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"schm",  {"sinf", "srpp"},   CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"schi",  {"sinf", "srpp"},   DUAL_STATE_ATOM,  OPTIONAL_ONE,         SIMPLE_ATOM },
   {"skcr",  {"sinf"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
+
   {"user",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"key ",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },   //could be required in 'drms'/'drmi'
   {"iviv",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"righ",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"name",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"priv",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
+
   {"iKMS",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },   // 'iAEC', '264b', 'iOMA', 'ICSD'
   {"iSFM",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
   {"iSLT",  {"schi"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //boxes with 'k***' are also here; reserved
@@ -182,14 +217,19 @@ const AtomDefinition KnownAtoms[] = {
   {"mpod",  {"tref"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"sync",  {"tref"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"chap",  {"tref"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //?possible versioned?
+
   {"ipmc",  {"moov", "meta"},   CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },
+
   {"tims",  {"rtp "},           CHILD_ATOM,       REQUIRED_ONE,         SIMPLE_ATOM },
   {"tsro",  {"rtp "},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"snro",  {"rtp "},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
+
   {"srpp",  {"srtp"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
+
   {"hnti",  {"udta"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },
   {"rtp ",  {"hnti"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //'rtp ' is defined twice in different containers
   {"sdp ",  {"hnti"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
+
   {"hinf",  {"udta"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },
   {"name",  {"udta"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"trpy",  {"hinf"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
@@ -207,6 +247,7 @@ const AtomDefinition KnownAtoms[] = {
   {"dmax",  {"hinf"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"payt",  {"hinf"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
   {"tpay",  {"hinf"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
+
   {"drms",  {"stsd"},           DUAL_STATE_ATOM,  REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"drmi",  {"stsd"},           DUAL_STATE_ATOM,  REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"alac",  {"stsd"},           DUAL_STATE_ATOM,  REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
@@ -232,6 +273,8 @@ const AtomDefinition KnownAtoms[] = {
   {"sqcp",  {"stsd"},           DUAL_STATE_ATOM,  REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"ssmv",  {"stsd"},           DUAL_STATE_ATOM,  REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
   {"tmcd",  {"stsd"},           DUAL_STATE_ATOM,  REQ_FAMILIAL_ONE,     VERSIONED_ATOM },
+  //{"mjp2",  {"stsd"},           DUAL_STATE_ATOM,  REQ_FAMILIAL_ONE,     VERSIONED_ATOM },   //mjpeg2000 //UNTRUNC: Removed Entry
+
   {"alac",  {"alac"},           CHILD_ATOM,       REQUIRED_ONE,         SIMPLE_ATOM },
   {"avcC",  {"avc1", "drmi"},   CHILD_ATOM,       REQUIRED_ONE,         SIMPLE_ATOM },
   {"damr",  {"samr", "sawb"},   CHILD_ATOM,       REQUIRED_ONE,         SIMPLE_ATOM },
@@ -244,6 +287,15 @@ const AtomDefinition KnownAtoms[] = {
   {"btrt",  {"avc1"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //found in NeroAVC
   {"m4ds",  {"avc1"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //?possible versioned?
   {"ftab",  {"tx3g"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },
+  //{"jp2h",  {"mjp2"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },      //mjpeg2000 //UNTRUNC: Removed Entry
+
+  //{"ihdr",  {"jp2h"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //mjpeg2000 //UNTRUNC: Removed Entry
+  //{"colr",  {"jp2h"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },   //mjpeg2000 //UNTRUNC: Removed Entry
+  //{"fiel",  {"mjp2"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //mjpeg2000 //UNTRUNC: Removed Entry
+  //{"jp2p",  {"mjp2"},           CHILD_ATOM,       OPTIONAL_ONE,         VERSIONED_ATOM },   //mjpeg2000 //UNTRUNC: Removed Entry
+  //{"jsub",  {"mjp2"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //mjpeg2000 //UNTRUNC: Removed Entry
+  //{"orfo",  {"mjp2"},           CHILD_ATOM,       OPTIONAL_ONE,         SIMPLE_ATOM },      //mjpeg2000 //UNTRUNC: Removed Entry
+
   {"cprt",  {"udta"},           CHILD_ATOM,       OPTIONAL_MANY,        PACKED_LANG_ATOM }, //the only ISO defined metadata tag; also a 3gp asset
   {"titl",  {"udta"},           CHILD_ATOM,       OPTIONAL_MANY,        PACKED_LANG_ATOM }, //3gp assets
   {"auth",  {"udta"},           CHILD_ATOM,       OPTIONAL_MANY,        PACKED_LANG_ATOM },
@@ -256,14 +308,32 @@ const AtomDefinition KnownAtoms[] = {
   {"clsf",  {"udta"},           CHILD_ATOM,       OPTIONAL_MANY,        PACKED_LANG_ATOM },
   {"kywd",  {"udta"},           CHILD_ATOM,       OPTIONAL_MANY,        PACKED_LANG_ATOM },
   {"loci",  {"udta"},           CHILD_ATOM,       OPTIONAL_MANY,        PACKED_LANG_ATOM },
+
   {"ID32",  {"meta"},           CHILD_ATOM,       OPTIONAL_MANY,        PACKED_LANG_ATOM }, //id3v2 tag
+  //{"tsel",  {"udta"},           CHILD_ATOM,       OPTIONAL_MANY,        SIMPLE_ATOM },      //but only at track level in a 3gp file //UNTRUNC: Removed Entry
+
+  //{"chpl",  {"udta"},           CHILD_ATOM,       OPTIONAL_ONCE,        VERSIONED_ATOM },   //Nero - seems to be versioned
+  //{"ndrm",  {"udta"},           CHILD_ATOM,       OPTIONAL_ONCE,        VERSIONED_ATOM },   //Nero - seems to be versioned
+  //{"tags",  {"udta"},           CHILD_ATOM,       OPTIONAL_ONCE,        SIMPLE_ATOM },      //Another Nero-Creationª
+                                                                                            // ...so if they claim that "tags doesn't have any children",
+                                                                                            // why does nerotags.exe say "tshd atom"? If 'tags' doesn't
+                                                                                            // have any children, then tshd can't be an atom....
+                                                                                            // Clearly, they are EternallyRightª and everyone else is
+                                                                                            // always wrong.
+
+                                                                                            //Pish! Seems that Nero is simply unable to register any atoms.
+
   {"ilst",  {"meta"},           PARENT_ATOM,      OPTIONAL_ONCE,        SIMPLE_ATOM },      //iTunes metadata container
   {"----",  {"ilst"},           PARENT_ATOM,      OPTIONAL_MANY,        SIMPLE_ATOM },      //reverse dns metadata
   {"mean",  {"----"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
   {"name",  {"----"},           CHILD_ATOM,       REQUIRED_ONE,         VERSIONED_ATOM },
+
+  //{".><.",  {"dref"},           CHILD_ATOM,       OPTIONAL_MANY,        VERSIONED_ATOM },   //support any future named child to dref; keep 4th from end; manual return //UNTRUNC: Removed Entry
+
   {"esds",  {"SAMPLE_DESC"},    CHILD_ATOM,       REQUIRED_ONE,         SIMPLE_ATOM },      //multiple parents; keep 3rd from end; manual return
-  //{"(..)",  {"ilst"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },      //multiple parents; keep 2nd from end; manual return
-  //{"data",  {"ITUNES_METADATA"}, CHILD_ATOM,      PARENT_SPECIFIC,      VERSIONED_ATOM }    //multiple parents
+
+  //{"(..)",  {"ilst"},           PARENT_ATOM,      OPTIONAL_ONE,         SIMPLE_ATOM },      //multiple parents; keep 2nd from end; manual return //UNTRUNC: Removed Entry
+  //{"data",  {"ITUNES_METADATA"}, CHILD_ATOM,      PARENT_SPECIFIC,      VERSIONED_ATOM }    //multiple parents //UNTRUNC: Removed Entry
 
 };
 
