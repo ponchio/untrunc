@@ -343,9 +343,9 @@ RUN printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr ' ' '-'; \
     printf "LIBAV          = '%s'\n" "${LIBAV}"; \
     cd untrunc-src/ \
     && if   [ "${LIBAV:-dev}" = "dev" ]; then \
-            g++ -o untrunc $(pkg-config --cflags libavformat libavcodec libavutil) *.cpp $(pkg-config --libs libavformat libavcodec libavutil); \
+            g++ -o untrunc -O1 -fno-strict-aliasing $(pkg-config --cflags libavformat libavcodec libavutil) *.cpp $(pkg-config --libs libavformat libavcodec libavutil); \
        elif [ "${LIBAV}" = "dev-headers" ]; then \
-            g++ -o untrunc $(pkg-config --cflags libavformat libavcodec libavutil) -idirafter "${LIBAV_DIR}/" *.cpp $(pkg-config --libs libavformat libavcodec libavutil); \
+            g++ -o untrunc -O1 -fno-strict-aliasing $(pkg-config --cflags libavformat libavcodec libavutil) -idirafter "${LIBAV_DIR}/" *.cpp $(pkg-config --libs libavformat libavcodec libavutil); \
        else \
             UNTRUNC_LINK="${UNTRUNC_LINK:-static}"; \
             UNTRUNC_PKGCFG="libavformat libavcodec libavutil"; \
@@ -374,7 +374,7 @@ RUN printf "\n%$(( ${COLUMNS:-80} - 4 ))s\n" "" | tr ' ' '-'; \
             [ "${UNTRUNC_LINK%-*}" != "dynamic" ] || UNTRUNC_LINK=""; \
             printf "pkg-config     = '%s'\n" "$(pkg-config --cflags --libs ${UNTRUNC_LINK:+"--${UNTRUNC_LINK}"} ${UNTRUNC_PKGCFG})"; \
             printf "libav=%s\n" "${LIBAV}" > /usr/local/share/untrunc/untrunc-info.txt; \
-            g++ -o untrunc ${UNTRUNC_LINK:+"-${UNTRUNC_LINK}"} $(pkg-config --cflags ${UNTRUNC_LINK:+"--${UNTRUNC_LINK%-*}"} ${UNTRUNC_PKGCFG}) -I"${LIBAV_DIR}" *.cpp $(pkg-config --libs ${UNTRUNC_LINK:+"--${UNTRUNC_LINK%-*}"} ${UNTRUNC_PKGCFG}) ${UNTRUNC_ELIBS}; \
+            g++ -o untrunc ${UNTRUNC_LINK:+"-${UNTRUNC_LINK}"} -O1 -fno-strict-aliasing $(pkg-config --cflags ${UNTRUNC_LINK:+"--${UNTRUNC_LINK%-*}"} ${UNTRUNC_PKGCFG}) -I"${LIBAV_DIR}" *.cpp $(pkg-config --libs ${UNTRUNC_LINK:+"--${UNTRUNC_LINK%-*}"} ${UNTRUNC_PKGCFG}) ${UNTRUNC_ELIBS}; \
        fi \
     && mv -f untrunc /usr/local/bin/ \
     && { printf "%$(( ${COLUMNS:-80} - 4 ))s\n\n" "" | tr ' ' '-'; };
