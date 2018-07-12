@@ -322,7 +322,7 @@ if [ $BuildLibAvOnly -eq 0 ]; then
     printf "\n\nBuilding Untrunc (extra-libs:%s).\n" "${optionsStr}"
     printf "%s\n" "${SepLine}"
     [ $ret -eq 0 ] && rm ./untrunc 2> /dev/null
-    [ $ret -eq 0 ] && { g++ -o untrunc -I${libAvDir} *.cpp -L${libAvDir}/libavformat -lavformat -L${libAvDir}/libavcodec -lavcodec -L${libAvDir}/lib${libAvResample} -l${libAvResample} -L${libAvDir}/libavutil -lavutil ${UntruncExtraLibs}; ret=$?; }
+    [ $ret -eq 0 ] && { g++ -o untrunc -O1 -fno-strict-aliasing -I${libAvDir} *.cpp -L${libAvDir}/libavformat -lavformat -L${libAvDir}/libavcodec -lavcodec -L${libAvDir}/lib${libAvResample} -l${libAvResample} -L${libAvDir}/libavutil -lavutil ${UntruncExtraLibs}; ret=$?; }
     printf "%s\n" "${SepLine}"
     [ $ret -eq 0 ] || die $ret "Failed to build Untrunc with library '%s'." "${LibAv}"
 fi; # BuildLibAvOnly
