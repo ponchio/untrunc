@@ -35,7 +35,7 @@ class Atom {
 public:
     int64_t start;       //including 8 header bytes
     int64_t length;      //including 8 header bytes
-    char name[8];
+    char name[5];
     char head[4];
     char version[4];
     std::vector<unsigned char> content;
