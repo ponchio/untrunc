@@ -62,8 +62,8 @@ public:
     static bool isDual     (const char *id);
     static bool isVersioned(const char *id);
 
-    virtual int readInt(int64_t offset);
-    void writeInt(int value, int64_t offset);
+    virtual int32_t readInt(int64_t offset);
+    void writeInt(int32_t value, int64_t offset);
     void readChar(char *str, int64_t offset, int64_t length);
 };
 
@@ -83,7 +83,7 @@ public:
 
     virtual int64_t contentSize() const { return file_end - file_begin; }
 
-    virtual int readInt(int64_t offset);
+    virtual int32_t readInt(int64_t offset);
 
 protected:
     File file;

@@ -24,7 +24,7 @@
 
 #include <map>
 #include <iostream>
-
+#include <cstring>      //for: memcpy()
 #include <cassert>
 
 using namespace std;
@@ -265,7 +265,7 @@ void Atom::replace(Atom *original, Atom *replacement) {
             return;
         }
     }
-    throw "Atom not found";
+    throw string("Atom not found");
 }
 
 void Atom::prune(string name) {
@@ -298,22 +298,34 @@ void Atom::updateLength() {
     }
 }
 
-int Atom::readInt(int64_t offset) {
+int32_t Atom::readInt(int64_t offset) {
     assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
     return swap32(*reinterpret_cast<uint32_t *>(&content[offset]));
+    // Read  an unaligned, 32-bit big-endian value.
+    // A compiler will optimize this to a single instruction if possible.
+    const uint8_t *p = &content[offset];
+    return (uint32_t(p[0]) << 24) | (uint32_t(p[1]) << 16) | (uint32_t(p[2]) << 8) | p[3];
 }
 
-void Atom::writeInt(int value, int64_t offset) {
+void Atom::writeInt(int32_t value, int64_t offset) {
     assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
     *reinterpret_cast<uint32_t *>(&content[offset]) = swap32(value);
+    // Write an unaligned, 32-bit big-endian value.
+    uint32_t val32 = value;
+    uint8_t *p     = &content[offset];
+    p[0] = static_cast<uint8_t>(val32 >> 24);
+    p[1] = static_cast<uint8_t>(val32 >> 16);
+    p[2] = static_cast<uint8_t>(val32 >>  8);
+    p[3] = static_cast<uint8_t>(val32);
 }
 
 void Atom::readChar(char *str, int64_t offset, int64_t length) {
     assert(str != NULL);
     assert(offset >= 0 && length >= 0 && content.size() >= uint64_t(offset) + uint64_t(length));
-    for(int i = 0; i < length; i++)
-        str[i] = content[offset + i];
-    str[length] = '\0';
+    const unsigned char *p = &content[offset];
+    for(long int i = 0; i < length; i++)
+        *str++ = *p++;
+    *str = '\0';
 }
 
 
@@ -327,7 +339,7 @@ BufferedAtom::BufferedAtom(string filename)
     buffer_end(0)
 {
     if(!file.open(filename))
-        throw "Could not open file.";
+        throw string("Could not open file");
 }
 
 BufferedAtom::~BufferedAtom() {
@@ -336,9 +348,9 @@ BufferedAtom::~BufferedAtom() {
 
 unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
     if(offset < 0)
-        throw "Offset set before beginning of buffer";
+        throw string("Offset set before beginning of buffer");
     if(offset + size > file_end - file_begin)
-        throw "Out of buffer";
+        throw string("Out of buffer");
 
     if(buffer) {
         if(buffer_begin >= offset && buffer_end >= offset + size)
@@ -370,11 +382,19 @@ void BufferedAtom::updateLength() {
     }
 }
 
-int BufferedAtom::readInt(int64_t offset) {
+int32_t BufferedAtom::readInt(int64_t offset) {
     if(!buffer || offset < buffer_begin || offset > (buffer_end - 4)) {
         buffer = getFragment(offset, 1<<16);
     }
-    return *reinterpret_cast<int *>(buffer + offset - buffer_begin);
+    // Read an unaligned, 32-bit value.
+    // Encode the unaligned access intention by using memcpy() with its
+    //  destination and source pointing to types with the wanted alignment.
+    // Some compilers use the alignments of these types for further optimizations.
+    // A compiler can optimize this memcpy() into a single instruction.
+    const unsigned char *p = buffer + offset - buffer_begin;
+    uint32_t val32;
+    memcpy(&val32, p, sizeof(val32));
+    return val32;
 }
 
 void BufferedAtom::write(File &output) {
