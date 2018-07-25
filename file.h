@@ -1,3 +1,4 @@
+//==================================================================//
 /*
 	Untrunc - file.h
 
@@ -15,48 +16,64 @@
 	Suite 330, Boston, MA 02111-1307, USA.  Or www.fsf.org
 
 	Copyright 2010 Federico Ponchio
-
-														*/
+                                                                    */
+//==================================================================//
 
 #ifndef FILE_H
 #define FILE_H
 
-extern "C" {
-	#include <stdint.h>
-}
-#include <stdio.h>
 #include <vector>
 #include <string>
+extern "C" {
+#include <stdint.h>
+}
+#include <cstdio>
 
+
+// Swap the 8-bit bytes into their reverse order.
 uint16_t swap16(uint16_t us);
 uint32_t swap32(uint32_t ui);
 uint64_t swap64(uint64_t ull);
 
+
+// Encapsulate FILE (RAII).
 class File {
 public:
 	File();
 	~File();
-	bool open(std::string filename);
+
+	bool open  (std::string filename);
 	bool create(std::string filename);
 
-	void seek(off_t p);
-	off_t pos();
-	bool atEnd();
-	off_t length() { return size; }
+	operator bool() { return static_cast<bool>(file); }
 
-	int readInt();
+	off_t pos();
+	void  seek(off_t offset);
+	void  rewind();
+	bool  atEnd();
+	off_t size();
+	off_t length() { return size(); }
+
+	int32_t readInt();
 	int64_t readInt64();
-	void readChar(char *dest, size_t n);
+	void    readChar(char *dest, size_t n);
 	std::vector<unsigned char> read(size_t n);
 
-	int writeInt(int n);
-	int writeInt64(int64_t n);
-	int writeChar(char *source, size_t n);
-	int write(std::vector<unsigned char> &v);
+	ssize_t writeInt  (int32_t value);
+	ssize_t writeInt64(int64_t value);
+	ssize_t writeChar (const char *source, size_t n);
+	ssize_t write(std::vector<unsigned char> &v);
 
 protected:
-	off_t size;
-	FILE *file;
+	std::FILE *file;
+	off_t file_sz;
+
+	void close();
+
+private:
+	// Disable copying.
+	File(const File&);
+	File& operator=(const File&);
 };
 
 #endif // FILE_H
