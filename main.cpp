@@ -41,28 +41,32 @@ namespace {
 
     // Logging.
     enum LogLevel {
-        LOG_QUIET   = AV_LOG_QUIET,     // Print no output.
-        LOG_PANIC   = AV_LOG_PANIC,     // Something went really wrong and we will crash now.
-        LOG_FATAL   = AV_LOG_FATAL,     // Something went wrong and recovery is not possible.
-        LOG_ERROR   = AV_LOG_ERROR,     // Something went wrong and cannot losslessly be recovered.
-        LOG_WARNING = AV_LOG_WARNING,   // Something somehow does not look correct.
-        LOG_INFO    = AV_LOG_INFO,      // Standard information.
-        LOG_VERBOSE = AV_LOG_VERBOSE,   // Detailed information.
-        LOG_DEBUG   = AV_LOG_DEBUG,     // Stuff which is only useful for developers.
-        LOG_TRACE   = AV_LOG_TRACE,     // Extremely verbose debugging, useful for development.
+        LOG_QUIET = 0,  // Print no output.
+        LOG_PANIC,      // Something went really wrong and we will crash now.
+        LOG_FATAL,      // Something went wrong and recovery is not possible.
+        LOG_ERROR,      // Something went wrong and cannot losslessly be recovered.
+        LOG_WARNING,    // Something somehow does not look correct.
+        LOG_INFO,       // Standard information.
+        LOG_VERBOSE,    // Detailed information.
+        LOG_DEBUG,      // Stuff which is only useful for developers.
+        LOG_TRACE       // Extremely verbose debugging, useful for development.
     };
-    LogLevel next(LogLevel level, int n = 1) { return LogLevel(level + ((LOG_WARNING - LOG_ERROR) * n)); }
-    LogLevel prev(LogLevel level, int n = 1) { return next(level, -n); }
-    LogLevel clmp(LogLevel level) { return (level < LOG_QUIET) ? LOG_QUIET : (level > LOG_TRACE) ? LOG_TRACE : level; }
-
-    LogLevel logNum2Lvl(int      number) { return clmp(LogLevel(((LOG_WARNING - LOG_ERROR) * number) + LOG_QUIET)); }
-    int      logLvl2Num(LogLevel level)  { return (clmp(level) - LOG_QUIET) / (LOG_WARNING - LOG_ERROR); }
+    LogLevel next(LogLevel level, int n = 1) { return LogLevel(level + n); }
+    LogLevel prev(LogLevel level, int n = 1) { return LogLevel(level - n); }
+    LogLevel clmp(LogLevel level) { return (level < LOG_QUIET) ? LOG_QUIET : (LOG_TRACE < level) ? LOG_TRACE : level; }
 
     const char* logName(LogLevel level) {
         const char* const LogNames[] = {
             "quiet", "panic", "fatal", "error", "warning", "info", "verbose", "debug", "trace"
         };
-        return LogNames[logLvl2Num(level)];
+        return LogNames[clmp(level)];
+    }
+
+    LogLevel getLibavLogLevel() {
+        return clmp(LogLevel((av_log_get_level() - AV_LOG_QUIET) / (AV_LOG_WARNING - AV_LOG_ERROR)));
+    }
+    void setLibavLogLevel(LogLevel level) {
+        av_log_set_level(((AV_LOG_WARNING - AV_LOG_ERROR) * clmp(level)) + AV_LOG_QUIET);
     }
 
     // Command-line help.
@@ -71,6 +75,7 @@ namespace {
     }
 
     void printHelp() {
+        LogLevel loglvl = getLibavLogLevel();
         // size "123456789+123456789+123456789+123456789+123456789+123456789+123456789+123456" = 76 chars
         cout << "\n"
                 "Untrunc  -  Untruncate damaged video files\n"
@@ -80,7 +85,7 @@ namespace {
                 "  Provided you have a similar not broken video. And some luck.\n"
                 "\n"
                 "  License: GPL-2.0-or-later (see: <https://www.gnu.org/licenses/>).\n" // SPDX Licence Id, https://spdx.org/licenses/
-                "  Current log level: \"" << logName(LogLevel(av_log_get_level())) << "\".\n"
+                "  Current log level: \"" << logName(loglvl) << "\" (" << loglvl << ").\n"
                 "\n"
                 "Usage: untrunc [-h -i -a -q -v] <ok.mp4> [<corrupt.mp4>]\n"
                 "  -h, --help       This help text.\n"
@@ -106,7 +111,7 @@ namespace {
 
 int main(int argc, const char *argv[]) {
 
-    LogLevel log_lvl = LogLevel(av_log_get_level());
+    LogLevel loglvl  = getLibavLogLevel();
     bool     help    = false;
     bool     info    = false;
     bool     analyze = false;
@@ -127,10 +132,10 @@ int main(int argc, const char *argv[]) {
                 case 'h': help    = true;       break;
                 case 'i': info    = true;       break;
                 case 'a': analyze = true;       break;
-                case 'q': log_lvl = LOG_QUIET;  break;
-                case 'v': log_lvl = next(log_lvl);
+                case 'q': loglvl  = LOG_QUIET;  break;
+                case 'v': loglvl  = next(loglvl);
                           if(i+1 < arg.size() && isdigit(arg[i+1]))
-                              log_lvl = logNum2Lvl(arg[++i] - '0');
+                              loglvl = clmp(LogLevel(arg[++i] - '0'));
                           break;
                 default:  invalid = true;       break;
                 }
@@ -140,16 +145,16 @@ int main(int argc, const char *argv[]) {
             if     (arg == "--help")        help    = true;
             else if(arg == "--info")        info    = true;
             else if(arg == "--analyze")     analyze = true;
-            else if(arg == "--log")         log_lvl = next(log_lvl);
-            else if(arg == "--log=quiet")   log_lvl = LOG_QUIET;
-            else if(arg == "--log=panic")   log_lvl = LOG_PANIC;
-            else if(arg == "--log=fatal")   log_lvl = LOG_FATAL;
-            else if(arg == "--log=error")   log_lvl = LOG_ERROR;
-            else if(arg == "--log=warning") log_lvl = LOG_WARNING;
-            else if(arg == "--log=info")    log_lvl = LOG_INFO;
-            else if(arg == "--log=verbose") log_lvl = LOG_VERBOSE;
-            else if(arg == "--log=debug")   log_lvl = LOG_DEBUG;
-            else if(arg == "--log=trace")   log_lvl = LOG_TRACE;
+            else if(arg == "--log")         loglvl  = next(loglvl);
+            else if(arg == "--log=quiet")   loglvl  = LOG_QUIET;
+            else if(arg == "--log=panic")   loglvl  = LOG_PANIC;
+            else if(arg == "--log=fatal")   loglvl  = LOG_FATAL;
+            else if(arg == "--log=error")   loglvl  = LOG_ERROR;
+            else if(arg == "--log=warning") loglvl  = LOG_WARNING;
+            else if(arg == "--log=info")    loglvl  = LOG_INFO;
+            else if(arg == "--log=verbose") loglvl  = LOG_VERBOSE;
+            else if(arg == "--log=debug")   loglvl  = LOG_DEBUG;
+            else if(arg == "--log=trace")   loglvl  = LOG_TRACE;
             else                            invalid = true;
         }
         if(invalid) {
@@ -178,17 +183,14 @@ int main(int argc, const char *argv[]) {
     }
 
     // Set log level.
-    if(log_lvl >= LOG_INFO) {
-        LogLevel old_log_lvl = LogLevel(av_log_get_level());
-        if(log_lvl != old_log_lvl) {
-            clog << "Changed logging level: \""
-                << logName(old_log_lvl) << "\" (" << int(old_log_lvl) << ") -> \"";
-        } else {
-            clog << "Using logging level: \"";
-        }
-        clog << logName(log_lvl) << "\" (" << int(log_lvl) << ')' << endl;
+    if(loglvl >= LOG_INFO) {
+        LogLevel old_loglvl  = getLibavLogLevel();
+        clog << "Log Level: \"";
+        if(loglvl != old_loglvl)
+            clog << logName(old_loglvl) << "\" (" << old_loglvl << ") -> \"";
+        clog << logName(loglvl) << "\" (" << loglvl << ')' << endl;
     }
-    av_log_set_level(int(clmp(log_lvl)));
+    setLibavLogLevel(loglvl);
 
     // Show help.
     if(help)
