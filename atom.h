@@ -35,36 +35,44 @@ class Atom {
 public:
     int64_t start;       //including 8 header bytes
     int64_t length;      //including 8 header bytes
-    char name[5];
-    char head[4];
-    char version[4];
+    char    name[5];
+    char    head[4];
+    char    version[4];
     std::vector<unsigned char> content;
     std::vector<Atom *> children;
 
     Atom();
     virtual ~Atom();
 
-    void parseHeader(File &file); //read just name and length
-    void parse(File &file);
+    void parseHeader  (File &file); //read just name and length
+    void parse        (File &file);
     virtual void write(File &file);
     void print(int offset);
 
     std::vector<Atom *> atomsByName(std::string name) const;
-    Atom *atomByName(std::string name) const;
+    Atom *              atomByName (std::string name) const;
     void replace(Atom *original, Atom *replacement);
 
     void prune(std::string name);
     virtual void updateLength();
 
-    virtual int64_t contentSize() const { return content.size(); }
+    virtual int64_t contentSize() const { return content.size();   }
+    virtual void    contentResize(size_t newsize);
 
     static bool isParent   (const char *id);
     static bool isDual     (const char *id);
     static bool isVersioned(const char *id);
 
-    virtual int32_t readInt(int64_t offset);
-    void writeInt(int32_t value, int64_t offset);
+    virtual int32_t readInt  (int64_t offset);
+    virtual int64_t readInt64(int64_t offset);
+    void writeInt  (int32_t value, int64_t offset);
+    void writeInt64(int64_t value, int64_t offset);
     void readChar(char *str, int64_t offset, int64_t length);
+
+private:
+    // Disable copying (BufferedAtom can't be copied, so children can't either).
+    Atom(const Atom&);
+    Atom& operator=(const Atom&);
 };
 
 
@@ -82,14 +90,21 @@ public:
     virtual void updateLength();
 
     virtual int64_t contentSize() const { return file_end - file_begin; }
+    virtual void    contentResize(size_t newsize);   //cannot resize
 
-    virtual int32_t readInt(int64_t offset);
+    virtual int32_t readInt  (int64_t offset);
+    virtual int64_t readInt64(int64_t offset);
 
 protected:
-    File file;
-    unsigned char *buffer;
-    int64_t buffer_begin;
-    int64_t buffer_end;
+    File            file;
+    unsigned char  *buffer;
+    int64_t         buffer_begin;
+    int64_t         buffer_end;
+
+private:
+    // Disable copying (File can't be copied).
+    BufferedAtom(const BufferedAtom&);
+    BufferedAtom& operator=(const BufferedAtom&);
 };
 
 #endif // ATOM_H

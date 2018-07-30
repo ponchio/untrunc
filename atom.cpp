@@ -31,9 +31,46 @@ using namespace std;
 
 
 namespace {
+    // Read an unaligned, big-endian value.
+    // A compiler will optimize this (at -O2) to a single instruction if possible.
+    template<class T> 
+    static inline T readBE(const uint8_t *p, size_t i = 0) {
+        return (i >= sizeof(T)) ? T(0) :
+                (T(*p) << ((sizeof(T) - 1 - i) * 8)) | readBE<T>(p + 1, i + 1);
+    };
+
+    template<class T>
+    static inline void readBE(T &result, const uint8_t *p) { result = readBE<T>(p); };
+
+    // Write an unaligned, big-endian value.
+    template<class T>
+    static inline void writeBE(uint8_t *p, T value, size_t i = 0) {
+        (i >= sizeof(T)) ? void(0) :
+            (*p = ((value >> ((sizeof(T) - 1 - i) * 8)) & 0xFF) , writeBE(p + 1, value, i + 1));
+    };
+
+    // Read an unaligned value in native-endian format.
+    // Encode the unaligned access intention by using memcpy() with its
+    //  destination and source pointing to types with the wanted alignment.
+    // Some compilers use the alignments of these types for further optimizations.
+    // A compiler can optimize this memcpy() into a single instruction.
+    template<class T>
+    static inline T readNE(const uint8_t *p) {
+        T value;
+        memcpy(&value, p, sizeof(value));
+        return value;
+    }
+
+    template<class T>
+    static inline void readNE(T &result, const uint8_t *p) {
+        memcpy(&result, p, sizeof(result));
+    }
+
+
+    // Atom definitions map.
     static inline uint32_t id2Key(const char *id) {
         const unsigned char *uid = reinterpret_cast<const unsigned char*>(id);
-        return ((uint32_t(uid[0]) << 24) | (uint32_t(uid[1]) << 16) | (uint32_t(uid[2]) << 8) | uint32_t(uid[3]));
+        return ((uint32_t(uid[0]) << 24) | (uint32_t(uid[1]) << 16) | (uint32_t(uid[2]) << 8) | uid[3]);
     }
 
     AtomDefinition definition(const char *id) {
@@ -61,6 +98,7 @@ namespace {
 }; //namespace
 
 
+
 // Atom
 Atom::Atom() : start(0), length(0), name(""), head(""), version("") { }
 
@@ -68,6 +106,7 @@ Atom::~Atom() {
     for(unsigned int i = 0; i < children.size(); i++)
         delete children[i];
 }
+
 
 void Atom::parseHeader(File &file) {
     start = file.pos();
@@ -268,6 +307,7 @@ void Atom::replace(Atom *original, Atom *replacement) {
     throw string("Atom not found");
 }
 
+
 void Atom::prune(string name) {
     if(children.empty()) return;
 
@@ -298,25 +338,30 @@ void Atom::updateLength() {
     }
 }
 
+
+void Atom::contentResize(size_t newsize) {
+    content.resize(newsize);
+}
+
+
 int32_t Atom::readInt(int64_t offset) {
     assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
-    return swap32(*reinterpret_cast<uint32_t *>(&content[offset]));
-    // Read  an unaligned, 32-bit big-endian value.
-    // A compiler will optimize this to a single instruction if possible.
-    const uint8_t *p = &content[offset];
-    return (uint32_t(p[0]) << 24) | (uint32_t(p[1]) << 16) | (uint32_t(p[2]) << 8) | p[3];
+    return readBE<int32_t>(&content[offset]);
+}
+
+int64_t Atom::readInt64(int64_t offset) {
+    assert(offset >= 0 && content.size() >= uint64_t(offset) + 8);
+    return readBE<int64_t>(&content[offset]);
 }
 
 void Atom::writeInt(int32_t value, int64_t offset) {
     assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
-    *reinterpret_cast<uint32_t *>(&content[offset]) = swap32(value);
-    // Write an unaligned, 32-bit big-endian value.
-    uint32_t val32 = value;
-    uint8_t *p     = &content[offset];
-    p[0] = static_cast<uint8_t>(val32 >> 24);
-    p[1] = static_cast<uint8_t>(val32 >> 16);
-    p[2] = static_cast<uint8_t>(val32 >>  8);
-    p[3] = static_cast<uint8_t>(val32);
+    writeBE(&content[offset], value);
+}
+
+void Atom::writeInt64(int64_t value, int64_t offset) {
+    assert(offset >= 0 && content.size() >= uint64_t(offset) + 8);
+    writeBE(&content[offset], value);
 }
 
 void Atom::readChar(char *str, int64_t offset, int64_t length) {
@@ -346,7 +391,9 @@ BufferedAtom::~BufferedAtom() {
     delete[] buffer;
 }
 
+
 unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
+    assert(size >= 0);
     if(offset < 0)
         throw string("Offset set before beginning of buffer");
     if(offset + size > file_end - file_begin)
@@ -362,7 +409,7 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
     }
 
     buffer_begin = offset;
-    buffer_end = offset + 2*size;
+    buffer_end   = offset + 2 * size;
     if(buffer_end + file_begin > file_end)
         buffer_end = file_end - file_begin;
     buffer = new unsigned char[buffer_end - buffer_begin];
@@ -372,7 +419,7 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
 }
 
 void BufferedAtom::updateLength() {
-    length = 8;
+    length  = 8;
     length += file_end - file_begin;
 
     for(unsigned int i = 0; i < children.size(); i++) {
@@ -382,20 +429,27 @@ void BufferedAtom::updateLength() {
     }
 }
 
+
+void BufferedAtom::contentResize(size_t newsize) {
+    if(newsize > file_end - file_begin)
+        throw string("Cannot resize buffered atom");
+}
+
+
 int32_t BufferedAtom::readInt(int64_t offset) {
     if(!buffer || offset < buffer_begin || offset > (buffer_end - 4)) {
         buffer = getFragment(offset, 1<<16);
     }
-    // Read an unaligned, 32-bit value.
-    // Encode the unaligned access intention by using memcpy() with its
-    //  destination and source pointing to types with the wanted alignment.
-    // Some compilers use the alignments of these types for further optimizations.
-    // A compiler can optimize this memcpy() into a single instruction.
-    const unsigned char *p = buffer + offset - buffer_begin;
-    uint32_t val32;
-    memcpy(&val32, p, sizeof(val32));
-    return val32;
+    return readNE<int32_t>(buffer + offset - buffer_begin);
 }
+
+int64_t BufferedAtom::readInt64(int64_t offset) {
+    if(!buffer || offset < buffer_begin || offset > (buffer_end - 8)) {
+        buffer = getFragment(offset, 1<<16);
+    }
+    return readNE<int64_t>(buffer + offset - buffer_begin);
+}
+
 
 void BufferedAtom::write(File &output) {
     //1 write length
