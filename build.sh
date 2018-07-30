@@ -131,7 +131,7 @@ die()
 
 ## isNumber()
 # Is the argument an arithmetic expression that evaluates to a valid number?
-# Usage: if isnum "expression"; then...
+# Usage: if isNumber "expression"; then...
 # Note:
 # - zsh: set -u doesn't work for vars without a leading '$' in arithmetic evaluations.
 isNumber()
@@ -169,6 +169,7 @@ log 4 "BuildLibAvOnly     = '%s'," "${BuildLibAvOnly}"
 log 4 "BuildUntruncOnly   = '%s'," "${BuildUntruncOnly}"
 log 4 "LibAv              = '%s'." "${LibAv}"
 log 4 "LibAvConfigureOpts = '%s'." "${LibAvConfigureOpts}"
+log 4 "UntruncWorkDir     = '%s'," "${UntruncWorkDir}"
 
 
 
@@ -272,18 +273,19 @@ if [ $BuildLibAvOnly -eq 0 ]; then
         [ -d "${libAvDir}/${libAvCfgBuildDir}" ] && break
     done
     [ -n "${libAvCfgBuildDir}" ] && libAvCfgBuildDir="${libAvCfgBuildDir}/"
+    # The extra libraries must be in link order: highest level -> lowest level (most containing library first)
     libAvExtraLibs=""
     if   [ -f "${libAvDir}/${libAvCfgBuildDir}config.sh"  ]; then
         # Get extra libraries from config shell script.
         . ${libAvDir}/${libAvCfgBuildDir}config.sh
-        libAvExtraLibs="${extralibs_avutil} ${extralibs_avcodec} ${extralibs_avformat} ${extralibs_avresample} ${extralibs_swresample}"
+        libAvExtraLibs="${extralibs_avformat} ${extralibs_avcodec} ${extralibs_swresample} ${extralibs_avresample} ${extralibs_avutil}"
     elif [ -f "${libAvDir}/${libAvCfgBuildDir}config.mak" ]; then
         # Get extra libraries from config make script.
-        for libAvNm in "avutil" "avcodec" "avformat" "avresample" "swresample" ""; do
+        for libAvNm in "avformat" "avcodec" "swresample" "avresample" "avutil" ""; do
             elibs="$(grep "^[[:blank:]]*EXTRALIBS${libAvNm:+"-${libAvNm}"}[[:blank:]]*=" "${libAvDir}/${libAvCfgBuildDir}config.mak")"
             elibs="${elibs#*=}"
-            log 4 "libAvNm = '%s' -> 'EXTRALIBS%s' -> '%s'." "${libAvNm}" "${libAvNm:+"-${libAvNm}"}" "${elibs}"
-            libAvExtraLibs="${libAvExtraLibs} ${elibs}"
+            log 4 "libAvNm            = '%s'%$(( 10 - ${#libAvNm} ))s -> 'EXTRALIBS%s'%$(( 11 - ${#libAvNm} - ( ( ${#libAvNm} != 0 ) ? 1 : 0 ) ))s -> '%s'." "${libAvNm}" "" "${libAvNm:+"-${libAvNm}"}" "" "${elibs}"
+            [ -n "${elibs}" ] && libAvExtraLibs="${libAvExtraLibs} ${elibs}"
         done
     fi
     if [ -n "${libAvExtraLibs}" ]; then
@@ -329,3 +331,4 @@ fi; # BuildLibAvOnly
 
 # Fin.
 exit $ret
+
