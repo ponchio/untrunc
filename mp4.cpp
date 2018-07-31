@@ -139,6 +139,7 @@ namespace {
 			file = to_file;
 			if(file_ref)  fflush(file_ref);
 		}
+
 		~FileRedirect() {
 			if(file_ref)  fflush(file_ref);
 			file_ref = file_value;
@@ -176,10 +177,10 @@ void Mp4::open(string filename) {
 	file_name = filename;
 
 	if(root->atomByName("ctts"))
-		clog << "Found 'Composition Time To Sample' atom (ctts). Out of order samples possible." << endl;
+		clog << "Found 'Composition Time To Sample' atom (ctts). Out of order samples possible.\n";
 
 	if(root->atomByName("sdtp"))
-		clog << "Found 'Independent and Disposable Samples' atom (sdtp). I and P frames might need to recover that info." << endl;
+		clog << "Found 'Independent and Disposable Samples' atom (sdtp). I and P frames might need to recover that info.\n";
 
 	Atom *mvhd = root->atomByName("mvhd");
 	if(!mvhd)
@@ -271,11 +272,11 @@ void Mp4::makeStreamable(string filename, string output_filename) {
 	Atom *moov = rootAtom.atomByName("moov");
 	Atom *mdat = rootAtom.atomByName("mdat");
 	if(!moov) {
-		cerr << "Missing 'Container for all the Meta-data' atom (moov)." << endl;
+		cerr << "Missing 'Container for all the Meta-data' atom (moov).\n";
 		return;
 	}
 	if(!mdat) {
-		cerr << "Missing 'Media Data container' atom (mdat)." << endl;
+		cerr << "Missing 'Media Data container' atom (mdat).\n";
 		return;
 	}
 
@@ -341,7 +342,7 @@ void Mp4::saveVideo(string output_filename) {
 
 	clog << "Saving to: " << output_filename << '\n';
 	if(!root) {
-		cerr << "No file opened." << endl;
+		cerr << "No file opened.\n";
 		return;
 	}
 
@@ -370,11 +371,11 @@ void Mp4::saveVideo(string output_filename) {
 	Atom *moov = root->atomByName("moov");
 	Atom *mdat = root->atomByName("mdat");
 	if(!moov) {
-		cerr << "Missing 'Container for all the Meta-data' atom (moov)." << endl;
+		cerr << "Missing 'Container for all the Meta-data' atom (moov).\n";
 		return;
 	}
 	if(!mdat) {
-		cerr << "Missing 'Media Data container' atom (mdat)." << endl;
+		cerr << "Missing 'Media Data container' atom (mdat).\n";
 		return;
 	}
 
@@ -414,13 +415,13 @@ void Mp4::saveVideo(string output_filename) {
 void Mp4::analyze(bool interactive) {
 	cout << "Analyze:\n";
 	if(!root) {
-		cerr << "No file opened." << endl;
+		cerr << "No file opened.\n";
 		return;
 	}
 
 	Atom *mdat = root->atomByName("mdat");
 	if(!mdat) {
-		cerr << "Missing 'Media Data container' atom (mdat)." << endl;
+		cerr << "Missing 'Media Data container' atom (mdat).\n";
 		return;
 	}
 
@@ -428,18 +429,21 @@ void Mp4::analyze(bool interactive) {
 		// For interactive analyzis, std::cin & std::cout must be connected to a terminal/tty.
 		if(!isTerminal(cin)) {
 #ifdef VERBOSE1
-			clog << "Cannot analyze interactively as input doesn't come directly from a terminal." << endl;
+			clog << "Cannot analyze interactively as input doesn't come directly from a terminal.\n";
 #endif
 			interactive = false;
 		}
 		if(interactive && !isTerminal(cout)) {
 #ifdef VERBOSE1
-			clog << "Cannot analyze interactively as output doesn't go directly to a terminal." << endl;
+			clog << "Cannot analyze interactively as output doesn't go directly to a terminal.\n";
 #endif
 			interactive = false;
 		}
 		if(interactive)
 			cin.clear();    //reset state - clear transient errors of previous input operations
+#ifdef VERBOSE1
+		clog.flush();
+#endif
 	}
 
 	for(unsigned int i = 0; i < tracks.size(); i++) {
@@ -483,15 +487,15 @@ void Mp4::analyze(bool interactive) {
 
 			bool wait = false;
 			if(!matches) {
-				cerr << "- Match failed!" << endl;
+				cerr << "- Match failed!\n";
 				wait = interactive;
 			}
 			if(length != track.sizes[i]) {
-				cerr << "- Length mismatch!" << endl;
+				cerr << "- Length mismatch!\n";
 				wait = interactive;
 			}
 			if(length < -1 || length > MaxFrameLength) {
-				cerr << "- Invalid length!" << endl;
+				cerr << "- Invalid length!\n";
 				wait = interactive;
 			}
 			if(wait) {
@@ -516,7 +520,7 @@ void Mp4::parseTracks() {
 
 	Atom *mdat = root->atomByName("mdat");
 	if(!mdat) {
-		cerr << "Missing 'Media Data container' atom (mdat)." << endl;
+		cerr << "Missing 'Media Data container' atom (mdat).\n";
 		return;
 	}
 	vector<Atom *> traks = root->atomsByName("trak");
@@ -677,7 +681,7 @@ void Mp4::repair(string filename) {
 	Atom *original_mdat = root->atomByName("mdat");
 	if(!original_mdat) {
 		delete mdat;
-		cerr << "Missing 'Media Data container' atom (mdat)." << endl;
+		cerr << "Missing 'Media Data container' atom (mdat).\n";
 		return;
 	}
 	mdat->start = original_mdat->start;
