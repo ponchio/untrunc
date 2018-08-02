@@ -40,16 +40,17 @@ public:
     Mp4();
     ~Mp4();
 
-    void open(std::string filename);
+    void open     (std::string filename);
+    bool repair   (std::string corrupt_filename);
+    bool save     (std::string output_filename);
+    bool saveVideo(std::string output_filename) { return save(output_filename); }
 
     void printMediaInfo();
     void printAtoms();
-    void saveVideo(std::string output_filename);
-    void makeStreamable(std::string filename, std::string output_filename);
 
     void analyze(bool interactive = true);
-    void writeTracksToAtoms();
-    void repair(std::string filename);
+
+    static bool makeStreamable(std::string filename, std::string output_filename);
 
 protected:
     std::string file_name;
@@ -58,7 +59,8 @@ protected:
     std::vector<Track> tracks;
 
     void close();
-    void parseTracks();
+    bool parseTracks();
+    void writeTracksToAtoms();
 };
 
 #endif // MP4_H

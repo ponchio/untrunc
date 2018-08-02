@@ -23,6 +23,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <ios>          // Pre-C++11: may not be included by <iostream>.
 #include <iomanip>
 #include <limits>
 
@@ -35,9 +36,9 @@
 extern "C" {
 #include <stdint.h>
 #ifdef _WIN32
-# include <io.h>        //for: _isatty()
+# include <io.h>        // for: _isatty()
 #else
-# include <unistd.h>    //for: isatty()
+# include <unistd.h>    // for: isatty()
 #endif
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
@@ -63,17 +64,18 @@ using namespace std;
 namespace {
 	const int MaxFrameLength = 1600000;
 
-	// Store addresses of C++ stdio stream buffers as identifiers.
-	// These addresses differ per thread and must be statically linked in.
+
+	// Store start-up addresses of C++ stdio stream buffers as identifiers.
+	// These addresses differ per process and must be statically linked in.
 	// Assume that the stream buffers at these stored addresses
 	//  are always connected to their underlaying stdio files.
 	static const streambuf* const StdioBufs[] = {
 		cin.rdbuf(), cout.rdbuf(), cerr.rdbuf(), clog.rdbuf()
 	};
-	// Store start-up terminal statuses of C++ stdio stream buffers.
-	// These statuses differ per thread and must be statically linked in.
-	// Assume that the statuses don't change during this thread life-time.
-	static const bool StdioTTys[sizeof(StdioBufs)/sizeof(StdioBufs[0])] = {
+	// Store start-up terminal/TTY statuses of C++ stdio stream buffers.
+	// These statuses differ per process and must be statically linked in.
+	// Assume that the statuses don't change during the process life-time.
+	static const bool StdioTtys[sizeof(StdioBufs)/sizeof(StdioBufs[0])] = {
 #ifdef _WIN32
 		_isatty(STDIN_FILENO), _isatty(STDOUT_FILENO), _isatty(STDERR_FILENO), _isatty(STDERR_FILENO)
 #else
@@ -81,11 +83,12 @@ namespace {
 #endif
 	};
 
-	// Return terminal status of a C++ stdio stream (cin, cout, cerr & clog).
-	bool isTerminal(const ios& strm) {
-		for(unsigned i = 0; i < sizeof(StdioBufs)/sizeof(StdioBufs[0]); ++i) {
+	// Is a Terminal/Console/TTY connected to the C++ stream?
+	// Use on C++ stdio chararacter streams: cin, cout, cerr and clog.
+	bool isTTY(const ios& strm) {
+		for(unsigned int i = 0; i < sizeof(StdioBufs)/sizeof(StdioBufs[0]); ++i) {
 			if(strm.rdbuf() == StdioBufs[i])
-				return StdioTTys[i];
+				return StdioTtys[i];
 		}
 		return false;
 	}
@@ -102,7 +105,20 @@ namespace {
 #else
 # define DEFAULT_AVLOG_FLAGS	0
 #endif
-		explicit AvLog(int level = AV_LOG_INFO, int flags = DEFAULT_AVLOG_FLAGS)
+
+		explicit AvLog()
+			: lvl(av_log_get_level())
+#ifdef AV_LOG_PRINT_LEVEL
+			, flgs(av_log_get_flags())
+#endif
+		{
+			av_log_set_flags(DEFAULT_AVLOG_FLAGS);
+			cout.flush();   // Flush C++ standard streams.
+			//cerr.flush();   // Unbuffered -> nothing to flush.
+			clog.flush();
+		}
+
+		explicit AvLog(int level, int flags = DEFAULT_AVLOG_FLAGS)
 			: lvl(av_log_get_level())
 #ifdef AV_LOG_PRINT_LEVEL
 			, flgs(av_log_get_flags())
@@ -111,13 +127,13 @@ namespace {
 			if(lvl < level)
 				av_log_set_level(lvl);
 			av_log_set_flags(flags);
-			cout.flush();   //flush C++ standard streams
-			//cerr.flush();   //unbuffered -> nothing to flush
+			cout.flush();   // Flush C++ standard streams.
+			//cerr.flush();   // Unbuffered -> nothing to flush.
 			clog.flush();
 		}
 
 		~AvLog() {
-			fflush(stdout); //flush C stdio files
+			fflush(stdout); // Flush C stdio files.
 			fflush(stderr);
 			av_log_set_level(lvl);
 #ifdef AV_LOG_PRINT_LEVEL
@@ -146,6 +162,7 @@ namespace {
 		}
 	};
 }; // namespace
+
 
 
 // Mp4
@@ -190,9 +207,9 @@ void Mp4::open(string filename) {
 
 	{
 		AvLog useAvLog();
-		// Register all formats and codecs
+		// Register all formats and codecs.
 		av_register_all();
-		// Open video file
+		// Open video file.
 #ifdef OLD_AVFORMAT_API
 		int error = av_open_input_file(&context, filename.c_str(), NULL, 0, NULL);
 #else
@@ -201,7 +218,7 @@ void Mp4::open(string filename) {
 		if(error != 0)
 			throw "Could not parse AV file: " + filename;
 
-		// Retrieve stream information
+		// Retrieve stream information.
 #ifdef OLD_AVFORMAT_API
 		if(av_find_stream_info(context) < 0)
 #else
@@ -215,10 +232,10 @@ void Mp4::open(string filename) {
 
 void Mp4::close() {
 	Atom *rm_root = root;
-	root = NULL;    //invalidate Mp4 data
+	root      = NULL;   // Invalidate Mp4 data.
 	timescale = 0;
 	duration  = 0;
-	tracks.clear(); //must clear tracks before closing context
+	tracks.clear();     // Must clear tracks before closing context.
 	if(context) {
 		AvLog useAvLog(AV_LOG_ERROR);
 #ifdef OLD_AVFORMAT_API
@@ -251,7 +268,7 @@ void Mp4::printAtoms() {
 	}
 }
 
-void Mp4::makeStreamable(string filename, string output_filename) {
+bool Mp4::makeStreamable(string filename, string output_filename) {
 	clog << "Make Streamable: " << filename << '\n';
 	Atom rootAtom;
 	{
@@ -273,16 +290,16 @@ void Mp4::makeStreamable(string filename, string output_filename) {
 	Atom *mdat = rootAtom.atomByName("mdat");
 	if(!moov) {
 		cerr << "Missing 'Container for all the Meta-data' atom (moov).\n";
-		return;
+		return false;
 	}
 	if(!mdat) {
 		cerr << "Missing 'Media Data container' atom (mdat).\n";
-		return;
+		return false;
 	}
 
 	if(mdat->start > moov->start) {
 		clog << "File is already streamable." << endl;
-		return;
+		return true;
 	}
 
 	int64_t old_start = mdat->start  + 8;
@@ -307,9 +324,9 @@ void Mp4::makeStreamable(string filename, string output_filename) {
 	std::vector<Atom *> stcos = moov->atomsByName("stco");
 	for(unsigned int i = 0; i < stcos.size(); i++) {
 		Atom *stco = stcos[i];
-		int64_t offsets = stco->readInt(4); //4 version, 4 number of entries, 4 entries
-		for(int64_t j = 0; j < offsets; j++) {
-			int64_t pos = 8 + 4*j;
+		int32_t nchunks = stco->readInt(4); // 4 version, 4 number of entries, 4 entries.
+		for(int j = 0; j < nchunks; j++) {
+			int64_t pos    = int64_t(8) + 4*j;
 			int64_t offset = stco->readInt(pos) + diff;
 			clog << "O: " << offset << '\n';
 			stco->writeInt(offset, pos);
@@ -317,7 +334,7 @@ void Mp4::makeStreamable(string filename, string output_filename) {
 	}
 
 	{
-		//save to file
+		// Save to file.
 		clog << "Saving to: " << output_filename << '\n';
 		File file;
 		if(!file.create(output_filename))
@@ -329,9 +346,10 @@ void Mp4::makeStreamable(string filename, string output_filename) {
 		mdat->write(file);
 	}
 	clog << endl;
+	return true;
 }
 
-void Mp4::saveVideo(string output_filename) {
+bool Mp4::save(string output_filename) {
 	// We save all atoms except:
 	//  ctts: composition offset (we use sample to time)
 	//  cslg: because it is used only when ctts is present
@@ -343,24 +361,28 @@ void Mp4::saveVideo(string output_filename) {
 	clog << "Saving to: " << output_filename << '\n';
 	if(!root) {
 		cerr << "No file opened.\n";
-		return;
+		return false;
 	}
 
 	duration = 0;
 	for(unsigned int i = 0; i < tracks.size(); i++) {
 		Track &track = tracks[i];
+		clog << "Track " << i << " (" << track.codec.name << "): duration: " << track.duration << " timescale: " << track.timescale << '\n';
 		track.writeToAtoms();
-		//convert to movie timescale
-		clog << "Track " << i << ": duration: " << track.duration << " timescale: " << track.timescale << '\n';
-		//int track_duration = static_cast<int>(double(track.duration) * double(timescale) / double(track.timescale));
-		int track_duration = static_cast<int>((int64_t(track.duration) * timescale - 1 + track.timescale) / track.timescale);
-		if(track_duration > duration)
-			duration = track_duration;
-
 		Atom *tkhd = track.trak->atomByName("tkhd");
-		tkhd->writeInt(track_duration, 20); //in movie timescale, not track timescale
+		if(!tkhd) {
+			cerr << "Missing 'Track Header' atom (tkhd).\n";
+			//return false;
+		} else {
+			// Convert to movie timescale.
+			//int track_duration = static_cast<int>(double(track.duration) * double(timescale) / double(track.timescale));
+			int track_duration = static_cast<int>((int64_t(track.duration) * timescale - 1 + track.timescale) / track.timescale);
+			if(track_duration > duration)
+				duration = track_duration;
+			tkhd->writeInt(track_duration, 20); // In movie timescale, not track timescale.
+		}
 	}
-	cout.flush();
+
 	Atom *mvhd = root->atomByName("mvhd");
 	if(!mvhd)
 		throw string("Missing 'Movie Header' atom (mvhd)");
@@ -372,11 +394,11 @@ void Mp4::saveVideo(string output_filename) {
 	Atom *mdat = root->atomByName("mdat");
 	if(!moov) {
 		cerr << "Missing 'Container for all the Meta-data' atom (moov).\n";
-		return;
+		return false;
 	}
 	if(!mdat) {
 		cerr << "Missing 'Media Data container' atom (mdat).\n";
-		return;
+		return false;
 	}
 
 	moov->prune("ctts");
@@ -385,21 +407,21 @@ void Mp4::saveVideo(string output_filename) {
 
 	root->updateLength();
 
-	//fix offsets
+	// Fix offsets.
 	int64_t offset = 8 + moov->length;
 	if(ftyp)
-		offset += ftyp->length; //not all mov have a ftyp.
+		offset += ftyp->length; // Not all moov have a ftyp.
 
 	for(unsigned int t = 0; t < tracks.size(); t++) {
 		Track &track = tracks[t];
 		for(unsigned int i = 0; i < track.offsets.size(); i++)
 			track.offsets[i] += offset;
 
-		track.writeToAtoms();  //need to save the offsets back to the atoms
+		track.writeToAtoms();  // Need to save the offsets back to the atoms.
 	}
 
 	{
-		//save to file
+		// Save to file.
 		File file;
 		if(!file.create(output_filename))
 			throw "Could not create file for writing: " + output_filename;
@@ -410,6 +432,7 @@ void Mp4::saveVideo(string output_filename) {
 		mdat->write(file);
 	}
 	clog << endl;
+	return true;
 }
 
 void Mp4::analyze(bool interactive) {
@@ -427,20 +450,20 @@ void Mp4::analyze(bool interactive) {
 
 	if(interactive) {
 		// For interactive analyzis, std::cin & std::cout must be connected to a terminal/tty.
-		if(!isTerminal(cin)) {
+		if(!isTTY(cin)) {
 #ifdef VERBOSE1
 			clog << "Cannot analyze interactively as input doesn't come directly from a terminal.\n";
 #endif
 			interactive = false;
 		}
-		if(interactive && !isTerminal(cout)) {
+		if(interactive && !isTTY(cout)) {
 #ifdef VERBOSE1
 			clog << "Cannot analyze interactively as output doesn't go directly to a terminal.\n";
 #endif
 			interactive = false;
 		}
 		if(interactive)
-			cin.clear();    //reset state - clear transient errors of previous input operations
+			cin.clear();  // Reset state - clear transient errors of previous input operations.
 #ifdef VERBOSE1
 		clog.flush();
 #endif
@@ -482,8 +505,8 @@ void Mp4::analyze(bool interactive) {
 			bool matches  = track.codec.matchSample(start, maxlength);
 			int  duration = 0;
 			int  length   = track.codec.getLength(start, maxlength, duration);
-			//TODO check if duration is working with the stts duration.
-			cout << "Length: " << length << " true length: " << track.sizes[i] << '\n';
+			// TODO: Check if duration is working with the stts duration.
+			cout << "Length: " << length << " true-length: " << track.sizes[i] << '\n';
 
 			bool wait = false;
 			if(!matches) {
@@ -499,7 +522,7 @@ void Mp4::analyze(bool interactive) {
 				wait = interactive;
 			}
 			if(wait) {
-				//cout and clog already flushed by cerr
+				// cout and clog have already been flushed by cerr.
 				cout << "  <Press [Enter] for next match>\r";
 				cin.ignore(numeric_limits<streamsize>::max(), '\n');
 			}
@@ -515,13 +538,13 @@ void Mp4::writeTracksToAtoms() {
 		tracks[i].writeToAtoms();
 }
 
-void Mp4::parseTracks() {
+bool Mp4::parseTracks() {
 	assert(root != NULL);
 
 	Atom *mdat = root->atomByName("mdat");
 	if(!mdat) {
 		cerr << "Missing 'Media Data container' atom (mdat).\n";
-		return;
+		return false;
 	}
 	vector<Atom *> traks = root->atomsByName("trak");
 	for(unsigned int i = 0; i < traks.size(); i++) {
@@ -530,18 +553,19 @@ void Mp4::parseTracks() {
 		track.parse(traks[i], mdat);
 		tracks.push_back(track);
 	}
+	return true;
 }
 
-void Mp4::repair(string filename) {
-	clog << "Repair: " << filename << '\n';
+bool Mp4::repair(string corrupt_filename) {
+	clog << "Repair: " << corrupt_filename << '\n';
 	BufferedAtom *mdat = NULL;
 	{
 		File file;
-		if(!file.open(filename))
-			throw "Could not open file: " + filename;
+		if(!file.open(corrupt_filename))
+			throw "Could not open file: " + corrupt_filename;
 
-		//find mdat. fails with krois and a few other.
-		//TODO check for multiple mdat, or just look for the first one.
+		// Find mdat.  This fails with krois and a few other.
+		// TODO: Check for multiple mdat, or just look for the first one.
 		while(true) {
 			Atom atom;
 			try {
@@ -556,7 +580,7 @@ void Mp4::repair(string filename) {
 				continue;
 			}
 
-			mdat = new BufferedAtom(filename);
+			mdat = new BufferedAtom(corrupt_filename);
 			mdat->start = atom.start;
 			memcpy(mdat->name, atom.name, sizeof(mdat->name)-1);
 			memcpy(mdat->head, atom.head, sizeof(mdat->head));
@@ -572,16 +596,16 @@ void Mp4::repair(string filename) {
 	for(unsigned int i = 0; i < tracks.size(); i++)
 		tracks[i].clear();
 
-	//mp4a is more reliable than avc1.
+	// mp4a is more reliable than avc1.
 	if(tracks.size() > 1 && tracks[0].codec.name != "mp4a" && tracks[1].codec.name == "mp4a") {
 #ifdef VERBOSE1
-		clog << "Swapping tracks: " << tracks[0].codec.name << " <-> mp4a.\n";
+		clog << "Swapping tracks: track 0 (" << tracks[0].codec.name << ") <-> track 1 (mp4a).\n";
 #endif
 		swap(tracks[0], tracks[1]);
 	}
 
-	//mp4a can be decoded and reports the number of samples (duration in samplerate scale).
-	//in some videos the duration (stts) can be variable and we can rebuild them using these values.
+	// mp4a can be decoded and reports the number of samples (duration in samplerate scale).
+	// In some videos the duration (stts) can be variable and we can rebuild them using these values.
 	vector<int> audiotimes;
 	unsigned long count = 0;
 	off_t offset = 0;
@@ -596,7 +620,7 @@ void Mp4::repair(string filename) {
 		unsigned int begin = mdat->readInt(offset);
 		if(begin == 0) {
 #if 0 // AARRGH this sometimes is not very correct, unless it's all zeros.
-			//skip zeros to next 000
+			// Skip zeros to next 000.
 			offset &= 0xfffff000;
 			offset += 0x1000;
 #else
@@ -611,7 +635,7 @@ void Mp4::repair(string filename) {
 			<< "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next << dec << '\n';
 #endif
 
-		//skip fake moov
+		// Skip fake moov.
 		if(start[4] == 'm' && start[5] == 'o' && start[6] == 'o' && start[7] == 'v') {
 			clog << "Skipping 'Container for all the Meta-data' atom (moov): begin: 0x" << hex << swap32(begin) << dec << ".\n";
 			offset += swap32(begin);
@@ -622,7 +646,7 @@ void Mp4::repair(string filename) {
 		for(unsigned int i = 0; i < tracks.size(); i++) {
 			Track &track = tracks[i];
 			clog << "Track " << i << " codec: " << track.codec.name << '\n';
-			//sometime audio packets are difficult to match, but if they are the only ones....
+			// Sometime audio packets are difficult to match, but if they are the only ones....
 			if(tracks.size() > 1 && !track.codec.matchSample(start, maxlength))
 				continue;
 			int duration = 0;
@@ -658,12 +682,12 @@ void Mp4::repair(string filename) {
 #endif
 
 		if(!found) {
-			//this could be a problem for large files
-			//assert(mdat->content.size() + 8 == mdat->length);
+			// This could be a problem for large files.
+			//assert(mdat->contentSize() + 8 == mdat->length);
 			mdat->file_end = mdat->file_begin + offset;
 			mdat->length   = mdat->file_end - mdat->file_begin;
 			//mdat->content.resize(offset);
-			//mdat->length = mdat->content.size() + 8;
+			//mdat->length = mdat->contentSize() + 8;
 			break;
 		}
 		count++;
@@ -680,9 +704,9 @@ void Mp4::repair(string filename) {
 
 	Atom *original_mdat = root->atomByName("mdat");
 	if(!original_mdat) {
-		delete mdat;
 		cerr << "Missing 'Media Data container' atom (mdat).\n";
-		return;
+		delete mdat;
+		return false;
 	}
 	mdat->start = original_mdat->start;
 #ifdef VERBOSE1
@@ -694,5 +718,7 @@ void Mp4::repair(string filename) {
 	delete original_mdat;
 
 	clog << endl;
+	return true;
 }
 
+// vim:set ts=4 sw=4 sts=4 noet:
