@@ -153,189 +153,7 @@ namespace {
 
 
 
-// Codec.
-Codec::Codec() : context(NULL), codec(NULL), mask1(0), mask0(0) { }
-
-void Codec::clear() {
-	name.clear();
-	// Do not remove the context, as it will be re-used!
-	codec   = NULL;
-	mask1   = 0;
-	mask0   = 0;
-}
-
-bool Codec::parse(Atom *trak, vector<int> &offsets, Atom *mdat) {
-	Atom *stsd = trak->atomByName("stsd");
-	if(!stsd) {
-		cerr << "Missing 'Sample Descriptions' atom (stsd).\n";
-		return false;
-	}
-	int32_t entries = stsd->readInt(4);
-	if(entries != 1)
-		throw string("Multiplexed streams not supported");
-
-	char codec_name[5];
-	stsd->readChar(codec_name, 12, 4);
-	name = codec_name;
-
-	// This was a stupid attempt at trying to detect packet type based on bitmasks.
-	mask1 = 0xffffffff;
-	mask0 = 0xffffffff;
-	// Build the mask:
-	for(unsigned int i = 0; i < offsets.size(); i++) {
-		int offset = offsets[i];
-		if(offset < mdat->start || offset - mdat->start > mdat->length)
-			throw string("Invalid offset in track!");
-
-		int32_t s = mdat->readInt(offset - mdat->start - 8);
-		mask1 &=  s;
-		mask0 &= ~s;
-
-		assert((s & mask1) == mask1);
-		assert((~s & mask0) == mask0);
-	}
-	return true;
-}
-
-
-bool Codec::matchSample(const unsigned char *start, int maxlength) {
-	int32_t s = readBE<int32_t>(start);
-
-	if(name == "avc1") {
-		// This works only for a very specific kind of video.
-		//#define SPECIAL_VIDEO
-#ifdef SPECIAL_VIDEO
-		int32_t s2 = readBE<int32_t>(start + 4);
-		if(s != 0x00000002 || (s2 != 0x09300000 && s2 != 0x09100000))
-			return false;
-		return true;
-#endif
-
-		// TODO: Use the first byte of the NAL: forbidden bit and type!
-		int nal_type = (start[4] & 0x1f);
-		// The other values are really uncommon on cameras...
-		if(nal_type > 21) {
-		//if(nal_type != 1 && !(nal_type >= 5 && nal_type <= 12)) {
-#ifdef VERBOSE
-			cout << "avc1: No match because of NAL type: " << nal_type << '\n';
-#endif
-			return false;
-		}
-		// If NAL is equal 7, the other fragments (starting with NAL type 7)
-		//  should be part of the same packet.
-		// (We cannot recover time information, remember.)
-		if(start[0] == 0) {
-#ifdef VERBOSE
-			cout << "avc1: Match with 0 header.\n";
-#endif
-			return true;
-		}
-#ifdef VERBOSE
-		cout << "avc1: Failed for no particular reason.\n";
-#endif
-		return false;
-
-	} else if(name == "mp4a") {
-		if(s > 1000000) {
-#ifdef VERBOSE
-			cout << "mp4a: Success because of large s value.\n";
-#endif
-			return true;
-		}
-		// XXX Horrible Hack: These values might need to be changed depending on the file. XXX
-		if((start[4] == 0xee && start[5] == 0x1b) ||
-		   (start[4] == 0x3e && start[5] == 0x64) )
-		{
-			cout << "mp4a: Success because of horrible hack.\n";
-			return true;
-		}
-
-		if(start[0] == 0) {
-#ifdef VERBOSE
-			cout << "mp4a: Failure because of NULL header.\n";
-#endif
-			return false;
-		}
-#ifdef VERBOSE
-		cout << "mp4a: Success for no particular reason....\n";
-#endif
-		return true;
-
-#if 0 // THIS is true for mp3...
-		// From: MP3'Tech Programmer's corner <http://www.mp3-tech.org/>.
-		// MPEG Audio Layer I/II/III frame header (MSB->LSB):
-		// BitPos   Length Use
-		//  31-21  11 bits Frame sync [all bits are 1],
-		//  20-19   2 bits MPEG Audio version Id [11=v1, 10=v2, 01=reserved, 00=v2.5+],
-		//  18-17   2 bits Layer [11=I, 10=II, 01=III, 00=reserved],
-		//     16   1 bit  Protection [1=unprotected, 0=16-bit CRC after this header],
-		//  15-12   4 bits Bitrate index (variable for VBR) [0000=free, .., 1111=bad],
-		//  11-10   2 bits Sampling rate frequency index [.., 11=reserved],
-		//      9   1 bit  Padding (might be variable) [0=unpadded, 1=extra 32bit (L1) or 8bit (L2/L3)],
-		//      8   1 bit  Private (???) [=0 ???],
-		//   7- 6   2 bits Channel mode (constant) [00=Stereo, 01=Joint Stereo, 10=Dual Mono, 11=Single Mono],
-		//   5- 4   2 bits Mode extension for Joint Stereo (variable),
-		//      3   1 bit  Copyright [0=Not-Copyrighted, 1=Copyrighted],
-		//      2   1 bit  Original [0=Copy, 1=Original Media],
-		//   1- 0   2 bits Emphasis (variable) [00=None, 01=50/15 ms, 10=reserved, 11=CCIT J.17].
-		// In practice we have:
-		//  mask = 11111111111 11 11 1 0000 11 0 0 11 11 1 1 11
-		//       = 1111 1111 1111 1111 0000 1100 1111 1111
-		//       = 0xFFFF0CFF
-		reverse(s);
-		if(s & 0xFFE00000 != 0xFFE00000) // Check frame sync.
-			return false;
-		return true;
-#endif
-
-	} else if(name == "mp4v") {
-		// As far as I know, keyframes are 1b3 and frames are 1b6 (ISO/IEC 14496-2, 6.3.4 6.3.5).
-		if(s == 0x1b3 || s == 0x1b6)
-			return true;
-		return false;
-
-	} else if(name == "alac") {
-		int32_t t = readBE<int32_t>(start + 4);
-		t &= 0xffff0000;
-
-		if(s == 0      && t == 0x00130000) return true;
-		if(s == 0x1000 && t == 0x001a0000) return true;
-		return false;
-
-	} else if(name == "samr") {
-		return start[0] == 0x3c;
-
-	} else if(name == "twos") {
-		// Weird audio codec: each packet is 2 signed 16b integers.
-		cerr << "The Twos audio codec is EVIL, there is no hope to guess it.\n";
-		throw "Encountered an EVIL audio codec";
-		return true;
-
-	} else if(name == "apcn") {
-		return memcmp(start, "icpf", 4) == 0;
-
-	} else if(name == "lpcm") {
-		// This is not trivial to detect, because it is just
-		// the audio waveform encoded as signed 16-bit integers.
-		// For now, just test that it is not "apcn" video.
-		return memcmp(start, "icpf", 4) != 0;
-
-	} else if(name == "in24") {
-		// It's a codec id, in a case I found a pcm_s24le (little endian 24 bit).
-		// No way to know it's length.
-		return true;
-
-	} else if(name == "sowt") {
-		cerr << "Sowt is just raw data, no way to guess length (unless reliably detecting the other codec start).\n";
-		return false;
-	}
-
-	return false;
-}
-
-
 // AVC1
-
 class H264sps {
 public:
 	int  log2_max_frame_num;
@@ -654,6 +472,187 @@ bool NalInfo::getNalInfo(const H264sps &sps, uint32_t maxlength, const uint8_t *
 	return true;
 }
 
+
+
+// Codec.
+Codec::Codec() : context(NULL), codec(NULL), mask1(0), mask0(0) { }
+
+void Codec::clear() {
+	name.clear();
+	// Do not remove the context, as it will be re-used!
+	codec   = NULL;
+	mask1   = 0;
+	mask0   = 0;
+}
+
+bool Codec::parse(Atom *trak, vector<int> &offsets, Atom *mdat) {
+	Atom *stsd = trak->atomByName("stsd");
+	if(!stsd) {
+		cerr << "Missing 'Sample Descriptions' atom (stsd).\n";
+		return false;
+	}
+	int32_t entries = stsd->readInt(4);
+	if(entries != 1)
+		throw string("Multiplexed streams not supported");
+
+	char codec_name[5];
+	stsd->readChar(codec_name, 12, 4);
+	name = codec_name;
+
+	// This was a stupid attempt at trying to detect packet type based on bitmasks.
+	mask1 = 0xffffffff;
+	mask0 = 0xffffffff;
+	// Build the mask:
+	for(unsigned int i = 0; i < offsets.size(); i++) {
+		int offset = offsets[i];
+		if(offset < mdat->start || offset - mdat->start > mdat->length)
+			throw string("Invalid offset in track!");
+
+		int32_t s = mdat->readInt(offset - mdat->start - 8);
+		mask1 &=  s;
+		mask0 &= ~s;
+
+		assert((s & mask1) == mask1);
+		assert((~s & mask0) == mask0);
+	}
+	return true;
+}
+
+
+bool Codec::matchSample(const unsigned char *start, int maxlength) {
+	int32_t s = readBE<int32_t>(start);
+
+	if(name == "avc1") {
+		// This works only for a very specific kind of video.
+		//#define SPECIAL_VIDEO
+#ifdef SPECIAL_VIDEO
+		int32_t s2 = readBE<int32_t>(start + 4);
+		if(s != 0x00000002 || (s2 != 0x09300000 && s2 != 0x09100000))
+			return false;
+		return true;
+#endif
+
+		// TODO: Use the first byte of the NAL: forbidden bit and type!
+		int nal_type = (start[4] & 0x1f);
+		// The other values are really uncommon on cameras...
+		if(nal_type > 21) {
+		//if(nal_type != 1 && !(nal_type >= 5 && nal_type <= 12)) {
+#ifdef VERBOSE
+			cout << "avc1: No match because of NAL type: " << nal_type << '\n';
+#endif
+			return false;
+		}
+		// If NAL is equal 7, the other fragments (starting with NAL type 7)
+		//  should be part of the same packet.
+		// (We cannot recover time information, remember.)
+		if(start[0] == 0) {
+#ifdef VERBOSE
+			cout << "avc1: Match with 0 header.\n";
+#endif
+			return true;
+		}
+#ifdef VERBOSE
+		cout << "avc1: Failed for no particular reason.\n";
+#endif
+		return false;
+
+	} else if(name == "mp4a") {
+		if(s > 1000000) {
+#ifdef VERBOSE
+			cout << "mp4a: Success because of large s value.\n";
+#endif
+			return true;
+		}
+		// XXX Horrible Hack: These values might need to be changed depending on the file. XXX
+		if((start[4] == 0xee && start[5] == 0x1b) ||
+		   (start[4] == 0x3e && start[5] == 0x64) )
+		{
+			cout << "mp4a: Success because of horrible hack.\n";
+			return true;
+		}
+
+		if(start[0] == 0) {
+#ifdef VERBOSE
+			cout << "mp4a: Failure because of NULL header.\n";
+#endif
+			return false;
+		}
+#ifdef VERBOSE
+		cout << "mp4a: Success for no particular reason....\n";
+#endif
+		return true;
+
+#if 0 // THIS is true for mp3...
+		// From: MP3'Tech Programmer's corner <http://www.mp3-tech.org/>.
+		// MPEG Audio Layer I/II/III frame header (MSB->LSB):
+		// BitPos   Length Use
+		//  31-21  11 bits Frame sync [all bits are 1],
+		//  20-19   2 bits MPEG Audio version Id [11=v1, 10=v2, 01=reserved, 00=v2.5+],
+		//  18-17   2 bits Layer [11=I, 10=II, 01=III, 00=reserved],
+		//     16   1 bit  Protection [1=unprotected, 0=16-bit CRC after this header],
+		//  15-12   4 bits Bitrate index (variable for VBR) [0000=free, .., 1111=bad],
+		//  11-10   2 bits Sampling rate frequency index [.., 11=reserved],
+		//      9   1 bit  Padding (might be variable) [0=unpadded, 1=extra 32bit (L1) or 8bit (L2/L3)],
+		//      8   1 bit  Private (???) [=0 ???],
+		//   7- 6   2 bits Channel mode (constant) [00=Stereo, 01=Joint Stereo, 10=Dual Mono, 11=Single Mono],
+		//   5- 4   2 bits Mode extension for Joint Stereo (variable),
+		//      3   1 bit  Copyright [0=Not-Copyrighted, 1=Copyrighted],
+		//      2   1 bit  Original [0=Copy, 1=Original Media],
+		//   1- 0   2 bits Emphasis (variable) [00=None, 01=50/15 ms, 10=reserved, 11=CCIT J.17].
+		// In practice we have:
+		//  mask = 11111111111 11 11 1 0000 11 0 0 11 11 1 1 11
+		//       = 1111 1111 1111 1111 0000 1100 1111 1111
+		//       = 0xFFFF0CFF
+		reverse(s);
+		if(s & 0xFFE00000 != 0xFFE00000) // Check frame sync.
+			return false;
+		return true;
+#endif
+
+	} else if(name == "mp4v") {
+		// As far as I know, keyframes are 1b3 and frames are 1b6 (ISO/IEC 14496-2, 6.3.4 6.3.5).
+		if(s == 0x1b3 || s == 0x1b6)
+			return true;
+		return false;
+
+	} else if(name == "alac") {
+		int32_t t = readBE<int32_t>(start + 4);
+		t &= 0xffff0000;
+
+		if(s == 0      && t == 0x00130000) return true;
+		if(s == 0x1000 && t == 0x001a0000) return true;
+		return false;
+
+	} else if(name == "samr") {
+		return start[0] == 0x3c;
+
+	} else if(name == "twos") {
+		// Weird audio codec: each packet is 2 signed 16b integers.
+		cerr << "The Twos audio codec is EVIL, there is no hope to guess it.\n";
+		throw "Encountered an EVIL audio codec";
+		return true;
+
+	} else if(name == "apcn") {
+		return memcmp(start, "icpf", 4) == 0;
+
+	} else if(name == "lpcm") {
+		// This is not trivial to detect, because it is just
+		// the audio waveform encoded as signed 16-bit integers.
+		// For now, just test that it is not "apcn" video.
+		return memcmp(start, "icpf", 4) != 0;
+
+	} else if(name == "in24") {
+		// It's a codec id, in a case I found a pcm_s24le (little endian 24 bit).
+		// No way to know it's length.
+		return true;
+
+	} else if(name == "sowt") {
+		cerr << "Sowt is just raw data, no way to guess length (unless reliably detecting the other codec start).\n";
+		return false;
+	}
+
+	return false;
+}
 
 
 int Codec::getLength(unsigned char *start, int maxlength, int &duration) {
