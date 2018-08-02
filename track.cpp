@@ -1020,10 +1020,6 @@ bool Track::parse(Atom *t, Atom *mdat) {
 				+ ((codec.context->codec && codec.context->codec->name)? codec.context->codec->name : "???");
 		}
 	}
-#ifdef VERBOSE
-	clog << "Codec: " << ((codec.context->codec && codec.context->codec->name)? codec.context->codec->name : "???")
-		<< " (" << codec.name << ")\n";
-#endif
 
 #if 0
 	if(!mdat)
