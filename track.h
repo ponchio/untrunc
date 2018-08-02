@@ -1,3 +1,4 @@
+//==================================================================//
 /*
     Untrunc - track.h
 
@@ -15,8 +16,9 @@
     Suite 330, Boston, MA 02111-1307, USA.  Or www.fsf.org
 
     Copyright 2010 Federico Ponchio
-                                                                                
-                                                        */
+                                                                    */
+//==================================================================//
+
 
 #ifndef TRACK_H
 #define TRACK_H
@@ -24,54 +26,67 @@
 #include <vector>
 #include <string>
 
+
 class Atom;
-class AVCodecContext;
-class AVCodec;
+struct AVCodecContext;
+struct AVCodec;
+
 
 class Codec {
 public:
-    std::string name;
-    void parse(Atom *trak, std::vector<int> &offsets, Atom *mdat);
-    bool matchSample(unsigned char *start, int maxlength);
-	int getLength(unsigned char *start, int maxlength, int &duration);
-    bool isKeyframe(unsigned char *start, int maxlength);
-    //used by: mp4a
+    std::string     name;
+    AVCodecContext *context;
+    AVCodec        *codec;
+
+    Codec();
+
+    bool parse(Atom *trak, std::vector<int> &offsets, Atom *mdat);
+    void clear();
+
+    bool matchSample(const unsigned char *start, int maxlength);
+    bool isKeyframe (const unsigned char *start, int maxlength);
+    int  getLength  (      unsigned char *start, int maxlength, int &duration);
+
+private:
+    // Used by mp4a.
     int mask1;
     int mask0;
-    AVCodecContext *context;
-    AVCodec *codec;
 };
+
 
 class Track {
 public:
     Atom *trak;
-    int timescale;
-    int duration;
+    int   timescale;
+    int   duration;
     Codec codec;
 
     std::vector<int> times;
-    std::vector<int> offsets;
+    std::vector<int> keyframes; // 0 based!
     std::vector<int> sizes;
-    std::vector<int> keyframes; //0 based!
+    std::vector<int> offsets;   // Should be 64-bit!
 
-    Track(): trak(0) {}
-    void parse(Atom *trak, Atom *mdat);
-    void writeToAtoms();
+    Track();
+
+    bool parse(Atom *trak, Atom *mdat);
     void clear();
+    void writeToAtoms();
     void fixTimes();
 
-    std::vector<int> getSampleTimes(Atom *t);
-    std::vector<int> getKeyframes(Atom *t);
-    std::vector<int> getSampleSizes(Atom *t);
-    std::vector<int> getChunkOffsets(Atom *t);
+protected:
+    void cleanUp();
+
+    std::vector<int> getSampleTimes  (Atom *t);
+    std::vector<int> getKeyframes    (Atom *t);
+    std::vector<int> getSampleSizes  (Atom *t);
+    std::vector<int> getChunkOffsets (Atom *t);
     std::vector<int> getSampleToChunk(Atom *t, int nchunks);
 
     void saveSampleTimes();
     void saveKeyframes();
-    void saveSampleToChunk();
     void saveSampleSizes();
+    void saveSampleToChunk();
     void saveChunkOffsets();
-
 };
 
 #endif // TRACK_H
