@@ -52,7 +52,8 @@ namespace {
 		LOG_DEBUG,      // Stuff which is only useful for developers.
 		//LOG_TRACE,      // Extremely verbose debugging, useful for development.
 
-		LOG_LEVEL_SIZE, // Number of log levels (used internallly).
+		LOG_LEVEL_SIZE, // Number of log levels.
+		LOG_LEVEL_MAX = LOG_LEVEL_SIZE - 1, // For convenience.
 
 		// Configuration only.
 		LOG_QUIET   = LOG_ERROR, // Log level to use for "quiet" logging.
@@ -62,7 +63,7 @@ namespace {
 	LogLevel next(LogLevel level, int n = 1) { return LogLevel(level + n); }
 	LogLevel prev(LogLevel level, int n = 1) { return LogLevel(level - n); }
 	LogLevel clamp(LogLevel level) {
-		return (level < LogLevel(0)) ? LogLevel(0) : (level < LOG_LEVEL_SIZE) ? level : LogLevel(LOG_LEVEL_SIZE-1);
+		return (level < LogLevel(0)) ? LogLevel(0) : (level < LOG_LEVEL_SIZE) ? level : LOG_LEVEL_MAX;
 	}
 
 	// Log level name.
@@ -84,7 +85,7 @@ namespace {
 	};
 
 	const char* logName(LogLevel level) {
-		if(LogInfo[0].level == 0 && LogInfo[LOG_LEVEL_SIZE - 1].level == LOG_LEVEL_SIZE - 1)
+		if(LogInfo[0].level == 0 && LogInfo[LOG_LEVEL_MAX].level == LOG_LEVEL_MAX)
 			return LogInfo[clamp(level)].name;
 		else {
 			level = clamp(level);
@@ -125,11 +126,11 @@ namespace {
 			if(av_loglvl <= LogInfo[i].av_level)
 				return LogInfo[i].level;
 		}
-		return LogLevel(LOG_LEVEL_SIZE - 1);
+		return LOG_LEVEL_MAX;
 	}
 
 	void setLibavLogLevel(LogLevel level) {
-		if(LogInfo[0].level == 0 && LogInfo[LOG_LEVEL_SIZE - 1].level == LOG_LEVEL_SIZE - 1)
+		if(LogInfo[0].level == 0 && LogInfo[LOG_LEVEL_MAX].level == LOG_LEVEL_MAX)
 			return av_log_set_level(LogInfo[clamp(level)].av_level);
 		else {
 			level = clamp(level);
@@ -166,7 +167,7 @@ namespace {
 				"  -a, --analyze    Interactively analyze <ok.mp4> (waits for user input).\n"
 				"  -q, --log=quiet  Be quiet and log as little as possible.\n"
 				"  -v, --log        Increase logging verbosity (use multiple times).\n"
-				"  -v<n>, --log=<n> Set logging verbosity to <n> in range [0..8].\n";
+				"  -v<n>, --log=<n> Set logging verbosity to <n> in range [0.." << LOG_LEVEL_MAX << "].\n";
 		for(unsigned int i = 0; i < sizeof(LogInfo)/sizeof(LogInfo[0]); ++i) {
 			cout << "  --log=" << left << setw(18 - (sizeof("  --log=")-1)) << LogInfo[i].name
 				<< ' ' << LogInfo[i].descr << ".\n";
