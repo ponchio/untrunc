@@ -22,6 +22,7 @@
 #include <cctype>
 #include <string>
 #include <iostream>
+#include <iomanip>
 
 #include "mp4.h"
 extern "C" {
@@ -41,32 +42,104 @@ namespace {
 
 	// Logging.
 	enum LogLevel {
-		LOG_QUIET = 0,  // Print no output.
-		LOG_PANIC,      // Something went really wrong and we will crash now.
-		LOG_FATAL,      // Something went wrong and recovery is not possible.
+		//LOG_NONE,       // Print no output.
+		//LOG_PANIC,      // Something went really wrong and we will crash now.
+		//LOG_FATAL,      // Something went wrong and recovery is not possible.
 		LOG_ERROR,      // Something went wrong and cannot losslessly be recovered.
 		LOG_WARNING,    // Something somehow does not look correct.
 		LOG_INFO,       // Standard information.
-		LOG_VERBOSE,    // Detailed information.
+		//LOG_VERBOSE,    // Detailed information.
 		LOG_DEBUG,      // Stuff which is only useful for developers.
-		LOG_TRACE       // Extremely verbose debugging, useful for development.
+		//LOG_TRACE,      // Extremely verbose debugging, useful for development.
+
+		LOG_LEVEL_SIZE, // Number of log levels (used internallly).
+
+		// Configuration only.
+		LOG_QUIET   = LOG_ERROR, // Log level to use for "quiet" logging.
+		LOG_DEFAULT = LOG_INFO   // Default log level.
 	};
+
 	LogLevel next(LogLevel level, int n = 1) { return LogLevel(level + n); }
 	LogLevel prev(LogLevel level, int n = 1) { return LogLevel(level - n); }
-	LogLevel clmp(LogLevel level) { return (level < LOG_QUIET) ? LOG_QUIET : (LOG_TRACE < level) ? LOG_TRACE : level; }
+	LogLevel clamp(LogLevel level) {
+		return (level < LogLevel(0)) ? LogLevel(0) : (level < LOG_LEVEL_SIZE) ? level : LogLevel(LOG_LEVEL_SIZE-1);
+	}
+
+	// Log level name.
+	const struct { LogLevel level; int av_level; const char *name; const char *descr;
+	} LogInfo[LOG_LEVEL_SIZE + 2] = {
+			//{ LOG_NONE,    AV_LOG_NONE,   "none",      "Show no output at all" },
+			//{ LOG_PANIC,    AV_LOG_PANIC,   "panic",    "Something went really wrong and we will crash now" },
+			//{ LOG_FATAL,    AV_LOG_FATAL,   "fatal",    "Something went wrong and recovery is not possible" },
+			{ LOG_ERROR,    AV_LOG_ERROR,   "error",    "Something went wrong and cannot losslessly be recovered" },
+			{ LOG_WARNING,  AV_LOG_WARNING, "warning",  "Something somehow does not look correct" },
+			{ LOG_INFO,     AV_LOG_INFO,    "info",     "Standard information" },
+			//{ LOG_VERBOSE,  AV_LOG_VERBOSE, "verbose",  "Detailed information" },
+			{ LOG_DEBUG,    AV_LOG_DEBUG,   "debug",    "Stuff which is only useful for developers" },
+			//{ LOG_TRACE,    AV_LOG_TRACE,   "trace",    "Extremely verbose debugging, useful for development" },
+
+			// Configuration only.
+			{ LOG_QUIET,    AV_LOG_QUIET,    "quiet",    "Log as little as needed" },
+			{ LOG_DEFAULT,  AV_LOG_INFO,     "default",  "Use the default log level" }
+	};
 
 	const char* logName(LogLevel level) {
-		const char* const LogNames[] = {
-			"quiet", "panic", "fatal", "error", "warning", "info", "verbose", "debug", "trace"
-		};
-		return LogNames[clmp(level)];
+		if(LogInfo[0].level == 0 && LogInfo[LOG_LEVEL_SIZE - 1].level == LOG_LEVEL_SIZE - 1)
+			return LogInfo[clamp(level)].name;
+		else {
+			level = clamp(level);
+			for(unsigned int i = 0; i < sizeof(LogInfo)/sizeof(LogInfo[0]); ++i) {
+				if(level == LogInfo[i].level)
+					return LogInfo[i].name;
+			}
+			return "???";
+		}
 	}
 
-	LogLevel getLibavLogLevel() {
-		return clmp(LogLevel((av_log_get_level() - AV_LOG_QUIET) / (AV_LOG_WARNING - AV_LOG_ERROR)));
+	bool setLogLevel(LogLevel &level, char ch) {
+		if(isdigit(ch)) {
+			level = clamp(LogLevel(ch - '0'));
+			return true;
+		}
+		return false;
 	}
+
+	bool setLogLevel(LogLevel &level, const string &name) {
+		if(!name.empty()) {
+			if (name.size() == 1 && setLogLevel(level, name[0]))
+				return true;
+			for(unsigned int i = 0; i < sizeof(LogInfo)/sizeof(LogInfo[0]); ++i) {
+				if(name == LogInfo[i].name) {
+					level = LogInfo[i].level;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	// AV library logging.
+	LogLevel getLibavLogLevel() {
+		int av_loglvl = av_log_get_level();
+		for(unsigned int i = 0; i < sizeof(LogInfo)/sizeof(LogInfo[0]); ++i) {
+			if(av_loglvl <= LogInfo[i].av_level)
+				return LogInfo[i].level;
+		}
+		return LogLevel(LOG_LEVEL_SIZE - 1);
+	}
+
 	void setLibavLogLevel(LogLevel level) {
-		av_log_set_level(((AV_LOG_WARNING - AV_LOG_ERROR) * clmp(level)) + AV_LOG_QUIET);
+		if(LogInfo[0].level == 0 && LogInfo[LOG_LEVEL_SIZE - 1].level == LOG_LEVEL_SIZE - 1)
+			return av_log_set_level(LogInfo[clamp(level)].av_level);
+		else {
+			level = clamp(level);
+			for(unsigned int i = 0; i < sizeof(LogInfo)/sizeof(LogInfo[0]); ++i) {
+				if(level == LogInfo[i].level) {
+					av_log_set_level(LogInfo[i].av_level);
+					return;
+				}
+			}
+		}
 	}
 
 	// Command-line help.
@@ -91,19 +164,14 @@ namespace {
 				"  -h, --help       This help text.\n"
 				"  -i, --info       Information on <ok.mp4>.\n"
 				"  -a, --analyze    Interactively analyze <ok.mp4> (waits for user input).\n"
-				"  -q, --log=quiet  Be quiet and don't log at all.\n"
+				"  -q, --log=quiet  Be quiet and log as little as possible.\n"
 				"  -v, --log        Increase logging verbosity (use multiple times).\n"
-				"  -v<n>            Set logging verbosity to <n> in range [0..8].\n"
-				"  --log=quiet      Print no output.\n"
-				"  --log=panic      Something went really wrong and we will crash now.\n"
-				"  --log=fatal      Something went wrong and recovery is not possible.\n"
-				"  --log=error      Something went wrong and cannot losslessly be recovered.\n"
-				"  --log=warning    Something somehow does not look correct.\n"
-				"  --log=info       Standard information.\n"
-				"  --log=verbose    Detailed information.\n"
-				"  --log=debug      Stuff which is only useful for developers.\n"
-				"  --log=trace      Extremely verbose debugging, useful for development.\n"
-				"\n";
+				"  -v<n>, --log=<n> Set logging verbosity to <n> in range [0..8].\n";
+		for(unsigned int i = 0; i < sizeof(LogInfo)/sizeof(LogInfo[0]); ++i) {
+			cout << "  --log=" << left << setw(18 - (sizeof("  --log=")-1)) << LogInfo[i].name
+				<< ' ' << LogInfo[i].descr << ".\n";
+		}
+		cout << '\n';
 		// size "123456789+123456789+123456789+123456789+123456789+123456789+123456789+123456" = 76 chars
 	}
 };
@@ -134,8 +202,8 @@ int main(int argc, const char *argv[]) {
 				case 'a':	analyze = true;       break;
 				case 'q':	loglvl  = LOG_QUIET;  break;
 				case 'v':	loglvl  = next(loglvl);
-							if(i+1 < arg.size() && isdigit(arg[i+1]))
-								loglvl = clmp(LogLevel(arg[++i] - '0'));
+							if(i+1 < arg.size() && setLogLevel(loglvl, arg[i+1]))
+								++i;
 							break;
 				default:	invalid = true;       break;
 				}
@@ -146,15 +214,9 @@ int main(int argc, const char *argv[]) {
 			else if(arg == "--info")        info    = true;
 			else if(arg == "--analyze")     analyze = true;
 			else if(arg == "--log")         loglvl  = next(loglvl);
-			else if(arg == "--log=quiet")   loglvl  = LOG_QUIET;
-			else if(arg == "--log=panic")   loglvl  = LOG_PANIC;
-			else if(arg == "--log=fatal")   loglvl  = LOG_FATAL;
-			else if(arg == "--log=error")   loglvl  = LOG_ERROR;
-			else if(arg == "--log=warning") loglvl  = LOG_WARNING;
-			else if(arg == "--log=info")    loglvl  = LOG_INFO;
-			else if(arg == "--log=verbose") loglvl  = LOG_VERBOSE;
-			else if(arg == "--log=debug")   loglvl  = LOG_DEBUG;
-			else if(arg == "--log=trace")   loglvl  = LOG_TRACE;
+			else if(arg.compare(0, sizeof("--log=")-1, "--log=") == 0
+					&& setLogLevel(loglvl, arg.substr(sizeof("--log=")-1)))
+				; // Level has already been set.
 			else                            invalid = true;
 		}
 		if(invalid) {
