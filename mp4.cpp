@@ -125,7 +125,7 @@ namespace {
 #endif
 		{
 			if(lvl < level)
-				av_log_set_level(lvl);
+				av_log_set_level(level);
 			av_log_set_flags(flags);
 			cout.flush();   // Flush C++ standard streams.
 			//cerr.flush();   // Unbuffered -> nothing to flush.
@@ -254,7 +254,7 @@ void Mp4::printMediaInfo() {
 		cout.flush();
 		clog.flush();
 		cout << "Media Info:\n"
-			<< "  Default stream: " << av_find_default_stream_index(context) << '\n';
+			 << "  Default stream: " << av_find_default_stream_index(context) << '\n';
 		AvLog useAvLog(AV_LOG_INFO);
 		FileRedirect redirect(stderr, stdout);
 		av_dump_format(context, 0, file_name.c_str(), 0);
@@ -480,9 +480,9 @@ void Mp4::analyze(bool interactive) {
 			int64_t begin  = mdat->readInt(offset);
 			int64_t next   = mdat->readInt(offset + 4);
 			cout << setw(8) << k
-				<< " Size: " << setw(6) << track.sizes[k]
-				<< " offset " << setw(10) << track.offsets[k]
-				<< "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next << dec << '\n';
+				 << " Size: " << setw(6) << track.sizes[k]
+				 << " offset " << setw(10) << track.offsets[k]
+				 << "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next << dec << '\n';
 		}
 
 		for(unsigned int i = 0; i < track.offsets.size(); i++) {
@@ -497,10 +497,10 @@ void Mp4::analyze(bool interactive) {
 			int64_t next  = mdat->readInt(offset + 4);
 			int64_t end   = mdat->readInt(offset + track.sizes[i] - 4);
 			cout << "\n\n>" << setw(7) << i
-				<< " Size: " << setw(6) << track.sizes[i]
-				<< " offset " << setw(10) << track.offsets[i]
-				<< "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next
-				<< " end: " << setw(8) << end << dec << '\n';
+				 << " Size: " << setw(6) << track.sizes[i]
+				 << " offset " << setw(10) << track.offsets[i]
+				 << "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next
+				 << " end: " << setw(8) << end << dec << '\n';
 
 			bool matches  = track.codec.matchSample(start, maxlength);
 			int  duration = 0;
@@ -632,7 +632,7 @@ bool Mp4::repair(string corrupt_filename) {
 #ifdef VERBOSE1
 		unsigned int next  = mdat->readInt(offset + 4);
 		clog << "Offset: " << setw(10) << offset
-			<< "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next << dec << '\n';
+			 << "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next << dec << '\n';
 #endif
 
 		// Skip fake moov.
