@@ -20,7 +20,11 @@
 
 #include "file.h"
 #include <string>
+#ifdef OSX
+#include "osx_endian.h"
+#else
 #include <endian.h>
+#endif
 
 using namespace std;
 
