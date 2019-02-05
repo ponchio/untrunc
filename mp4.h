@@ -1,3 +1,4 @@
+//==================================================================//
 /*
     Untrunc - mp4.h
 
@@ -15,48 +16,51 @@
     Suite 330, Boston, MA 02111-1307, USA.  Or www.fsf.org
 
     Copyright 2010 Federico Ponchio
-                                                                                
-                                                        */
+                                                                    */
+//==================================================================//
 
 #ifndef MP4_H
 #define MP4_H
 
 #include <vector>
 #include <string>
-#include <stdio.h>
 
 #include "track.h"
+
+
 class Atom;
-class File;
-class AVFormatContext;
+struct AVFormatContext;
+
 
 class Mp4 {
 public:
     int timescale;
     int duration;
-    Atom *root;
 
     Mp4();
     ~Mp4();
 
-    void open(std::string filename);
+    void open     (std::string filename);
+    bool repair   (std::string corrupt_filename);
+    bool save     (std::string output_filename);
+    bool saveVideo(std::string output_filename) { return save(output_filename); }
 
     void printMediaInfo();
     void printAtoms();
-    void saveVideo(std::string filename);
-	void makeStreamable(std::string filename, std::string output);
 
+    void analyze(bool interactive = true);
 
-    void analyze();
-    void writeTracksToAtoms();
-    void repair(std::string filename);
+    static bool makeStreamable(std::string filename, std::string output_filename);
 
-protected:    
-    std::vector<Track> tracks;
+protected:
+    std::string file_name;
+    Atom *root;
     AVFormatContext *context;
+    std::vector<Track> tracks;
 
-    void parseTracks();
+    void close();
+    bool parseTracks();
+    void writeTracksToAtoms();
 };
-
 
 #endif // MP4_H
