@@ -727,7 +727,7 @@ bool Mp4::repair(string corrupt_filename) {
 	}
 	mdat->start = original_mdat->start;
 #ifdef VERBOSE1
-	clog << "Replacing 'Media Data content' atom (mdat).\n"
+	clog << "Replacing 'Media Data content' atom (mdat).\n";
 #endif
 	root->replace(original_mdat, mdat);
 	//original_mdat->content.swap(mdat->content);
