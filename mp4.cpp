@@ -62,7 +62,7 @@ using namespace std;
 
 
 namespace {
-	const int MaxFrameLength = 1600000;
+	const int MaxFrameLength = 16000000;
 
 
 	// Store start-up addresses of C++ stdio stream buffers as identifiers.
