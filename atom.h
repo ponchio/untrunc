@@ -34,7 +34,7 @@ extern "C" {
 class Atom {
 public:
     int64_t start;       //including 8 header bytes
-    int64_t length;      //including 8 header bytes
+    uint64_t length;     //including 8 header bytes
     char    name[5];
     char    head[4];
     char    version[4];

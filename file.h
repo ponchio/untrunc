@@ -54,8 +54,8 @@ public:
 	off_t size();
 	off_t length() { return size(); }
 
-	int32_t readInt();
-	int64_t readInt64();
+	uint32_t readInt();
+	uint64_t readInt64();
 	void    readChar(char *dest, size_t n);
 	std::vector<unsigned char> read(size_t n);
 
