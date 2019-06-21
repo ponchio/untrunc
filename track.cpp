@@ -1022,7 +1022,7 @@ bool Track::parse(Atom *t, Atom *mdat) {
 		}
 	}
 
-#if 1
+#if 0
 	if(!mdat)
 		throw string("Missing 'Media Data container' atom (mdat)");
 
@@ -1035,11 +1035,11 @@ bool Track::parse(Atom *t, Atom *mdat) {
 		int64_t next   = mdat->readInt(offset + 4);
 		int64_t end    = mdat->readInt(offset + sizes[i] - 4);
 		// Use <iomanip> for layout.
-		clog <<  i << endl
-			<< " Size: " <<  sizes[i] << endl
-			<< " offset "  << offsets[i] << endl
-			<< "  begin: " << hex << " " << begin << ' ' << ' ' << next
-			<< " end: " << ' ' << end << dec << '\n';
+		clog << setw(8) << i
+			<< " Size: " << setw(6) << sizes[i]
+			<< " offset " << setw(10) << offsets[i]
+			<< "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next
+			<< " end: " << setw(8) << end << dec << '\n';
 	}
 	if(sizes.size() > 10)
 		clog << "...\n";
