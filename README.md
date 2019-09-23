@@ -6,64 +6,33 @@ Restore a damaged (truncated) mp4, m4v, mov, 3gp video. Provided you have a simi
 You need:
 
 * Another video file which isn't broken
-* [Libav](https://libav.org/)
+* [Libav 12](https://libav.org/)
 * Basic ability to use a command line
 
 
-## Installing on Ubuntu
-
-If you have an old Ubuntu version or other operational system, you might need to manually install a recent Libav version, go to the bottom of the page for instructions.
-
-Install some pre-requisite libraries with this command:
-
-    sudo apt-get install libavformat-dev libavcodec-dev libavutil-dev
-
-Download the source code from GitHub at https://github.com/ponchio/untrunc
-
-    wget https://github.com/ponchio/untrunc/archive/master.zip
-
-Unzip the source code:
-
-    unzip master.zip
-
-Go into the directory where it's been unzipped:
-
-    cd untrunc-master
-
-Compile the source code using this command (all one line):
-
-    g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -L/usr/local/lib -lavformat -lavcodec -lavutil
-
-
-## Installing on other operating systems (Manual Libav installation)
-
-Because Untrunc uses Libav internal headers and internal headers are not included in application development packages, you must build Libav from source.
-
-Download the [Untrunc](https://github.com/ponchio/untrunc) source code from GitHub:
-
-    wget https://github.com/ponchio/untrunc/archive/master.zip
+## Installing
 
 Download the Libav sources from either [the download page](https://libav.org/download/) or its [GitHub mirror](https://github.com/libav/libav/releases):
 
     wget https://libav.org/releases/libav-12.3.tar.xz
     [or:  wget https://github.com/libav/libav/archive/v12.3.zip ]
 
+Download the source code from GitHub at https://github.com/ponchio/untrunc
+
+    wget https://github.com/ponchio/untrunc/archive/master.zip
+
 Unzip the Untrunc source code:
 
     unzip master.zip
-
+    
 Unzip the Libav source code into the Untrunc source directory with either:
 
     tar -xJf libav-12.3.tar.xz -C untrunc-master
     [or:  unzip v12.3.zip -d untrunc-master ]
 
-Go into the directory where it's been unzipped:
+Go into the libav directory and build it:
 
-    cd untrunc-master
-
-Build the Libav library:
-
-    cd libav-12.3/
+    cd untrunc-master/libav-12.3/
     ./configure
     make
     cd ..
