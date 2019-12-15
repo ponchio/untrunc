@@ -659,6 +659,14 @@ bool Mp4::repair(string corrupt_filename) {
 			continue;
 		}
 
+		//skip free block!
+		if(start[4] == 'f' && start[5] == 'r' && start[6] == 'e' && start[7] == 'e') {
+			clog << "Skipping 'Container for all the Meta-data' atom (moov): begin: 0x"
+				 << hex << swap32(begin) << dec << ".\n";
+			offset += swap32(begin);
+			continue;
+		}
+
 		bool found = false;
 		for(unsigned int i = 0; i < tracks.size(); ++i) {
 			Track &track = tracks[i];
