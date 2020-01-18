@@ -169,7 +169,7 @@ off_t File::size() {
 }
 
 
-int32_t File::readInt() {
+uint32_t File::readUInt() {
 	uint32_t value = 0;
 	size_t n = (file) ? fread(&value, sizeof(value), 1, file) : 0;
 	if(n != 1)
@@ -179,6 +179,12 @@ int32_t File::readInt() {
 	// A compiler will optimize this to a single instruction if possible.
 	const uint8_t *p = reinterpret_cast<const uint8_t*>(&value);
 	return ((uint32_t(p[0]) << 24) | (uint32_t(p[1]) << 16) | (uint32_t(p[2]) << 8) | uint32_t(p[3]));
+}
+
+
+int32_t File::readInt() {
+	uint32_t n = readUInt();
+	return *(int32_t *)&n;
 }
 
 int64_t File::readInt64() {

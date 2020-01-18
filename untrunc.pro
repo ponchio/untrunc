@@ -18,14 +18,19 @@ SOURCES += main.cpp \
     atom.cpp \
     mp4.cpp \
     file.cpp \
-    track.cpp
+    track.cpp \
+    log.cpp \
+    codec.cpp
 
 HEADERS += \
     atom.h \
     mp4.h \
     file.h \
     track.h \
-    AP_AtomDefinitions.h
+    AP_AtomDefinitions.h \
+    log.h \
+    codec.h \
+    avlog.h
 
 INCLUDEPATH += ../libav-12.3
 LIBS += ../libav-12.3/libavformat/libavformat.a \

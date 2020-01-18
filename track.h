@@ -27,32 +27,9 @@
 #include <string>
 
 
+#include "codec.h"
+
 class Atom;
-struct AVCodecContext;
-struct AVCodec;
-
-
-class Codec {
-public:
-    std::string     name;
-    AVCodecContext *context;
-    AVCodec        *codec;
-
-    Codec();
-
-    bool parse(Atom *trak, std::vector<int> &offsets, Atom *mdat);
-    void clear();
-
-    bool matchSample(const unsigned char *start, int maxlength);
-    bool isKeyframe (const unsigned char *start, int maxlength);
-    int  getLength  (      unsigned char *start, int maxlength, int &duration);
-
-private:
-    // Used by mp4a.
-    int mask1;
-    int mask0;
-};
-
 
 class Track {
 public:

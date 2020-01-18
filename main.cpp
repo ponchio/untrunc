@@ -20,13 +20,19 @@
 
 #include "mp4.h"
 #include "atom.h"
+#include "log.h"
 
 #include <iostream>
 #include <string>
 using namespace std;
 
 void usage() {
-	cerr << "Usage: untrunc [-a -i] <ok.mp4> [<corrupt.mp4>]\n\n";
+	cout << "Usage: untrunc [-a -i -v -w] <ok.mp4> [<corrupt.mp4>]\n\n"
+		<< "	-a: test the ok video\n"
+		<< "	-q: silent\n"
+		<< "	-e: error\n"
+		<< "	-v; verbose\n"
+		<< "	-w: debug info\n\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -37,8 +43,14 @@ int main(int argc, char *argv[]) {
     for(; i < argc; i++) {
         string arg(argv[i]);
         if(arg[0] == '-') {
-            if(arg[1] == 'i') info = true;
-            if(arg[1] == 'a') analyze = true;
+            switch(arg[1]) {
+            case 'i': info = true; break;
+            case 'a': analyze = true; break;
+            case 'q': Logger::log_level = Logger::SILENT; break;
+			case 'e': Logger::log_level = Logger::ERROR; break;
+            case 'v': Logger::log_level = Logger::INFO; break;
+            case 'w': Logger::log_level = Logger::DEBUG; break;
+            }
         } else
             break;
     }
@@ -53,7 +65,7 @@ int main(int argc, char *argv[]) {
     if(i < argc)
         corrupt = argv[i];
 
-    cout << "Reading: " << ok << endl;
+    Log::info << "Reading: " << ok << endl;
     Mp4 mp4;
 
     try {
@@ -67,10 +79,12 @@ int main(int argc, char *argv[]) {
         }
         if(corrupt.size()) {
             mp4.repair(corrupt);
-            mp4.saveVideo(corrupt + "_fixed.mp4");
+			size_t lastindex = corrupt.find_last_of(".");
+			string fixed = corrupt.substr(0, lastindex);
+			mp4.saveVideo(fixed + "_fixed.mp4");
         }
     } catch(string e) {
-        cerr << e << endl;
+        Log::error << e << endl;
         return -1;
     }
     return 0;

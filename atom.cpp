@@ -21,6 +21,7 @@
 
 #include "AP_AtomDefinitions.h"
 #include "atom.h"
+#include "log.h"
 
 #include <map>
 #include <iostream>
@@ -162,24 +163,24 @@ void Atom::write(File &file) {
 void Atom::print(int offset) {
     string indent(offset, ' ');
 
-    cout << string(offset, '-') << name << " [" << start << ", " << length << "]\n";
+    Log::info << string(offset, '-') << name << " [" << start << ", " << length << "]\n";
     if(name == string("mvhd") || name == string("mdhd")) {
         //timescale: time units per second
         //duration: in time units
-        cout << indent << " Timescale: " << readInt(12) << " Duration: " << readInt(16) << '\n';
+        Log::info << indent << " Timescale: " << readInt(12) << " Duration: " << readInt(16) << '\n';
 
     } else if(name == string("tkhd")) {
         //track id:
         //duration:
-        cout << indent << " Trak: " << readInt(12) << " Duration: "  << readInt(20) << '\n';
+        Log::info << indent << " Trak: " << readInt(12) << " Duration: "  << readInt(20) << '\n';
 
     } else if(name == string("hdlr")) {
         char type[5];
         readChar(type, 8, 4);
-        cout << indent << " Type: " << type << '\n';
+        Log::info << indent << " Type: " << type << '\n';
 
     } else if(name == string("dref")) {
-        cout << indent << " Entries: " << readInt(4) << '\n';
+        Log::info << indent << " Entries: " << readInt(4) << '\n';
 
     } else if(name == string("stsd")) { //sample description: (which codec...)
         //lets just read the first entry
@@ -203,29 +204,29 @@ void Atom::print(int offset) {
         //00 04 -> length of picture parameter set
         //28 EE 16 20 -> picture parameter set. (28 ee 04 62),  (28 ee 1e 20)
 
-        cout << indent << " Entries: " << readInt(4) << " codec: " << type << '\n';
+        Log::info << indent << " Entries: " << readInt(4) << " codec: " << type << '\n';
 
     } else if(name == string("stts")) { //run length compressed duration of samples
         //lets just read the first entry
         int entries = readInt(4);
         cout << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 30; i++)
-            cout << indent << " samples: " << readInt(8 + 8*i) << " for: " << readInt(12 + 8*i) << '\n';
+            Log::info << indent << " samples: " << readInt(8 + 8*i) << " for: " << readInt(12 + 8*i) << '\n';
 
     } else if(name == string("stss")) { //sync sample: (keyframes)
         //lets just read the first entry
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << '\n';
+        Log::info << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 10; i++)
-            cout << indent << " Keyframe: " << readInt(8 + 4*i) << '\n';
+            Log::info << indent << " Keyframe: " << readInt(8 + 4*i) << '\n';
 
 
     } else if(name == string("stsc")) { //samples to chucnk:
         //lets just read the first entry
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << '\n';
+        Log::info << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 10; i++) {
-            cout << indent  << " chunk: "     << readInt( 8 + 12*i)
+            Log::info << indent  << " chunk: "     << readInt( 8 + 12*i)
                             << " nsamples: "  << readInt(12 + 12*i)
                             << " id: "        << readInt(16 + 12*i)
                             << '\n';
@@ -234,30 +235,30 @@ void Atom::print(int offset) {
     } else if(name == string("stsz")) { //sample size atoms
         int entries = readInt(8);
         int sample_size = readInt(4);
-        cout << indent << " Sample size: " << sample_size << " Entries: " << entries << '\n';
+        Log::info << indent << " Sample size: " << sample_size << " Entries: " << entries << '\n';
         if(sample_size == 0) {
             for(int i = 0; i < entries && i < 10; i++)
-                cout << indent << " Size " << readInt(12 + i*4) << '\n';
+                Log::info << indent << " Size " << readInt(12 + i*4) << '\n';
         }
 
     } else if(name == string("stco")) { //sample chunk offset atoms
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << '\n';
+        Log::info << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 10; i++)
-            cout << indent << " chunk: " << readInt(8 + i*4) << '\n';
+            Log::info << indent << " chunk: " << readInt(8 + i*4) << '\n';
 
     } else if(name == string("co64")) {
         int entries = readInt(4);
-        cout << indent << " Entries: " << entries << '\n';
+        Log::info << indent << " Entries: " << entries << '\n';
         for(int i = 0; i < entries && i < 10; i++)
-            cout << indent << " chunk: " << readInt(12 + i*8) << '\n';
+            Log::info << indent << " chunk: " << readInt(12 + i*8) << '\n';
 
     }
 
     for(unsigned int i = 0; i < children.size(); i++)
         children[i]->print(offset+1);
 
-    cout.flush();
+    Log::flush();
 }
 
 

@@ -26,6 +26,7 @@
 #include <string>
 
 #include "track.h"
+class File;
 
 
 class Atom;
@@ -42,6 +43,8 @@ public:
 
     void open     (std::string filename);
     bool repair   (std::string corrupt_filename);
+	int64_t findMdat   (File &file);
+
     bool save     (std::string output_filename);
     bool saveVideo(std::string output_filename) { return save(output_filename); }
 
