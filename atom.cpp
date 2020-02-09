@@ -35,11 +35,11 @@ using namespace std;
 namespace {
     // Read an unaligned, big-endian value.
     // A compiler will optimize this (at -O2) to a single instruction if possible.
-    template<class T> 
-    static inline T readBE(const uint8_t *p, size_t i = 0) {
-        return (i >= sizeof(T)) ? T(0) :
-                (T(*p) << ((sizeof(T) - 1 - i) * 8)) | readBE<T>(p + 1, i + 1);
-    };
+	template<class T>
+	static inline T readBE(const uint8_t *p, size_t i = 0) {
+		return (i >= sizeof(T)) ? T(0) :
+				(T(*p) << ((sizeof(T) - 1 - i) * 8)) | readBE<T>(p + 1, i + 1);
+	};
 
     template<class T>
     static inline void readBE(T &result, const uint8_t *p) { result = readBE<T>(p); };

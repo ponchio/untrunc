@@ -20,7 +20,10 @@ SOURCES += main.cpp \
     file.cpp \
     track.cpp \
     log.cpp \
-    codec.cpp
+    codec.cpp \
+    codec_rtp.cpp \
+    codec_avc1.cpp \
+    codec_mp4a.cpp
 
 HEADERS += \
     atom.h \

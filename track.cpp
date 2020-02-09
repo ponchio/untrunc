@@ -16,7 +16,7 @@
 	Suite 330, Boston, MA 02111-1307, USA.  Or www.fsf.org
 
 	Copyright 2010 Federico Ponchio
-                                                                    */
+																	*/
 //==================================================================//
 
 #include <vector>
@@ -51,10 +51,13 @@ bool Track::parse(Atom *t, Atom *mdat) {
 	cleanUp();
 
 	if(!t) {
-        Log::error << "Missing 'Container for an individual Track or stream' atom (trak).\n";
+		Log::error << "Missing 'Container for an individual Track or stream' atom (trak).\n";
 		return false;
 	}
 	trak = t;
+	Atom *tkhd = trak->atomByName("tkhd");
+	id = tkhd->readInt(12);
+
 	Atom *mdhd = t->atomByName("mdhd");
 	if(!mdhd)
 		throw string("Missing 'Media Header' atom (mdhd): Unknown duration and timescale");
@@ -62,21 +65,21 @@ bool Track::parse(Atom *t, Atom *mdat) {
 	timescale = mdhd->readInt(12);
 	duration  = mdhd->readInt(16);
 
-	times     = getSampleTimes(t);
+	getSampleTimes(t);
 	keyframes = getKeyframes  (t);
-	sizes     = getSampleSizes(t);
+	getSampleSizes(t);
 
 	vector<int> chunk_offsets   = getChunkOffsets(t);
 	vector<int> sample_to_chunk = getSampleToChunk(t, chunk_offsets.size());
 
-	if(times.size() != sizes.size()) {
-        Log::info << "Mismatch between time offsets and size offsets.\n";
-        Log::debug << "Time offsets: " << times.size() << " Size offsets: " << sizes.size() << '\n';
+	if(!default_time && !default_size && times.size() != sizes.size()) {
+		Log::info << "Mismatch between time offsets and size offsets.\n";
+		Log::debug << "Time offsets: " << times.size() << " Size offsets: " << sizes.size() << '\n';
 	}
 	//assert(times.size() == sizes.size());
-	if(times.size() != sample_to_chunk.size()) {
-        Log::info << "Mismatch between time offsets and sample_to_chunk offsets.\n";
-        Log::debug << "Time offsets: " << times.size() << " Chunk offsets: " << sample_to_chunk.size() << '\n';
+	if(!default_time && times.size() != sample_to_chunk.size()) {
+		Log::info << "Mismatch between time offsets and sample_to_chunk offsets.\n";
+		Log::debug << "Time offsets: " << times.size() << " Chunk offsets: " << sample_to_chunk.size() << '\n';
 	}
 	// Compute actual offsets.
 	int old_chunk = -1;
@@ -95,21 +98,39 @@ bool Track::parse(Atom *t, Atom *mdat) {
 	// Move this stuff into track!
 	Atom *hdlr = trak->atomByName("hdlr");
 	if(!hdlr) {
-        Log::error << "Missing 'Handler' atom (hdlr).\n";
+		Log::error << "Missing 'Handler' atom (hdlr).\n";
 		return false;
 	}
 	char type[5];
 	hdlr->readChar(type, 8, 4);
 
-	if(type != string("soun") && type != string("vide")) {
-        Log::error << "Not an Audio nor Video track.\n";
+	if(type != string("soun") && type != string("vide") && type != string("hint")) {
+		Log::info << "Not an Audio nor Video nor Hint  track: " << type << "\n";
 		return true;
 	}
+
+	Log::debug << "Track type: " << type << "\n";
+	if(type == string("hint")) {
+		Atom *hint =  trak->atomByName("hint");
+		hinted_id = hint->readInt(0);
+		hint_track = true;
+		Log::info << "Found a hint track for track: " << hinted_id << endl;
+		//return true;
+	}
+
+	if(type == string("hint")) {
+		Log::info << "Found hint track" << "\n";
+	}
+
+
 	// If audio, use next?
 	//bool audio = (type == string("soun"));
 
 	// Move this to Codec.
 	codec.parse(trak, offsets, mdat);
+	if(type == string("hint")) //no codec for hints.
+		return true;
+
 	if(!codec.context)
 		throw string("No codec context.");
 	{
@@ -119,7 +140,7 @@ bool Track::parse(Atom *t, Atom *mdat) {
 			throw string("No codec found!");
 		if(avcodec_open2(codec.context, codec.codec, NULL) < 0) {
 			throw string("Could not open codec: ")
-				+ ((codec.context->codec && codec.context->codec->name)? codec.context->codec->name : "???");
+					+ ((codec.context->codec && codec.context->codec->name)? codec.context->codec->name : "???");
 		}
 	}
 
@@ -137,10 +158,10 @@ bool Track::parse(Atom *t, Atom *mdat) {
 		int64_t end    = mdat->readInt(offset + sizes[i] - 4);
 		// Use <iomanip> for layout.
 		clog << setw(8) << i
-			<< " Size: " << setw(6) << sizes[i]
-			<< " offset " << setw(10) << offsets[i]
-			<< "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next
-			<< " end: " << setw(8) << end << dec << '\n';
+			 << " Size: " << setw(6) << sizes[i]
+				<< " offset " << setw(10) << offsets[i]
+				   << "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next
+				   << " end: " << setw(8) << end << dec << '\n';
 	}
 	if(sizes.size() > 10)
 		clog << "...\n";
@@ -164,7 +185,7 @@ void Track::writeToAtoms() {
 
 	Atom *mdhd = trak->atomByName("mdhd");
 	if(!mdhd)
-        Log::error << "Missing 'Media Header' atom (mdhd).\n";
+		Log::error << "Missing 'Media Header' atom (mdhd).\n";
 	else
 		mdhd->writeInt(duration, 16);
 
@@ -216,22 +237,25 @@ void Track::clear() {
 void Track::fixTimes() {
 	if(codec.name == "samr") {
 		times.clear();
-		times.resize(offsets.size(), 160);
-		return;
+		assert(default_time == 160);
+		//times.resize(offsets.size(), 160);
 	}
-	while(times.size() < offsets.size())
-		times.insert(times.end(), times.begin(), times.end());
-	times.resize(offsets.size());
+	if(default_time) {
+		duration = default_time * offsets.size();
+	} else {
+		while(times.size() < offsets.size())
+			times.insert(times.end(), times.begin(), times.end());
+		times.resize(offsets.size());
 
-	duration = 0;
-	for(unsigned int i = 0; i < times.size(); i++)
-		duration += times[i];
+		duration = 0;
+		for(unsigned int i = 0; i < times.size(); i++)
+			duration += times[i];
+	}
 }
 
-
-vector<int> Track::getSampleTimes(Atom *t) {
+void Track::getSampleTimes(Atom *t) {
 	assert(t != NULL);
-	vector<int> sample_times;
+	times.clear();
 	// Chunk offsets.
 	Atom *stts = t->atomByName("stts");
 	if(!stts)
@@ -241,10 +265,13 @@ vector<int> Track::getSampleTimes(Atom *t) {
 	for(int i = 0; i < entries; i++) {
 		int32_t nsamples = stts->readInt( 8 + 8*i);
 		int32_t time     = stts->readInt(12 + 8*i);
+		if(entries == 1) {
+			default_time = time;
+			break;
+		}
 		for(int i = 0; i < nsamples; i++)
-			sample_times.push_back(time);
+			times.push_back(time);
 	}
-	return sample_times;
 }
 
 vector<int> Track::getKeyframes(Atom *t) {
@@ -261,23 +288,25 @@ vector<int> Track::getKeyframes(Atom *t) {
 	return sample_key;
 }
 
-vector<int> Track::getSampleSizes(Atom *t) {
+void Track::getSampleSizes(Atom *t) {
 	assert(t != NULL);
-	vector<int> sample_sizes;
+	sizes.clear();
 	// Chunk offsets.
 	Atom *stsz = t->atomByName("stsz");
 	if(!stsz)
 		throw string("Missing 'Sample Sizes' atom (stsz)");
 
 	int32_t entries      = stsz->readInt(8);
-	int32_t default_size = stsz->readInt(4);
-	if(default_size == 0) {
+	int32_t default_size_t = stsz->readInt(4);
+
+	if(default_size_t == 0) {
 		for(int i = 0; i < entries; i++)
-			sample_sizes.push_back(stsz->readInt(12 + 4*i));
+			sizes.push_back(stsz->readInt(12 + 4*i));
 	} else {
-		sample_sizes.resize(entries, default_size);
+		default_size = default_size_t;
+		sizes.clear();
+		sizes.resize(entries, default_size);
 	}
-	return sample_sizes;
 }
 
 vector<int> Track::getChunkOffsets(Atom *t) {
@@ -300,8 +329,8 @@ vector<int> Track::getChunkOffsets(Atom *t) {
 			int32_t hi32 = co64->readInt( 8 + i*8); //high order 32-bits
 			int32_t lo32 = co64->readInt(12 + i*8); //low  order 32-bits
 			if(hi32 != 0) {
-                Log::error << "Overflow: 64-bit Chunk Offset value too large ("
-					<< ((int64_t(hi32) << 32) | uint32_t(lo32)) << ").\n";
+				Log::error << "Overflow: 64-bit Chunk Offset value too large ("
+						   << ((int64_t(hi32) << 32) | uint32_t(lo32)) << ").\n";
 			}
 			chunk_offsets.push_back(lo32);
 		}
@@ -345,13 +374,19 @@ void Track::saveSampleTimes() {
 	assert(stts);
 	if(!stts)
 		return;
+	int nentries = default_time? 1 : times.size();
 	stts->content.resize(4 +                //version
 						 4 +                //entries
-						 8*times.size());   //time table
-	stts->writeInt(times.size(), 4);
-	for(unsigned int i = 0; i < times.size(); i++) {
-		stts->writeInt(1, 8 + 8*i);
-		stts->writeInt(times[i], 12 + 8*i);
+						 8*nentries);   //time table
+	stts->writeInt(nentries, 4);
+	if(default_time) {
+		stts->writeInt(times.size(), 8);
+		stts->writeInt(default_time, 12);
+	} else {
+		for(unsigned int i = 0; i < times.size(); i++) {
+			stts->writeInt(1, 8 + 8*i);
+			stts->writeInt(times[i], 12 + 8*i);
+		}
 	}
 }
 

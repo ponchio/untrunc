@@ -12,22 +12,45 @@ struct AVCodecContext;
 struct AVCodec;
 class Atom;
 
+//TODO if we have some probability...
+struct Match {
+	uint32_t id = 0;
+	uint32_t length = 0;
+	uint32_t duration = 0; //audio often provide a duration for the packet.
+	float chances = 0.0f; //1/chances is the probability to NOT be a match
+	bool keyframe = false;
+};
+
 class Codec {
 public:
 	std::string     name;
 	AVCodecContext *context;
 	AVCodec        *codec;
 
+	/* Codec properties */
+	bool pcm = false;
+	bool knows_start = false;
+	bool guess_start = false;
+	bool knows_length = false;
+
 	Codec();
 
 	bool parse(Atom *trak, std::vector<int> &offsets, Atom *mdat);
 	void clear();
 
-	bool matchSample(const unsigned char *start, int maxlength);
-	bool isKeyframe (const unsigned char *start, int maxlength);
-	int  getLength  (      unsigned char *start, int maxlength, int &duration);
+	Match match(const unsigned char *start, int maxlength);
+
+//	bool matchSample(const unsigned char *start, int maxlength);
+//	bool isKeyframe (const unsigned char *start, int maxlength);
+//	int  getLength  (      unsigned char *start, int maxlength, int &duration);
 
 private:
+	Match rtpMatch(const unsigned char *start, int maxlength);
+	Match avc1Match(const unsigned char *start, int maxlength);
+	Match mp4aMatch(const unsigned char *start, int maxlength);
+
+
+
 	// Used by mp4a.
 	int mask1;
 	int mask0;
