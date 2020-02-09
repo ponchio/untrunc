@@ -169,7 +169,7 @@ off_t File::size() {
 }
 
 
-int32_t File::readInt() {
+uint32_t File::readInt() {
 	uint32_t value = 0;
 	size_t n = (file) ? fread(&value, sizeof(value), 1, file) : 0;
 	if(n != 1)
@@ -181,7 +181,7 @@ int32_t File::readInt() {
 	return ((uint32_t(p[0]) << 24) | (uint32_t(p[1]) << 16) | (uint32_t(p[2]) << 8) | uint32_t(p[3]));
 }
 
-int64_t File::readInt64() {
+uint64_t File::readInt64() {
 	uint64_t value = 0;
 	size_t n = (file) ? fread(&value, sizeof(value), 1, file) : 0;
 	if(n != 1)
