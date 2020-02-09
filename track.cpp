@@ -505,7 +505,7 @@ bool Codec::parse(Atom *trak, vector<int> &offsets, Atom *mdat) {
 	mask0 = 0xffffffff;
 	// Build the mask:
 	for(unsigned int i = 0; i < offsets.size(); i++) {
-		int offset = offsets[i];
+		uint32_t offset = offsets[i];
 		if(offset < mdat->start || offset - mdat->start > mdat->length)
 			throw string("Invalid offset in track!");
 
