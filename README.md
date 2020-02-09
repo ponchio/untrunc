@@ -9,6 +9,10 @@ You need:
 * [Libav 12](https://libav.org/)
 * Basic ability to use a command line
 
+## Installing on CentOS 7
+
+    yum install https://extras.getpagespeed.com/release-el7-latest.rpm
+    yum install untrunc
 
 ## Installing
 
