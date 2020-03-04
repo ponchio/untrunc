@@ -1,36 +1,41 @@
 #include "codec.h"
 #include "log.h"
+#include "avlog.h"
 
 using namespace std;
 
 Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 
+
 	Match match;
+
+	if(!context)
+		return match;
 
 	//leftover!
 	/*if(s > 1000000) {
 		Log::debug << "mp4a: Success because of large s value.\n";
 		return true;
 	}*/
-	// XXX Horrible Hack: These values might need to be changed depending on the file. XXX
-	if((start[4] == 0xee && start[5] == 0x1b) ||
-			(start[4] == 0x3e && start[5] == 0x64) )
-	{
-		Log::debug << "mp4a: Success because of horrible hack.\n";
-		return true;
-	}
 
 	if(start[0] == 0) {
 		Log::debug << "mp4a: Failure because of NULL header.\n";
-		return false;
+		return match;
 	}
-	Log::debug << "mp4a: Success for no particular reason....\n";
-	return true;
+
+	// XXX Horrible Hack: These values might need to be changed depending on the file. XXX
+	if((start[4] == 0xee && start[5] == 0x1b) ||
+			(start[4] == 0x3e && start[5] == 0x64) ) {
+		match.chances = 32000;
+		Log::debug << "mp4a: Success because of horrible hack.\n";
+	}
 
 
+	uint32_t duration = 0;
+	Log::error << "TO BE IMPLEMENTED" << "\n";
+	exit(0);
 
-	if(!context)
-		return -1;
+	/*
 
 	int consumed = -1;
 	{
@@ -40,7 +45,7 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 			throw string("Could not create AVFrame");
 		AVPacket avp;
 		av_init_packet(&avp);
-		avp.data = start;
+		avp.data = (uint8_t *)start;
 		avp.size = maxlength;
 		int got_frame = 0;
 		consumed = avcodec_decode_audio4(context, frame, &got_frame, &avp);
@@ -49,7 +54,6 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 				duration = frame->nb_samples;
 			// Flush decoder to receive buffered packets.
 			if(consumed <= 0 || duration <= 0) {
-				Log::debug << "Flush " << name << " decoder.\n";
 				got_frame = 0;
 				av_packet_unref(&avp);
 				av_frame_unref(frame);
@@ -67,6 +71,7 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 	}
 	Log::debug << "Duration: " << duration << '\n';
 	match.length = consumed;
+*/
 	return match;
 }
 

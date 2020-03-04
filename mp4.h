@@ -51,7 +51,7 @@ public:
     void printMediaInfo();
     void printAtoms();
 
-    void analyze(bool interactive = true);
+	void analyze(int analyze_track = -1, bool interactive = true);
 
     static bool makeStreamable(std::string filename, std::string output_filename);
 

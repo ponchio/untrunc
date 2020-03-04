@@ -345,6 +345,11 @@ void Atom::contentResize(size_t newsize) {
     content.resize(newsize);
 }
 
+int16_t Atom::readInt16(int64_t offset) {
+	assert(offset >= 0 && content.size() >= uint64_t(offset) + 2);
+	return readBE<int16_t>(&content[offset]);
+
+}
 
 int32_t Atom::readInt(int64_t offset) {
     assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);

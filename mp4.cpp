@@ -455,7 +455,7 @@ bool Mp4::save(string output_filename) {
 	return true;
 }
 
-void Mp4::analyze(bool interactive) {
+void Mp4::analyze(int analyze_track, bool interactive) {
 	Log::info << "Analyze:\n";
 	if(!root) {
 		Log::error << "No file opened.\n";
@@ -486,6 +486,8 @@ void Mp4::analyze(bool interactive) {
 	}
 
 	for(unsigned int i = 0; i < tracks.size(); ++i) {
+		if(analyze_track != -1 && i != analyze_track)
+			continue;
 		Log::info << "\n\nTrack " << i << endl;
 		Track &track = tracks[i];
 
@@ -497,7 +499,8 @@ void Mp4::analyze(bool interactive) {
 		Log::info << "Keyframes  : " << track.keyframes.size() << "\n\n";
 		if(track.codec.pcm) {
 			Log::info << "PCM codec, skipping keyframes\n\n";
-
+		} else if(track.default_size) {
+			Log::info << "Default size packets, skipping keyframes\n\n";
 		} else {
 			for(unsigned int i = 0; i < track.keyframes.size(); ++i) {
 				int k = track.keyframes[i];
@@ -510,7 +513,47 @@ void Mp4::analyze(bool interactive) {
 								 << "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next << dec << '\n';
 			}
 		}
-// if codec is pcm type, it might be encode each sample (1-4) bytes as a packet (AARGH!)
+
+		if(track.default_size) {
+			Log::info << "Constant size for packet: " << track.default_size << "\n";
+		} else {
+			Log::info << "Sizes for packets: " << "\n";
+			for(int i = 0; i < 10 && i < track.sizes.size(); i++) {
+				Log::info << track.sizes[i] << " ";
+			}
+			Log::info << "\n";
+		}
+\
+		if(track.default_time) {
+			Log::info << "Constant time for packet: " << track.default_time << endl;
+		}
+
+		if(track.default_size) {
+			if(!track.codec.pcm) {
+				Log::info << "Not a PCM codec, no idea how to deal width it.\n";
+				continue;
+			}
+			for(Track::Chunk &chunk: track.chunks) {
+				int64_t offset = chunk.offset - (mdat->start + 8);
+
+				int64_t maxlength64 = mdat->contentSize() - offset;
+				if(maxlength64 > MaxFrameLength)
+					maxlength64 = MaxFrameLength;
+				int maxlength = static_cast<int>(maxlength64);
+
+				int32_t begin = mdat->readInt(offset);
+				int32_t next  = mdat->readInt(offset + 4);
+				int32_t end   = mdat->readInt(offset + track.getSize(i) - 4);
+
+				Log::info << " Size: " << setw(6) << chunk.size
+						<< " offset " << setw(10) << chunk.offset
+						<< "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
+						<< " end: " << setw(8) << end << dec << '\n';
+			}
+		}
+
+
+
 		for(unsigned int i = 0; i < track.offsets.size(); ++i) {
 
 			int64_t offset = track.offsets[i] - (mdat->start + 8);
@@ -522,43 +565,26 @@ void Mp4::analyze(bool interactive) {
 
 			int32_t begin = mdat->readInt(offset);
 			int32_t next  = mdat->readInt(offset + 4);
-			int32_t end   = mdat->readInt(offset + track.getSize(i) - 4);
-			Log::debug << "\n\n>" << setw(7) << i
-					   << " Size: " << setw(6) << track.getSize(i)
-						  << " offset " << setw(10) << track.offsets[i]
-							 << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
-							 << " end: " << setw(8) << end << dec << '\n';
+			Log::info << " Size: " << setw(6) << track.getSize(i)
+					<< " offset " << setw(10) << track.offsets[i]
+					<< "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
+					<<  dec << '\n';
 
-			Log::flush();  // Flush here untill track code is fixed.
-			bool matches  = track.codec.matchSample(start, maxlength);
-			int  duration = 0;
-			int  length   = track.codec.getLength(start, maxlength, duration);
-			// TODO: Check if duration is working with the stts duration.
-			Log::debug << "Length: " << length << " true-length: " << track.getSize(i) << '\n';
+			Match match = track.codec.match(start, maxlength);
+			if(match.length == track.sizes[i])
+				continue;
 
-			bool wait = false;
-			if(!matches) {
+			if(match.length == 0) {
 				Log::error << "- Match failed!\n";
-				wait = interactive;
-			}
-			if(length != track.getSize(i)) {
-				Log::error << "- Length mismatch!\n";
-				wait = interactive;
-			}
-			if(length < -1 || length > MaxFrameLength) {
+			} else if(match.length < 0 || match.length > MaxFrameLength) {
 				Log::error << "- Invalid length!\n";
-				wait = interactive;
+			} else {
+				Log::error << "- Length mismatch!\n";
 			}
-			if(wait) {
-				// cout and clog have already been flushed by cerr.
+
+			if(interactive) {
 				Log::info << "  <Press [Enter] for next match>\r";
 				cin.ignore(numeric_limits<streamsize>::max(), '\n');
-			}
-			//assert(matches);
-			//assert(length == track.sizes[i]);
-			if(track.codec.pcm) {
-				Log::info << "No point keeping with fixed length packets\n";
-				//break;
 			}
 		}
 	}
@@ -683,17 +709,27 @@ bool Mp4::repair(string corrupt_filename) {
 	for(unsigned int i = 0; i < tracks.size(); ++i)
 		tracks[i].clear();
 
-	// mp4a is more reliable than avc1.
-	if(tracks.size() > 1 && tracks[0].codec.name != "mp4a" && tracks[1].codec.name == "mp4a") {
-		Log::debug << "Swapping tracks: track 0 (" << tracks[0].codec.name << ") <-> track 1 (mp4a).\n";
-		swap(tracks[0], tracks[1]);
-	}
 
 	// mp4a can be decoded and reports the number of samples (duration in samplerate scale).
 	// In some videos the duration (stts) can be variable and we can rebuild them using these values.
 	vector<int> audiotimes;
 	unsigned long count = 0;
 	off_t offset = 0;
+	//skip initial zeros
+	{
+		int64_t maxlength64 = mdat->contentSize() - offset;
+		if(maxlength64 > MaxFrameLength)
+			maxlength64 = MaxFrameLength;
+		unsigned char *start = mdat->getFragment(offset, maxlength64);
+		int maxlength = static_cast<int>(maxlength64);
+
+		unsigned int begin = mdat->readInt(offset);
+		while(begin == 0 && offset < maxlength-4) {
+			offset++;
+			begin = mdat->readInt(offset);
+		}
+	}
+
 	while(offset < mdat->contentSize()) {
 		//unsigned char *start = &mdat->content[offset];
 		int64_t maxlength64 = mdat->contentSize() - offset;
@@ -744,22 +780,56 @@ bool Mp4::repair(string corrupt_filename) {
 		//if no match assume is a non matchable for wich we know length.
 		//search for a beginning
 		//backtrace otherwise
-		bool found = false;
-		std::vector<Match> lengths;
+		int found = 0;
+		int step = 1;
+		std::vector<Match> matches;
 		for(unsigned int i = 0; i < tracks.size(); ++i) {
 			Track &track = tracks[i];
 
-			if(track.codec.matchSample(start, maxlength) || track.codec.guess_start) {
-				Match m = track.codec.match(start, maxlength);
-				m.id = i;
-				lengths.push_back(m);
+			Match m = track.codec.match(start, maxlength);
+			m.id = i;
+			matches.push_back(m);
+			if(track.codec.pcm)
+				step = track.codec.pcm_bytes_per_sample;
+			if(m.chances >= 1024 && m.length > 0)
+				found++;
+		}
+		//do this only for the first packet
+		step = 1;
+		Match best;
+		if(found == 0) {
+			//lets' hope is the one with still chances > 0
+			for(unsigned int i = 0; i < matches.size(); ++i) {
+				if(matches[i].chances > 0) {
+					//try typical lengths for chunks otherwise scan.
+					for(unsigned int t = 0; t < tracks.size(); t++) {
+						if(t == i) continue;
+						int candidate = tracks[t].codec.search(start+k, maxlength-k);
+						if(m.length > 0 && m.chances > 1024) {
+							//we found the end!
+							matches[i].length = k;
+							best = matches[i];
+						}
+					}
+				}
+			}
+		} else { //pick the best!
+			for(unsigned int i = 0; i < matches.size(); ++i) {
+				if(matches[i].chances >= 1024) {
+					Log::debug << "Found for track: " << i
+								<< "  offset: " << setw(10) << offset
+								<< "  start:" << hex << setw(8) << swap32(begin) << dec
+								<< "  length: " << matches[i].length << "\n";
+					best = matches[i];
+				}
 			}
 		}
-
+		offset += best.length;
 
 
 		int audio_duration = 0;
 
+		/*
 
 		for(unsigned int i = 0; i < tracks.size(); ++i) {
 			Track &track = tracks[i];
@@ -806,15 +876,14 @@ bool Mp4::repair(string corrupt_filename) {
 
 			found = true;
 			break;
-		}
+		} */
 
 		if(!found) {
 			// This could be a problem for large files.
 			//assert(mdat->contentSize() + 8 == mdat->length);
 			mdat->file_end = mdat->file_begin + offset;
 			mdat->length   = mdat->file_end - mdat->file_begin;
-			//mdat->content.resize(offset);
-			//mdat->length = mdat->contentSize() + 8;
+
 			break;
 		}
 		count++;

@@ -34,13 +34,14 @@ using namespace std;
 
 
 // Track.
-Track::Track() : trak(NULL), timescale(0), duration(0) { }
+Track::Track() : trak(nullptr), timescale(0), duration(0) { }
 
 void Track::cleanUp() {
 	trak      = NULL;
 	timescale = 0;
 	duration  = 0;
 	offsets.clear();
+	chunks.clear();
 	sizes.clear();
 	keyframes.clear();
 	times.clear();
@@ -62,38 +63,57 @@ bool Track::parse(Atom *t, Atom *mdat) {
 	if(!mdhd)
 		throw string("Missing 'Media Header' atom (mdhd): Unknown duration and timescale");
 
+	//required before getting other properties (it reads stsd)
+	codec.parse(trak);
+
 	timescale = mdhd->readInt(12);
 	duration  = mdhd->readInt(16);
 
 	getSampleTimes(t);
-	keyframes = getKeyframes  (t);
+	getKeyframes  (t);
 	getSampleSizes(t);
 
-	vector<int> chunk_offsets   = getChunkOffsets(t);
-	vector<int> sample_to_chunk = getSampleToChunk(t, chunk_offsets.size());
+	if(default_size) {
+		Log::debug << "Default size: " << default_size << endl;
+	}
+
+	getChunkOffsets(t);
+	getSampleToChunk(t);
 
 	if(!default_time && !default_size && times.size() != sizes.size()) {
 		Log::info << "Mismatch between time offsets and size offsets.\n";
 		Log::debug << "Time offsets: " << times.size() << " Size offsets: " << sizes.size() << '\n';
 	}
 	//assert(times.size() == sizes.size());
-	if(!default_time && times.size() != sample_to_chunk.size()) {
+/*	if(!default_time && times.size() != sample_to_chunk.size()) {
 		Log::info << "Mismatch between time offsets and sample_to_chunk offsets.\n";
 		Log::debug << "Time offsets: " << times.size() << " Chunk offsets: " << sample_to_chunk.size() << '\n';
-	}
+	} */
 	// Compute actual offsets.
-	int old_chunk = -1;
+/*	int old_chunk = -1;
 	int offset = -1;
-	for(unsigned int i = 0; i < sizes.size(); i++) {
-		int chunk = sample_to_chunk[i];
-		int size = sizes[i];
-		if(chunk != old_chunk) {
-			offset = chunk_offsets[chunk];
-			old_chunk= chunk;
+	if(sizes.size()) {
+		for(unsigned int i = 0; i < sizes.size(); i++) {
+			int chunk = sample_to_chunk[i];
+			int size = sizes[i];
+			if(chunk != old_chunk) {
+				offset = chunk_offsets[chunk];
+				old_chunk= chunk;
+			}
+			offsets.push_back(offset);
+			offset += size;
 		}
-		offsets.push_back(offset);
-		offset += size;
-	}
+	} else {
+		for(unsigned int i = 0; i < sample_to_chunk.size(); i++) {
+			int chunk = sample_to_chunk[i];
+			if(chunk != old_chunk) {
+				offset = chunk_offsets[chunk];
+				old_chunk= chunk;
+			}
+			offsets.push_back(offset);
+			offset += default_size;
+		}
+	} */
 
 	// Move this stuff into track!
 	Atom *hdlr = trak->atomByName("hdlr");
@@ -126,8 +146,6 @@ bool Track::parse(Atom *t, Atom *mdat) {
 	// If audio, use next?
 	//bool audio = (type == string("soun"));
 
-	// Move this to Codec.
-	codec.parse(trak, offsets, mdat);
 	if(type == string("hint")) //no codec for hints.
 		return true;
 
@@ -241,7 +259,7 @@ void Track::fixTimes() {
 		//times.resize(offsets.size(), 160);
 	}
 	if(default_time) {
-		duration = default_time * offsets.size();
+		duration = default_time * nsamples;
 	} else {
 		while(times.size() < offsets.size())
 			times.insert(times.end(), times.begin(), times.end());
@@ -274,18 +292,18 @@ void Track::getSampleTimes(Atom *t) {
 	}
 }
 
-vector<int> Track::getKeyframes(Atom *t) {
+void Track::getKeyframes(Atom *t) {
 	assert(t != NULL);
-	vector<int> sample_key;
+	vector<int> keyframes;
 	// Chunk offsets.
 	Atom *stss = t->atomByName("stss");
 	if(!stss)
-		return sample_key;
+		return;
 
 	int32_t entries = stss->readInt(4);
 	for(int i = 0; i < entries; i++)
-		sample_key.push_back(stss->readInt(8 + 4*i) - 1);
-	return sample_key;
+		keyframes.push_back(stss->readInt(8 + 4*i) - 1);
+	return;
 }
 
 void Track::getSampleSizes(Atom *t) {
@@ -296,51 +314,46 @@ void Track::getSampleSizes(Atom *t) {
 	if(!stsz)
 		throw string("Missing 'Sample Sizes' atom (stsz)");
 
-	int32_t entries      = stsz->readInt(8);
+	nsamples      = stsz->readInt(8);
 	int32_t default_size_t = stsz->readInt(4);
 
 	if(default_size_t == 0) {
-		for(int i = 0; i < entries; i++)
+		for(int i = 0; i < nsamples; i++)
 			sizes.push_back(stsz->readInt(12 + 4*i));
 	} else {
 		default_size = default_size_t;
-		sizes.clear();
-		sizes.resize(entries, default_size);
 	}
 }
 
-vector<int> Track::getChunkOffsets(Atom *t) {
+void Track::getChunkOffsets(Atom *t) {
 	assert(t != NULL);
-	vector<int> chunk_offsets;
-	// Chunk offsets.
+
+	int32_t nchunks = 0;
+
 	Atom *stco = t->atomByName("stco");
+	if(stco)
+		nchunks = stco->readInt(4);
+
+	Atom *co64 = t->atomByName("co64");
+	if(co64)
+		nchunks = co64->readInt(4);
+
+	if(nchunks == 0)
+		throw string("Missing both 'Chunk Offset' atoms (stco & co64) or no chunks!");
+
+	chunks.resize(nchunks);
 	if(stco) {
-		int32_t nchunks = stco->readInt(4);
 		for(int i = 0; i < nchunks; i++)
-			chunk_offsets.push_back(stco->readInt(8 + i*4));
-
+			chunks[i].offset = stco->readInt(8 + i*4);
 	} else {
-		Atom *co64 = t->atomByName("co64");
-		if(!co64)
-			throw string("Missing both 'Chunk Offset' atoms (stco & co64)");
-
-		int32_t nchunks = co64->readInt(4);
-		for(int i = 0; i < nchunks; i++) {
-			int32_t hi32 = co64->readInt( 8 + i*8); //high order 32-bits
-			int32_t lo32 = co64->readInt(12 + i*8); //low  order 32-bits
-			if(hi32 != 0) {
-				Log::error << "Overflow: 64-bit Chunk Offset value too large ("
-						   << ((int64_t(hi32) << 32) | uint32_t(lo32)) << ").\n";
-			}
-			chunk_offsets.push_back(lo32);
-		}
+		for(int i = 0; i < nchunks; i++)
+			chunks[i].offset = co64->readInt64(8 + i*8);
 	}
-	return chunk_offsets;
+	return;
 }
 
-vector<int> Track::getSampleToChunk(Atom *t, int nchunks){
+void Track::getSampleToChunk(Atom *t){
 	assert(t != NULL);
-	vector<int> sample_to_chunk;
 
 	Atom *stsc = t->atomByName("stsc");
 	if(!stsc)
@@ -349,21 +362,38 @@ vector<int> Track::getSampleToChunk(Atom *t, int nchunks){
 	vector<int> first_chunks;
 	int32_t entries = stsc->readInt(4);
 	for(int i = 0; i < entries; i++)
-		first_chunks.push_back(stsc->readInt(8 + 12*i));
-	first_chunks.push_back(nchunks+1);
+		first_chunks.push_back(stsc->readInt(8 + 12*i)-1);
 
+	//assert(first_chunks.back() == chunks.size());
+
+	int32_t count = 0;
 	for(int i = 0; i < entries; i++) {
-		int first_chunk = first_chunks[i];
-		int last_chunk  = first_chunks[i + 1];
-		int32_t nsamples = stsc->readInt(12 + 12*i);
-
+		int first_chunk  = first_chunks[i];
+		int last_chunk =  (i == entries-1)? chunks.size() : first_chunks[i+1];
 		for(int k = first_chunk; k < last_chunk; k++) {
-			for(int j = 0; j < nsamples; j++)
-				sample_to_chunk.push_back(k - 1);
-		}
-	}
+			chunks[k].first_sample = count;
+			chunks[k].nsamples = stsc->readInt(12 + 12*i);
 
-	return sample_to_chunk;
+			if(default_size) {
+				assert(codec.pcm_bytes_per_sample > 0);
+				chunks[k].size = chunks[k].nsamples * codec.pcm_bytes_per_sample;
+				count += chunks[k].nsamples ;
+
+			} else {
+				uint64_t offset = chunks[k].offset;
+				for(int s = 0; s < chunks[k].nsamples; s++) {
+					int32_t size = sizes[count++];
+					chunks[k].size += size;
+					offsets.push_back(offset);
+					offset += size;
+				}
+			}
+		}
+		first_chunk = last_chunk;
+	}
+	assert(count == nsamples);
+
+	return;
 }
 
 

@@ -76,9 +76,10 @@ void H264sps::parseSPS(const uint8_t *data, int size) {
 
 
 class NalInfo {
-	static const int MaxAVC1Length = 8 * (1 << 20);
 
 public:
+	static const int MaxAVC1Length = 8 * (1 << 20);
+
 	int length;
 
 	int ref_idc;
@@ -340,7 +341,22 @@ bool NalInfo::getNalInfo(const H264sps &sps, uint32_t maxlength, const uint8_t *
 
 
 
-
+int Codec::avc1Search(const unsigned char *start, int maxlength) {
+	for(int offset = 0; offset < maxlength - 8; offset++) {
+		if(start[offset] != 0)
+			continue;
+		uint32_t len = readBE<uint32_t>(start + offset);
+		if(len < 8 || len > NalInfo::MaxAVC1Length)
+			continue;
+		if(start[4] & (1 << 7))
+			continue;
+		int nal_type = start[4] & 0x1f;
+		if(nal_type > 21)
+			continue;
+		//this looks like it might be a packet. might want to do a more thorough check.
+		return offset;
+	}
+}
 
 
 Match Codec::avc1Match(const unsigned char *start, int maxlength) {
@@ -358,7 +374,7 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 
 	//First 4 bytes is the length the the packet and it's expected not to be bigger than 16M
 	if(start[0] != 0) {
-		Log::debug << "avc1: Match with 0 header.\n";
+//		Log::debug << "avc1: Match with 0 header.\n";
 		return match;
 	}
 
@@ -382,7 +398,7 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 	//     NAL_PREFIX            = 14,
 	//     NAL_SUB_SPS           = 15,
 	//     NAL_DPS               = 16,
-	//     NAL_AUXILIARY_SLICE   = 19,
+	//     NAL_AUXILIARY_SLICE   = 19,best
 	//     NAL_EXTEN_SLICE       = 20,
 	//     NAL_DEPTH_EXTEN_SLICE = 21,
 	//
@@ -468,7 +484,7 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 	while(true) {
 		NalInfo info;
 		bool ok = info.getNalInfo(sps, maxlength, pos);
-		match.chances *= 1024;
+		match.chances = 1024;
 		if(!ok) {
 			//THIS should never happens, but it happens
 			if(first_pack) {

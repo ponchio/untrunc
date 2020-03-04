@@ -14,9 +14,6 @@
 using namespace std;
 
 
-
-
-
 // Codec.
 Codec::Codec() : context(NULL), codec(NULL), mask1(0), mask0(0) { }
 
@@ -28,7 +25,7 @@ void Codec::clear() {
 	mask0   = 0;
 }
 
-bool Codec::parse(Atom *trak, vector<int> &offsets, Atom *mdat) {
+bool Codec::parse(Atom *trak) {
 	Atom *stsd = trak->atomByName("stsd");
 	if(!stsd) {
 		Log::error << "Missing 'Sample Descriptions' atom (stsd).\n";
@@ -42,23 +39,7 @@ bool Codec::parse(Atom *trak, vector<int> &offsets, Atom *mdat) {
 	stsd->readChar(codec_name, 12, 4);
 	name = codec_name;
 
-	// This was a stupid attempt at trying to detect packet type based on bitmasks.
-	mask1 = 0xffffffff;
-	mask0 = 0xffffffff;
-	// Build the mask:
-	for(unsigned int i = 0; i < offsets.size(); i++) {
-		int offset = offsets[i];
-		if(offset < mdat->start || offset - mdat->start > mdat->length)
-			throw string("Invalid offset in track!");
-
-		int32_t s = mdat->readInt(offset - mdat->start - 8);
-		mask1 &=  s;
-		mask0 &= ~s;
-
-		assert((s & mask1) == mask1);
-		assert((~s & mask0) == mask0);
-	}
-	if( name == "raw " || //unsigned, linear PCM. 16-bit data is stored in little endian format.
+	if(name == "raw " || //unsigned, linear PCM. 8-bit data
 		name == "twos" || //signed (i.e. twos-complement) linear PCM. 16-bit data is stored in big endian format.
 		name == "sowt" || //signed linear PCM. However, 16-bit data is stored in little endian format.
 		name == "in24" || //24-bit, big endian, linear PCM.
@@ -66,15 +47,27 @@ bool Codec::parse(Atom *trak, vector<int> &offsets, Atom *mdat) {
 		name == "fl32" || //32-bit floating point PCM. (Presumably IEEE 32-bit; byte order?)
 		name == "fl64" || //64-bit floating point PCM. (Presumably IEEE 64-bit; byte order?)
 		name == "alaw" || //A-law logarithmic PCM.
-		name == "ulaw") {//mu-law logarithmic PCM.
+		name == "ulaw") {
+			pcm = true;
+	}
 
-		pcm = true;
-		knows_start = guess_start = knows_length = false;
-		//some videos has all the same lenght groups of packets.. check!
-
-	} else if(name == "avc1" || name == "mp4v") {
-		guess_start = knows_length = true;
-	} else if(name == "") {
+	if(pcm) {
+		//first entry 8 is length 12 is codec
+		//then 16 data format and 22 for refence index
+		int16_t version = stsd->readInt16(24);
+		int16_t pcm_channels = stsd->readInt16(32);
+		int16_t pcm_channel_bits = stsd->readInt16(34);
+		if(version == 0) {
+			pcm_bytes_per_sample = pcm_channels * pcm_channel_bits/8;
+		} else if(version == 1) {
+			//int32_t bytes_per_packet = stsd->readInt(44);
+			//int32_t bytes_per_frame = stsd->readInt(48);
+			pcm_bytes_per_sample = stsd->readInt(52);
+		} else if(version == 2) {
+			//TODO verify this number!
+			pcm_bytes_per_sample = stsd->readInt(24 + 13*4);
+			assert(pcm_bytes_per_sample < 128);
+		}
 
 	}
 	return true;
@@ -90,9 +83,15 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 	if(name == "avc1") {
 		return avc1Match(start, maxlength);
 	}
+	if(name == "mp4a") {
+		return mp4aMatch(start, maxlength);
+	}
+	if(pcm) {
+		return pcmMatch(start, maxlength);
+	}
 }
 
-
+/*
 
 bool Codec::matchSample(const unsigned char *start, int maxlength) {
 	int32_t s = readBE<int32_t>(start);
@@ -266,4 +265,4 @@ bool Codec::isKeyframe(const unsigned char *start, int maxlength) {
 		return (start[4] & 0x1F) == 5;
 	} else
 		return false;
-}
+} */

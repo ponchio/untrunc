@@ -63,6 +63,7 @@ public:
     static bool isDual     (const char *id);
     static bool isVersioned(const char *id);
 
+	virtual int16_t readInt16(int64_t offset);
     virtual int32_t readInt  (int64_t offset);
     virtual int64_t readInt64(int64_t offset);
     void writeInt  (int32_t value, int64_t offset);

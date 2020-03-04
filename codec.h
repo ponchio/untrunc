@@ -28,6 +28,7 @@ public:
 	AVCodec        *codec;
 
 	/* Codec properties */
+	uint32_t pcm_bytes_per_sample = 0; //sample size.
 	bool pcm = false;
 	bool knows_start = false;
 	bool guess_start = false;
@@ -35,19 +36,19 @@ public:
 
 	Codec();
 
-	bool parse(Atom *trak, std::vector<int> &offsets, Atom *mdat);
+	bool parse(Atom *trak);
 	void clear();
 
 	Match match(const unsigned char *start, int maxlength);
-
-//	bool matchSample(const unsigned char *start, int maxlength);
-//	bool isKeyframe (const unsigned char *start, int maxlength);
-//	int  getLength  (      unsigned char *start, int maxlength, int &duration);
+	Match search(const unsigned char *start, int maxlength);
 
 private:
 	Match rtpMatch(const unsigned char *start, int maxlength);
 	Match avc1Match(const unsigned char *start, int maxlength);
 	Match mp4aMatch(const unsigned char *start, int maxlength);
+	Match pcmMatch(const unsigned char *start, int maxlength);
+
+	int avc1Search(const unsigned char *start, int maxlength);
 
 
 

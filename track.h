@@ -43,12 +43,27 @@ public:
 	Codec codec;
 
 	int default_time = 0;
-	int default_size = 0;
 	std::vector<int> times;
-	std::vector<int> sizes;
+
+	//if default size we work using chunks
+	int32_t nsamples;
+	int default_size = 0;
+	std::vector<int32_t> sizes;
+	std::vector<int64_t> offsets; //populated only if not default size
 
 	std::vector<int> keyframes; // 0 based!
-	std::vector<int> offsets;   // Should be 64-bit!
+
+	//std::vector<int> chunk_offsets;
+	//std::vector<int> sample_to_chunk;
+
+	struct Chunk {
+		uint64_t offset = 0;
+		int32_t size = 0;
+		int32_t nsamples = 0;
+		int32_t first_sample = 0;
+	};
+
+	std::vector<Chunk> chunks;
 
 	Track();
 
@@ -65,9 +80,9 @@ protected:
 	void getSampleTimes  (Atom *t);
 	void getSampleSizes  (Atom *t);
 
-	std::vector<int> getKeyframes    (Atom *t);
-	std::vector<int> getChunkOffsets (Atom *t);
-	std::vector<int> getSampleToChunk(Atom *t, int nchunks);
+	void getKeyframes    (Atom *t);
+	void getChunkOffsets (Atom *t);
+	void getSampleToChunk(Atom *t);
 
 	void saveSampleTimes();
 	void saveKeyframes();
