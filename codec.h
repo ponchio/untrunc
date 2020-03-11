@@ -12,13 +12,18 @@ struct AVCodecContext;
 struct AVCodec;
 class Atom;
 
-//TODO if we have some probability...
 struct Match {
 	uint32_t id = 0;
 	uint32_t length = 0;
 	uint32_t duration = 0; //audio often provide a duration for the packet.
 	float chances = 0.0f; //1/chances is the probability to NOT be a match
 	bool keyframe = false;
+	bool operator<(const Match &b) { return chances < b.chances; }
+};
+
+//the last one is the chosen candidate.
+struct MatchGroup: public std::vector<Match> {
+	int64_t offset;
 };
 
 class Codec {
@@ -46,6 +51,8 @@ private:
 	Match rtpMatch(const unsigned char *start, int maxlength);
 	Match avc1Match(const unsigned char *start, int maxlength);
 	Match mp4aMatch(const unsigned char *start, int maxlength);
+	Match alacMatch(const unsigned char *start, int maxlength);
+	Match mbexMatch(const unsigned char *start, int maxlength);
 	Match pcmMatch(const unsigned char *start, int maxlength);
 
 	int avc1Search(const unsigned char *start, int maxlength);

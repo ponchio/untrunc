@@ -86,10 +86,26 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 	if(name == "mp4a") {
 		return mp4aMatch(start, maxlength);
 	}
+	if(name == "alac") {
+		return alacMatch(start, maxlength);
+	}
+	if(name == "mebx") {
+		return mbexMatch(start, maxlength);
+	}
 	if(pcm) {
 		return pcmMatch(start, maxlength);
 	}
+
+	Log::error << "Unsupported codec: " << name << "\n";
+	return Match();
+	//throw "Usnupported codec\n";
 }
+
+Match Codec::search(const unsigned char *start, int maxlength) {
+
+	return Match();
+}
+
 
 /*
 

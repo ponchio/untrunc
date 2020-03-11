@@ -24,7 +24,9 @@ SOURCES += main.cpp \
     codec_rtp.cpp \
     codec_avc1.cpp \
     codec_mp4a.cpp \
-    codec_pcm.cpp
+    codec_pcm.cpp \
+    codec_mbex.cpp \
+    codec_alac.cpp
 
 HEADERS += \
     atom.h \

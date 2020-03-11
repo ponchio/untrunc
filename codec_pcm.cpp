@@ -8,6 +8,6 @@ Match Codec::pcmMatch(const unsigned char *start, int maxlength) {
 
 	Match match;
 	match.length = pcm_bytes_per_sample;
-	match.chances = 2; //we really have no idea
+    match.chances = 2.0f; //we really have no idea
 	return match;
 }

@@ -375,8 +375,8 @@ void Track::getSampleToChunk(Atom *t){
 			chunks[k].nsamples = stsc->readInt(12 + 12*i);
 
 			if(default_size) {
-				assert(codec.pcm_bytes_per_sample > 0);
-				chunks[k].size = chunks[k].nsamples * codec.pcm_bytes_per_sample;
+				//assert(codec.pcm_bytes_per_sample > 0);
+				chunks[k].size = chunks[k].nsamples * default_size; //codec.pcm_bytes_per_sample;
 				count += chunks[k].nsamples ;
 
 			} else {
@@ -410,7 +410,7 @@ void Track::saveSampleTimes() {
 						 8*nentries);   //time table
 	stts->writeInt(nentries, 4);
 	if(default_time) {
-		stts->writeInt(times.size(), 8);
+		stts->writeInt(sizes.size(), 8);
 		stts->writeInt(default_time, 12);
 	} else {
 		for(unsigned int i = 0; i < times.size(); i++) {

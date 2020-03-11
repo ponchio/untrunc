@@ -12,16 +12,6 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 	if(!context)
 		return match;
 
-	//leftover!
-	/*if(s > 1000000) {
-		Log::debug << "mp4a: Success because of large s value.\n";
-		return true;
-	}*/
-
-	if(start[0] == 0) {
-		Log::debug << "mp4a: Failure because of NULL header.\n";
-		return match;
-	}
 
 	// XXX Horrible Hack: These values might need to be changed depending on the file. XXX
 	if((start[4] == 0xee && start[5] == 0x1b) ||
@@ -32,14 +22,11 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 
 
 	uint32_t duration = 0;
-	Log::error << "TO BE IMPLEMENTED" << "\n";
-	exit(0);
-
-	/*
 
 	int consumed = -1;
 	{
 		AvLog useAvLog();
+		av_log_set_level(0);
 		AVFrame *frame = av_frame_alloc();
 		if(!frame)
 			throw string("Could not create AVFrame");
@@ -49,6 +36,8 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 		avp.size = maxlength;
 		int got_frame = 0;
 		consumed = avcodec_decode_audio4(context, frame, &got_frame, &avp);
+
+
 		if(consumed >= 0) {
 			if(frame->nb_samples > 0)
 				duration = frame->nb_samples;
@@ -70,8 +59,22 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 		av_frame_free(&frame);
 	}
 	Log::debug << "Duration: " << duration << '\n';
+	if(consumed < 0) {
+		match.chances = 0.0f;
+		consumed = 0;
+	} else if(consumed == 6)
+        match.chances = 32000;
+
+//actually below 200 is pretty common! l
+//TODO use actual length of the good packets to assess a probability
+	else if(consumed < 400)
+
+        match.chances = 1;
+	else
+		match.chances = 10000;
+
+	match.duration = duration;
 	match.length = consumed;
-*/
 	return match;
 }
 

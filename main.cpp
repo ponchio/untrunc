@@ -28,6 +28,7 @@ using namespace std;
 
 void usage() {
 	cout << "Usage: untrunc [-a -i -v -w] <ok.mp4> [<corrupt.mp4>]\n\n"
+		 << "	-i: info about codecs and mov structure\n"
 		 << "	-a: test the ok video\n"
 		 << "	-q: silent\n"
 		 << "	-e: error\n"

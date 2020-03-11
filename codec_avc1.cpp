@@ -231,8 +231,8 @@ bool NalInfo::getNalInfo(const H264sps &sps, uint32_t maxlength, const uint8_t *
 		Log::debug << "Max AVC1 length exceeded.\n";
 		return false;
 	}
-	if(len + 4 > maxlength) {
-		Log::debug << "Buffer size exceeded (" << (len + 4) << " > " << maxlength << ").\n";
+	if(len > maxlength) {
+		Log::debug << "Buffer size exceeded (" << (len ) << " > " << maxlength << ").\n";
 		return false;
 	}
 	length = len + 4;
@@ -252,8 +252,8 @@ bool NalInfo::getNalInfo(const H264sps &sps, uint32_t maxlength, const uint8_t *
 		return true;
 
 	// Check if size is reasonable.
-	if(len < 8) {
-		Log::debug << "Length too short! (" << len << " < 8).\n";
+	if(len < 6) {
+		Log::debug << "Length too short! (" << len << " < 7).\n";
 		return false;
 	}
 
@@ -416,7 +416,7 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 	// TODO: Use the first byte of the NAL: forbidden bit and type!
 	int nal_type = (start[4] & 0x1f);
 	// The other values are really uncommon on cameras...
-	if(nal_type > 21) {
+	if(nal_type > 29) {
 		//if(nal_type != 1 && !(nal_type >= 5 && nal_type <= 12)) {
 		Log::debug << "avc1: No match because of NAL type: " << nal_type << '\n';
 		return match;
@@ -484,10 +484,10 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 	while(true) {
 		NalInfo info;
 		bool ok = info.getNalInfo(sps, maxlength, pos);
-		match.chances = 1024;
 		if(!ok) {
 			//THIS should never happens, but it happens
 			if(first_pack) {
+				match.chances = 0.0f;
 				if(info.length == 0) {
 					NalInfo info1;
 
@@ -500,6 +500,8 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 			match.length = length;
 			return match;
 		}
+		match.chances = 1024;
+
 		first_pack = false;
 
 		switch(info.nal_type) {
