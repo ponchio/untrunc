@@ -9,12 +9,20 @@ You need:
 * [Libav 12](https://libav.org/)
 * Basic ability to use a command line
 
-## Installing on CentOS 7
+## Docker container
+
+You can use the included Dockerfile to build and execute the package as a container
+```
+docker build -t untrunc .
+docker run -v /path/to/files/:/files untrunc /files/working_video /files/broken_video
+```    
+
+## Installing on CentOS 7 (requires getpagespeed subscription)
 
     yum install https://extras.getpagespeed.com/release-el7-latest.rpm
     yum install untrunc
 
-## Installing
+## Installing on Ubuntu
 
 Download the Libav sources from either [the download page](https://libav.org/download/) or its [GitHub mirror](https://github.com/libav/libav/releases):
 
@@ -33,6 +41,10 @@ Unzip the Libav source code into the Untrunc source directory with either:
 
     tar -xJf libav-12.3.tar.xz -C untrunc-master
     [or:  unzip v12.3.zip -d untrunc-master ]
+    
+Install build-essential and zlib
+
+    apt install build-essential libz-dev
 
 Go into the libav directory and build it:
 
@@ -69,13 +81,6 @@ Follow the above steps for "Installing on other operating system", but use the f
 
 Jose1711 kindly provides an arch package here: https://aur.archlinux.org/packages/untrunc-git/
 
-## Docker container
-
-You can use the included Dockerfile to build and execute the package as a container
-```
-docker build -t untrunc .
-docker run -v /path/to/files/:/files untrunc /files/working_video /files/broken_video
-```    
 ## Using
 
 You need both the broken video and an example working video (ideally from the same camera, if not the chances to fix it are slim).
