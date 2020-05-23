@@ -401,7 +401,7 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
         throw string("Out of buffer");
 
     if(buffer) {
-        if(buffer_begin >= offset && buffer_end >= offset + size)
+        if(buffer_begin <= offset && buffer_end >= offset + size)
             return buffer + (offset - buffer_begin);
 
         //reallocate and reread
