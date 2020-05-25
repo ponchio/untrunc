@@ -121,41 +121,30 @@ bool Track::parse(Atom *t, Atom *mdat) {
 		Log::error << "Missing 'Handler' atom (hdlr).\n";
 		return false;
 	}
-	char type[5];
 	hdlr->readChar(type, 8, 4);
 
-	if(type != string("soun") && type != string("vide") && type != string("hint")) {
-		Log::info << "Not an Audio nor Video nor Hint  track: " << type << "\n";
-		return true;
+	Log::debug << "Track type: " << type << "\n";
+
+	if(type != string("soun") && type != string("vide")) {
+		Log::info << "Found '" << type << "' track. Might be not supported.\n";
 	}
 
-	Log::debug << "Track type: " << type << "\n";
 	if(type == string("hint")) {
 		Atom *hint =  trak->atomByName("hint");
 		hinted_id = hint->readInt(0);
 		hint_track = true;
 		Log::info << "Found a hint track for track: " << hinted_id << endl;
-		//return true;
 	}
-
-	if(type == string("hint")) {
-		Log::info << "Found hint track" << "\n";
-	}
-
-
-	// If audio, use next?
-	//bool audio = (type == string("soun"));
-
-	if(type == string("hint")) //no codec for hints.
-		return true;
 
 	if(!codec.context)
 		throw string("No codec context.");
 	{
 		AvLog useAvLog();
 		codec.codec = avcodec_find_decoder(codec.context->codec_id);
-		if(!codec.codec)
-			throw string("No codec found!");
+		if(!codec.codec) {
+			Log::info <<  "No codec found for track of type: " << type << "\n";
+			return true;
+		}
 		if(avcodec_open2(codec.context, codec.codec, NULL) < 0) {
 			throw string("Could not open codec: ")
 					+ ((codec.context->codec && codec.context->codec->name)? codec.context->codec->name : "???");
@@ -246,6 +235,7 @@ void Track::writeToAtoms() {
 }
 
 void Track::clear() {
+	nsamples = 0;
 	offsets.clear();
 	sizes.clear();
 	keyframes.clear();
@@ -339,7 +329,7 @@ void Track::getChunkOffsets(Atom *t) {
 		nchunks = co64->readInt(4);
 
 	if(nchunks == 0)
-		throw string("Missing both 'Chunk Offset' atoms (stco & co64) or no chunks!");
+		Log::debug << "Missing both 'Chunk Offset' atoms (stco & co64) or no chunks!";
 
 	chunks.resize(nchunks);
 	if(stco) {
@@ -391,7 +381,7 @@ void Track::getSampleToChunk(Atom *t){
 		}
 		first_chunk = last_chunk;
 	}
-	assert(count == nsamples);
+	//assert(count == nsamples);
 
 	return;
 }
@@ -445,14 +435,20 @@ void Track::saveSampleSizes() {
 	assert(stsz);
 	if(!stsz)
 		return;
+
 	stsz->content.resize(4 +                //version
 						 4 +                //default size
 						 4 +                //entries
 						 4*sizes.size());   //size table
 	stsz->writeInt(0, 4);
-	stsz->writeInt(sizes.size(), 8);
-	for(unsigned int i = 0; i < sizes.size(); i++)
-		stsz->writeInt(sizes[i], 12 + 4*i);
+	stsz->writeInt(default_size, 4);
+	if(default_size) {
+		stsz->writeInt(nsamples, 8);
+	} else {
+		stsz->writeInt(sizes.size(), 8);
+		for(unsigned int i = 0; i < sizes.size(); i++)
+			stsz->writeInt(sizes[i], 12 + 4*i);
+	}
 }
 
 void Track::saveSampleToChunk() {
@@ -474,26 +470,26 @@ void Track::saveSampleToChunk() {
 void Track::saveChunkOffsets() {
 	if(!trak)
 		return;
-	Atom *co64 = trak->atomByName("co64");
-	if(co64) {
-		trak->prune("co64");
+	Atom *stco = trak->atomByName("stco");
+	if(stco) {
+		trak->prune("stco");
 		Atom *stbl = trak->atomByName("stbl");
 		if(stbl) {
-			Atom *new_stco = new Atom;
-			memcpy(new_stco->name, "stco", min(sizeof("stco"), sizeof(new_stco->name)-1));
-			stbl->children.push_back(new_stco);
+			Atom *new_co64 = new Atom;
+			memcpy(new_co64->name, "co64", min(sizeof("co64"), sizeof(new_co64->name)-1));
+			stbl->children.push_back(new_co64);
 		}
 	}
-	Atom *stco = trak->atomByName("stco");
-	assert(stco);
-	if(!stco)
-		return;
-	stco->content.resize(4 +                //version
+	Atom *co64 = trak->atomByName("co64");
+	assert(co64);
+
+	co64->content.resize(4 +                //version
 						 4 +                //number of entries
-						 4*offsets.size());
-	stco->writeInt(offsets.size(), 4);
+						 8*offsets.size());
+	co64->writeInt(0, 4);
+	co64->writeInt(offsets.size(), 4);
 	for(unsigned int i = 0; i < offsets.size(); i++)
-		stco->writeInt(offsets[i], 8 + 4*i);
+		co64->writeInt64(offsets[i], 8 + 8*i);
 }
 
 // vim:set ts=4 sw=4 sts=4 noet:

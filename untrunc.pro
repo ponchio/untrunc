@@ -26,7 +26,10 @@ SOURCES += main.cpp \
     codec_mp4a.cpp \
     codec_pcm.cpp \
     codec_mbex.cpp \
-    codec_alac.cpp
+    codec_alac.cpp \
+    codecstats.cpp \
+    codec_unknown.cpp \
+    codec_text.cpp
 
 HEADERS += \
     atom.h \
@@ -36,7 +39,8 @@ HEADERS += \
     AP_AtomDefinitions.h \
     log.h \
     codec.h \
-    avlog.h
+    avlog.h \
+    codecstats.h
 
 INCLUDEPATH += ../libav-12.3
 LIBS += ../libav-12.3/libavformat/libavformat.a \

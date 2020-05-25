@@ -423,7 +423,6 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 	}
 	match.keyframe = (start[4] & 0x1f) == 5;
 
-
 	if(!context)
 		return match;
 
@@ -487,22 +486,23 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 		if(!ok) {
 			//THIS should never happens, but it happens
 			if(first_pack) {
+				throw string("What's ahppinghin egherklhj HELP!");
 				match.chances = 0.0f;
 				if(info.length == 0) {
 					NalInfo info1;
 
-					bool ok = info1.getNalInfo(sps, maxlength, pos);
+					info1.getNalInfo(sps, maxlength, pos);
 					return match;
 				}
-				match.length = info.length;
-				return match;
+				goto final;
 			}
-			match.length = length;
-			return match;
+			goto final;
 		}
 		match.chances = 1024;
 
 		first_pack = false;
+
+		Log::debug << "Nal type: " << info.nal_type << endl;
 
 		switch(info.nal_type) {
 		case 1:
@@ -512,54 +512,63 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 				seen_slice = true;
 			} else {
 				// Check for changes.
+				cout << "Frame number: " << info.frame_num << endl;
 				if(previous.frame_num != info.frame_num) {
-					//Log::debug << "Different frame number.\n";
-					match.length = length;
-					return match;
+					Log::debug << "Different frame number.\n";
+					goto final;
+
 				}
 				if(previous.pps_id != info.pps_id) {
-					//Log::debug << "Different pic parameter set id.\n";
-					match.length = length;
-					return match;
+					Log::debug << "Different pic parameter set id.\n";
+					goto final;
 				}
 				// All these conditions are listed in the docs, but
-				//   it looks like it creates invalid packets if respected.
+				// it looks like it creates invalid packets if respected.
 				// Puzzling.
 				//#define STRICT_NAL_INFO_CHECKING  1
-#ifdef STRICT_NAL_INFO_CHECKING
+//#define STRICT_FIELD_PIC_CHECKING
+#ifdef STRICT_FIELD_PIC_CHECKING
 				if(previous.field_pic_flag != info.field_pic_flag) {
 					Log::debug << "Different field  pic flag.\n";
-					return length;
+					goto final;
 				}
 				if(previous.field_pic_flag && info.field_pic_flag
 						&& previous.bottom_pic_flag != info.bottom_pic_flag)
 				{
 					Log::debug << "Different bottom pic flag.\n";
-					return length;
+					goto final;
 				}
 #endif
+
+#define STRICT_REF_IDC_CHECKING
+#ifdef STRICT_REF_IDC_CHECKING
 				if(previous.ref_idc != info.ref_idc) {
 					Log::debug << "Different ref idc.\n";
-					match.length = length;
-					return match;
+					goto final;
 				}
-#ifdef STRICT_NAL_INFO_CHECKING
+#endif
+
+//#define STRICT_POC_TYPE_CHECKING
+#ifdef STRICT_POC_TYPE_CHECKING
 				if(previous.poc_type == 0 && info.poc_type == 0
 						&& previous.poc_lsb != info.poc_lsb)
 				{
 					Log::debug << "Different pic order count lsb (poc lsb).\n";
-					return length;
+					goto final;
 				}
 #endif
 				if(previous.idr_pic_flag != info.idr_pic_flag) {
 					Log::debug << "Different NAL type (5, 1).\n";
+					//TODO check this was an error and not on purpouse.
+					goto final;
 				}
-#ifdef STRICT_NAL_INFO_CHECKING
+//#define STRICT_PIC_IDR_CHECKING
+#ifdef STRICT_PIC_IDR_CHECKING
 				if(previous.idr_pic_flag == 1 && info.idr_pic_flag == 1
 						&& previous.idr_pic_id != info.idr_pic_id)
 				{
 					Log::debug << "Different idr pic id for keyframe.\n";
-					return length;
+					goto final;
 				}
 #endif
 			}
@@ -567,8 +576,7 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 		default:
 			if(seen_slice) {
 				Log::debug << "New access unit since seen picture.\n";
-				match.length = length;
-				return match;
+				goto final;
 			}
 			break;
 		}
@@ -577,6 +585,20 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 		maxlength -= info.length;
 		//Log::debug << "Partial length : " << length << '\n';
 	}
+	final:
 	match.length = length;
+	//probability depends on length, the longer the higher.
+	match.chances = 1 + length/10;
+	if(maxlength < 8)
+		return match;
+	int64_t begin32 = readBE<int64_t>(start);
+	if(stats.beginnings64.count(begin32))
+		match.chances = stats.beginnings32[begin32];
+
+	int64_t begin64 = readBE<int64_t>(start);
+	if(stats.beginnings64.count(begin64))
+		match.chances = stats.beginnings64[begin64];
+
+	Log::flush();
 	return match;
 }

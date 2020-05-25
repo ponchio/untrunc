@@ -34,6 +34,7 @@ class Atom;
 class Track {
 public:
 	Atom *trak;
+	char    type[5];
 	int   timescale;
 	int   duration;
 	int32_t id;

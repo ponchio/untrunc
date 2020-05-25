@@ -52,12 +52,12 @@ typedef struct ALACContext {
 Match Codec::alacMatch(const unsigned char *start, int maxlength) {
 
 	if(!context)
-		throw "No match!";
+		throw string("No match!");
 	//return match;
 
 	ALACContext *alac = (ALACContext *)context->priv_data;
 
-	cout << alac->gb.index << endl;
+	cout << "alac!: " << alac->gb.index << endl;
 
 	Match match;
 

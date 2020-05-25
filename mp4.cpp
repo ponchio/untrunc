@@ -190,8 +190,9 @@ void Mp4::open(string filename) {
 
 			root->children.push_back(atom);
 		} while(!file.atEnd());
-	} catch(string error) {
+	} catch(const string &error) {
 		Log::info << error << "\n";
+		Log::flush();
 		throw string("Failed parsing working mp4. Maybe the broken and working files got inverted.");
 	} catch(...) {
 		throw string("Failed parsing working mp4. Maybe the broken and working files got inverted.");
@@ -497,7 +498,9 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 		} else {
 			Log::info << "Track codec: " << track.codec.name << '\n';
 		}
+
 		Log::info << "Keyframes  : " << track.keyframes.size() << "\n\n";
+
 		if(track.codec.pcm) {
 			Log::info << "PCM codec, skipping keyframes\n\n";
 		} else if(track.default_size) {
@@ -505,7 +508,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 		} else {
 			for(unsigned int i = 0; i < track.keyframes.size(); ++i) {
 				int k = track.keyframes[i];
-				int64_t  offset = track.offsets[k] - (mdat->start + 8);
+				int64_t  offset = track.offsets[k] - mdat->content_start;
 				uint32_t begin  = mdat->readInt(offset);
 				uint32_t next   = mdat->readInt(offset + 4);
 				Log::debug << setw(8) << k
@@ -524,18 +527,18 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 			}
 			Log::info << "\n";
 		}
-		\
+
 		if(track.default_time) {
 			Log::info << "Constant time for packet: " << track.default_time << endl;
 		}
 
 		if(track.default_size) {
 			if(!track.codec.pcm) {
-				Log::info << "Not a PCM codec, no idea how to deal width it.\n";
-				continue;
+				Log::info << "Not a PCM codec, default size though..  we have hope.\n";
+
 			}
 			for(Track::Chunk &chunk: track.chunks) {
-				int64_t offset = chunk.offset - (mdat->start + 8);
+				int64_t offset = chunk.offset - mdat->content_start;
 
 				int64_t maxlength64 = mdat->contentSize() - offset;
 				if(maxlength64 > MaxFrameLength)
@@ -557,7 +560,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 
 		for(unsigned int i = 0; i < track.offsets.size(); ++i) {
 
-			int64_t offset = track.offsets[i] - (mdat->start + 8);
+			int64_t offset = track.offsets[i] - mdat->content_start;
 			unsigned char *start = &(mdat->content[offset]);
 			int64_t maxlength64 = mdat->contentSize() - offset;
 			if(maxlength64 > MaxFrameLength)
@@ -584,6 +587,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 				Log::error << "- Length mismatch!\n";
 			}
 
+			Log::info << "Match: length " << match.length << "\n";
 			if(interactive) {
 				Log::info << "  <Press [Enter] for next match>\r";
 				cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -610,6 +614,8 @@ bool Mp4::parseTracks() {
 		Track track;
 		track.codec.context = context->streams[i]->codec;
 		track.parse(traks[i], mdat);
+		track.codec.stats.init(track, mdat);
+
 		tracks.push_back(track);
 	}
 	return true;
@@ -736,7 +742,7 @@ bool Mp4::repair(string corrupt_filename) {
 		mdat->start = mdat_offset;
 		memcpy(mdat->name, "mdat", 5);
 		//	memcpy(mdat->head, atom.head, sizeof(mdat->head));
-		//memcpy(mdat->version, atom.version, sizeof(mdat->version));
+		//memcpy(mdat->version, atom.version, sizeof(mdat->version));gedit
 		file.seek(mdat_offset);
 		mdat->file_begin = file.pos();
 		mdat->file_end   = file.length();
@@ -759,8 +765,8 @@ bool Mp4::repair(string corrupt_filename) {
 	//keep track of how many backtraced.
 	int backtracked = 0;
 	while(offset <  mdat->contentSize()) {
-		if(offset == 14961185 - mdat->file_begin)
-			cout << "a" << endl;
+		if(offset + mdat->file_begin == 3240909)
+			cout << "Here we are" << endl;
 		//unsigned char *start = &mdat->content[offset];
 		int64_t maxlength64 = mdat->contentSize() - offset;
 		if(maxlength64 > MaxFrameLength)
@@ -769,22 +775,13 @@ bool Mp4::repair(string corrupt_filename) {
 		int maxlength = static_cast<int>(maxlength64);
 
 		unsigned int begin = readBE<int>(start); //mdat->readInt(offset);
-		/* Needed better zeroskipping policy! */
-		/* if(begin == 0) {
-#if 0 // AARRGH this sometimes is not very correct, unless it's all zeros.
-			// Skip zeros to next 000.
-			offset &= 0xfffff000;
-			offset += 0x1000;
-#else
-			offset += 4;
-#endif
-			continue;
-		} */
 
+		zeroskip(mdat, offset);
 		unsigned int next  = readBE<int>(start + 4);//mdat->readInt(offset + 4);
 		Log::debug << "Offset: " << setw(10) << (mdat->file_begin + offset)
 				   << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
 
+		Log::flush();
 		//skip internal atoms
 		if(!strncmp("moov", (char *)start + 4, 4) ||
 			!strncmp("free", (char *)start + 4, 4) ||
@@ -878,6 +875,9 @@ bool Mp4::repair(string corrupt_filename) {
 		}
 		backtracked = 0;
 
+		if(mdat->file_begin + offset + best.length > mdat->file_end)
+			break;
+
 		if(best.length) {
 			Log::debug << "Matched track: " << best.id << " length: " << best.length << "\n";
 			offset += best.length;
@@ -889,7 +889,6 @@ bool Mp4::repair(string corrupt_filename) {
 
 
 	//copy matches into tracks
-	int previous_id = -1;
 	int count = 0;
 	for(MatchGroup &group: matches) {
 		assert(group.size() > 0);
@@ -906,8 +905,13 @@ bool Mp4::repair(string corrupt_filename) {
 		if(match.keyframe)
 			track.keyframes.push_back(track.offsets.size());
 		track.offsets.push_back(group.offset);
-		if(!track.default_size)
+		if(track.default_size) {
+			//TODO check for pcm!
+			track.nsamples++;
+		} else {
+			track.nsamples++;
 			track.sizes.push_back(match.length);
+		}
 
 		if(match.duration)
 			audiotimes.push_back(match.duration);

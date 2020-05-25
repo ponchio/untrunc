@@ -79,22 +79,22 @@ Match rtpMatch(const unsigned char *start, int maxlength);
 Match Codec::match(const unsigned char *start, int maxlength) {
 	if(name == "rtp ") {
 		return rtpMatch(start, maxlength);
-	}
-	if(name == "avc1") {
+	} else if(name == "avc1") {
 		return avc1Match(start, maxlength);
-	}
-	if(name == "mp4a") {
+	} else if(name == "mp4a") {
 		return mp4aMatch(start, maxlength);
-	}
-	if(name == "alac") {
+	} else if(name == "alac") {
 		return alacMatch(start, maxlength);
-	}
-	if(name == "mebx") {
+	} else if(name == "mebx") {
 		return mbexMatch(start, maxlength);
-	}
-	if(pcm) {
+	} else if(name == "text") {
+		return textMatch(start, maxlength);
+	} else if(pcm) {
 		return pcmMatch(start, maxlength);
+	} else { //rtmd
+		return unknownMatch(start, maxlength);
 	}
+
 
 	Log::error << "Unsupported codec: " << name << "\n";
 	return Match();

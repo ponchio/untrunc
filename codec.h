@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "codecstats.h"
+
 extern "C" {
 #include <stdint.h>
 }
@@ -35,9 +37,10 @@ public:
 	/* Codec properties */
 	uint32_t pcm_bytes_per_sample = 0; //sample size.
 	bool pcm = false;
-	bool knows_start = false;
-	bool guess_start = false;
-	bool knows_length = false;
+//	bool knows_start = false;
+//	bool guess_start = false;
+//	bool knows_length = false;
+	CodecStats stats;
 
 	Codec();
 
@@ -54,6 +57,10 @@ private:
 	Match alacMatch(const unsigned char *start, int maxlength);
 	Match mbexMatch(const unsigned char *start, int maxlength);
 	Match pcmMatch(const unsigned char *start, int maxlength);
+	Match textMatch(const unsigned char *start, int maxlength);
+
+	//we just hope statistics on beginning and lenght is enough
+	Match unknownMatch(const unsigned char *start, int maxlength);
 
 	int avc1Search(const unsigned char *start, int maxlength);
 

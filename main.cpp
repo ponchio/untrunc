@@ -73,6 +73,7 @@ int main(int argc, char *argv[]) {
 
 	try {
 		mp4.open(ok);
+
 		if(info) {
 			mp4.printMediaInfo();
 			mp4.printAtoms();
@@ -81,6 +82,7 @@ int main(int argc, char *argv[]) {
 			mp4.analyze(analyze_track);
 		}
 		if(corrupt.size()) {
+
 			mp4.repair(corrupt);
 			size_t lastindex = corrupt.find_last_of(".");
 			string fixed = corrupt.substr(0, lastindex);
