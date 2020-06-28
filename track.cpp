@@ -334,7 +334,7 @@ void Track::getChunkOffsets(Atom *t) {
 	chunks.resize(nchunks);
 	if(stco) {
 		for(int i = 0; i < nchunks; i++)
-			chunks[i].offset = stco->readInt(8 + i*4);
+			chunks[i].offset = stco->readUInt(8 + i*4);
 	} else {
 		for(int i = 0; i < nchunks; i++)
 			chunks[i].offset = co64->readInt64(8 + i*8);

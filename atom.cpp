@@ -113,7 +113,7 @@ Atom::~Atom() {
 void Atom::parseHeader(File &file) {
 	start = file.pos();
 	content_start += start + 8;
-	length = file.readInt();
+	length = file.readUInt();
 	file.readChar(name, 4);
 
 	if(length == 1) {
@@ -368,6 +368,12 @@ int16_t Atom::readInt16(int64_t offset) {
 int32_t Atom::readInt(int64_t offset) {
 	assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
 	return readBE<int32_t>(&content[offset]);
+}
+
+
+uint32_t Atom::readUInt(int64_t offset) {
+	assert(offset >= 0 && content.size() >= uint64_t(offset) + 4);
+	return readBE<uint32_t>(&content[offset]);
 }
 
 int64_t Atom::readInt64(int64_t offset) {

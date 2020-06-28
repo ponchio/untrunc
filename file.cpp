@@ -25,6 +25,7 @@
 #include <string>
 #include <cstdio>
 #include <cassert>
+#include <iostream>
 
 using namespace std;
 

@@ -194,9 +194,9 @@ void Mp4::open(string filename) {
 		Log::info << error << "\n";
 		Log::flush();
 		throw string("Failed parsing working mp4. Maybe the broken and working files got inverted.");
-	} catch(...) {
+	}/* catch(...) {
 		throw string("Failed parsing working mp4. Maybe the broken and working files got inverted.");
-	}
+	}*/
 	// {
 	file_name = filename;
 
