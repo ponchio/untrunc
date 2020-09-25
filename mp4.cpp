@@ -756,7 +756,9 @@ bool Mp4::repair(string corrupt_filename) {
 	// mp4a can be decoded and reports the number of samples (duration in samplerate scale).
 	// In some videos the duration (stts) can be variable and we can rebuild them using these values.
 	vector<int> audiotimes;
-	int64_t offset = 0;
+	//TODO: if it fails, try again with the same offset as the good one.
+	//carefu the offset is relative to mdat, use the same absolute position.
+	int64_t offset = 8;
 
 
 
@@ -780,6 +782,7 @@ bool Mp4::repair(string corrupt_filename) {
 		unsigned int next  = readBE<int>(start + 4);//mdat->readInt(offset + 4);
 		Log::debug << "Offset: " << setw(10) << (mdat->file_begin + offset)
 				   << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
+		cout.flush();
 
 		Log::flush();
 		//skip internal atoms

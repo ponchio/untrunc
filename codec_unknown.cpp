@@ -41,7 +41,7 @@ Match Codec::unknownMatch(const unsigned char *start, int maxlength) {
 	if(stats.beginnings64.count(begin64))
 		match.chances = stats.beginnings64[begin64];
 
-	match.chances = 0.0f; //we really have no idea
+	//match.chances = 0.0f; //we really have no idea
 
 	return match;
 }

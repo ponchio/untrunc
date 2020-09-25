@@ -486,7 +486,8 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 		if(!ok) {
 			//THIS should never happens, but it happens
 			if(first_pack) {
-				throw string("What's ahppinghin egherklhj HELP!");
+
+				//throw string("What's ahppinghin egherklhj HELP!");
 				match.chances = 0.0f;
 				if(info.length == 0) {
 					NalInfo info1;
@@ -512,7 +513,7 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 				seen_slice = true;
 			} else {
 				// Check for changes.
-				cout << "Frame number: " << info.frame_num << endl;
+				//cout << "Frame number: " << info.frame_num << endl;
 				if(previous.frame_num != info.frame_num) {
 					Log::debug << "Different frame number.\n";
 					goto final;
@@ -591,9 +592,14 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 	match.chances = 1 + length/10;
 	if(maxlength < 8)
 		return match;
-	int64_t begin32 = readBE<int64_t>(start);
-	if(stats.beginnings64.count(begin32))
+	int64_t begin32 = readBE<int32_t>(start);
+	if(stats.beginnings32.count(begin32))
 		match.chances = stats.beginnings32[begin32];
+	else {
+		//TODO this actually depends by the number of different beginnings.
+		//changes = (n -1); //se sono due le chanches sono davvero piccole.
+		match.chances = stats.beginnings32.size() -1;
+	}
 
 	int64_t begin64 = readBE<int64_t>(start);
 	if(stats.beginnings64.count(begin64))

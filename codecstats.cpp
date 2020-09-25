@@ -29,7 +29,7 @@ void CodecStats::init(Track &track, Atom *mdat) {
 		int64_t offset = chunk.offset - mdat->content_start;
 		unsigned char *start = &(mdat->content[offset]);
 		int64_t begin64 = readBE<int64_t>(start);
-		int32_t begin32 = readBE<int64_t>(start);
+		int32_t begin32 = readBE<int32_t>(start);
 
 		if(!beginnings64.count(begin64)) {
 			beginnings64[begin64] = 1;
