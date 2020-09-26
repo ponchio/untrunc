@@ -775,7 +775,7 @@ int64_t Mp4::findMdat(File &file) {
 	int64_t mdat_offset = -1;
 	char m[4];
 	m[3] = 0;
-	for(uint64_t i = 0; i < file.size()-4; i++) {
+	for(uint64_t i = 0; i < file.size()-4 && i < 20000000; i++) {
 		char c;
 		file.readChar(&c, 1);
 		if(c != 'm') continue;
@@ -790,6 +790,29 @@ int64_t Mp4::findMdat(File &file) {
 		mdat_offset = file.pos();
 		break;
 	}
+	if(mdat_offset == -1) {
+		//TODO if we have some unique beginnigs, try to spot the first one.
+
+		for(uint64_t i = 0; i < file.size()-4 && i < 20000000; i++) {
+			file.seek(i);
+			int32_t begin32 = file.readInt();
+//			begin32 = readBE<int>((unsigned char *)&begin32);
+			if(i == 192)
+				Log::debug<< "begin: " << begin32 << endl;
+			if(begin32 == 0) continue;
+			bool found = false;
+			for(Track &track: tracks) {
+				if(track.codec.stats.beginnings32.count(begin32)) {
+					found = true;
+					break;
+				}
+			}
+			if(found)
+				return i;
+		}
+	}
+
+	//wild guess with little hope.
 	if(mdat_offset == -1) {
 		uint32_t threshold = 0x00030000;
 		cerr << "Mdat not found!" << endl;
@@ -906,7 +929,7 @@ bool Mp4::repair(string corrupt_filename) {
 	vector<int> audiotimes;
 	//TODO: if it fails, try again with the same offset as the good one.
 	//carefu the offset is relative to mdat, use the same absolute position.
-	int64_t offset = 8;
+	int64_t offset = 0;
 
 
 
@@ -1030,6 +1053,7 @@ bool Mp4::repair(string corrupt_filename) {
 		if(best.length) {
 			Log::debug << "Matched track: " << best.id << " length: " << best.length << "\n";
 			offset += best.length;
+
 		} else {
 			throw "This should only happen with pcm codecs, and here we should search for the beginning of another codec";
 		}
