@@ -21,6 +21,8 @@
 
 #include <cassert>
 #include <vector>
+#include <algorithm>
+#include <functional>
 #include <string>
 #include <iostream>
 #include <ios>          // Pre-C++11: may not be included by <iostream>.
@@ -596,6 +598,135 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 	}
 }
 
+void Mp4::simulate() {
+
+	//TODO remove duplicated code with analyze.
+	Log::info << "Simulate:\n";
+
+	Log::info << "Analyze:\n";
+	if(!root) {
+		Log::error << "No file opened.\n";
+		return;
+	}
+	Atom *original_mdat = root->atomByName("mdat");
+	if(!original_mdat) {
+		Log::error << "Missing 'Media Data container' atom (mdat).\n";
+		return;
+	}
+
+	BufferedAtom *mdat = findMdat(file_name);
+	if(!mdat) {
+		Log::error << "MDAT not found.\n";
+		return;
+	}
+
+
+	//sort packets by start, length, track id
+
+	std::vector<Match> packets;
+
+	for(unsigned int t = 0; t < tracks.size(); ++t) {
+		Track &track = tracks[t];
+		//if pcm -> offsets should be chunks!
+
+		if(track.default_size) {
+			Log::debug << "Track " << t << " packets: " << track.chunks.size() << endl;
+			for(unsigned int i = 0;i < track.chunks.size(); i++) {
+				Track::Chunk &chunk = track.chunks[i];
+				Match match;
+				match.id = t;
+
+				match.offset = chunk.offset;
+				match.length = chunk.size;
+				match.duration = track.default_time? track.default_time : track.times[i];
+				packets.push_back(match);
+			}
+		} else {
+			Log::debug << "Track " << t << " packets: " << track.offsets.size() << endl;
+
+			for(unsigned int i = 0; i < track.offsets.size(); ++i) {
+				Match match;
+
+				match.id = t;
+				match.offset = track.offsets[i];
+				match.length = track.sizes[i];
+				match.duration = track.default_time? track.default_time : track.times[i];
+				packets.push_back(match);
+			}
+		}
+	}
+	std::sort(packets.begin(), packets.end(), [](const Match &m1, const Match &m2) { return m1.offset < m2.offset; });
+
+	if(packets[0].offset != original_mdat->content_start) {
+		Log::error << "First packet does not start with mdat, finding the start of the packets might be problematic" << endl;
+	}
+
+
+	//ensure mdat is correctly found.
+	if(original_mdat->content_start != mdat->file_begin) {
+		Log::error << "Wrong start of mdat: " << mdat->file_begin << " should be " << original_mdat->content_start << "\n";
+		mdat->file_begin = mdat->content_start = packets[0].offset;
+	}
+
+	int64_t offset = 0; //mdat->file_begin;
+	for(Match &m: packets) {
+		if(m.offset != mdat->file_begin + offset) {
+			Log::error << "Some empty space to be skipped!\n";
+			break;
+		}
+		MatchGroup matches = match(offset, mdat);
+		Match &best = matches[0];
+		unsigned char *start = mdat->getFragment(offset, 8);
+		unsigned int begin = readBE<int>(start);
+		unsigned int next  = readBE<int>(start + 4);
+		Log::debug << "Offset: " << setw(10) << (mdat->file_begin + best.offset)
+					<< "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
+
+		for(Match m: matches) {
+			Log::debug << "Match for: " << m.id << " chances: " << m.chances << " length: " << m.length << "\n";
+		}
+		if(best.chances == 0.0f) {
+			//we could not detect best, in reconstruction we need to backtrack
+			Log::error << "Could not match packet for track " << m.id << "\n";
+			Log::flush();
+			break;
+		}
+		if(m.id  != best.id) {
+			Log::error << "Mismatch! Packet track should be " << m.id << " it is: " << best.id << "\n";
+			Log::flush();
+			break;
+		}
+		if(m.length != best.length) {
+			Log::error << "Packet length is wrong." << endl;
+			Log::flush();
+		}
+		offset += m.length;
+	}
+}
+
+MatchGroup Mp4::match(int64_t offset, BufferedAtom *mdat) {
+	MatchGroup group;
+	group.offset = offset;
+
+	int64_t maxlength64 = mdat->contentSize() - offset;
+	if(maxlength64 > MaxFrameLength)
+		maxlength64 = MaxFrameLength;
+	unsigned char *start = mdat->getFragment(offset, maxlength64);
+	int maxlength = static_cast<int>(maxlength64);
+
+
+	for(unsigned int i = 0; i < tracks.size(); ++i) {
+		Track &track = tracks[i];
+		Match m = track.codec.match(start, maxlength);
+		m.id = i;
+		m.offset = group.offset;
+		group.push_back(m);
+	}
+
+	sort(group.begin(), group.end(), [](const Match &m1, const Match &m2) { return m1.chances > m2.chances; });
+	return group;
+}
+
 void Mp4::writeTracksToAtoms() {
 	for(unsigned int i = 0; i < tracks.size(); ++i)
 		tracks[i].writeToAtoms();
@@ -619,6 +750,23 @@ bool Mp4::parseTracks() {
 		tracks.push_back(track);
 	}
 	return true;
+}
+
+BufferedAtom *Mp4::findMdat(std::string filename) {
+	BufferedAtom *mdat = new BufferedAtom(filename);
+	int64_t start = findMdat(mdat->file);
+	if(start < 0) {
+		delete mdat;
+		return nullptr;
+	}
+
+	mdat->start = 0; //will be overwritten in repair.
+	memcpy(mdat->name, "mdat", 5);
+
+	mdat->content_start = start;
+	mdat->file_begin = start;
+	mdat->file_end = mdat->file.length();
+	return mdat;
 }
 
 int64_t Mp4::findMdat(File &file) {
@@ -767,8 +915,6 @@ bool Mp4::repair(string corrupt_filename) {
 	//keep track of how many backtraced.
 	int backtracked = 0;
 	while(offset <  mdat->contentSize()) {
-		if(offset + mdat->file_begin == 3240909)
-			cout << "Here we are" << endl;
 		//unsigned char *start = &mdat->content[offset];
 		int64_t maxlength64 = mdat->contentSize() - offset;
 		if(maxlength64 > MaxFrameLength)
@@ -781,7 +927,7 @@ bool Mp4::repair(string corrupt_filename) {
 		zeroskip(mdat, offset);
 		unsigned int next  = readBE<int>(start + 4);//mdat->readInt(offset + 4);
 		Log::debug << "Offset: " << setw(10) << (mdat->file_begin + offset)
-				   << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
+					   << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
 		cout.flush();
 
 		Log::flush();
@@ -910,8 +1056,9 @@ bool Mp4::repair(string corrupt_filename) {
 		track.offsets.push_back(group.offset);
 		if(track.default_size) {
 			//TODO check for pcm!
-			track.nsamples++;
+			track.nsamples += track.default_chunk_nsamples;
 		} else {
+			//TODO: this won't work for things with samples per chunk != 1;
 			track.nsamples++;
 			track.sizes.push_back(match.length);
 		}

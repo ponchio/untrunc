@@ -85,6 +85,7 @@ class BufferedAtom : public Atom {
 public:
     int64_t file_begin;
     int64_t file_end;
+	File    file; //don't touch!
 
     explicit BufferedAtom(std::string filename);
     ~BufferedAtom();
@@ -101,8 +102,7 @@ public:
     virtual int64_t readInt64(int64_t offset);
 
 protected:
-    File            file;
-    unsigned char  *buffer;
+	unsigned char  *buffer;
     int64_t         buffer_begin;
     int64_t         buffer_end;
 

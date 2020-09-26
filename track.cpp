@@ -249,7 +249,10 @@ void Track::fixTimes() {
 		//times.resize(offsets.size(), 160);
 	}
 	if(default_time) {
-		duration = default_time * nsamples;
+		if(default_size)
+			duration = default_time * nsamples;
+		else
+			duration = default_time * nsamples;
 	} else {
 		while(times.size() < offsets.size())
 			times.insert(times.end(), times.begin(), times.end());
@@ -356,6 +359,8 @@ void Track::getSampleToChunk(Atom *t){
 
 	//assert(first_chunks.back() == chunks.size());
 
+	default_chunk_nsamples = -1;
+
 	int32_t count = 0;
 	for(int i = 0; i < entries; i++) {
 		int first_chunk  = first_chunks[i];
@@ -363,6 +368,10 @@ void Track::getSampleToChunk(Atom *t){
 		for(int k = first_chunk; k < last_chunk; k++) {
 			chunks[k].first_sample = count;
 			chunks[k].nsamples = stsc->readInt(12 + 12*i);
+			if(default_chunk_nsamples == -1)
+				default_chunk_nsamples = chunks[k].nsamples;
+			else if(default_chunk_nsamples != chunks[k].nsamples)
+				default_chunk_nsamples = 0;
 
 			if(default_size) {
 				//assert(codec.pcm_bytes_per_sample > 0);
@@ -384,6 +393,7 @@ void Track::getSampleToChunk(Atom *t){
 	//assert(count == nsamples);
 
 	return;
+
 }
 
 
@@ -400,7 +410,8 @@ void Track::saveSampleTimes() {
 						 8*nentries);   //time table
 	stts->writeInt(nentries, 4);
 	if(default_time) {
-		stts->writeInt(sizes.size(), 8);
+		//TODO
+		stts->writeInt(nsamples, 8);
 		stts->writeInt(default_time, 12);
 	} else {
 		for(unsigned int i = 0; i < times.size(); i++) {
@@ -458,13 +469,40 @@ void Track::saveSampleToChunk() {
 	assert(stsc);
 	if(!stsc)
 		return;
-	stsc->content.resize(4 +                //version
-						 4 +                //number of entries
-						 12);               //one sample per chunk.
-	stsc->writeInt(1,  4);
-	stsc->writeInt(1,  8);                  //first chunk (1 based)
-	stsc->writeInt(1, 12);                  //one sample per chunk
-	stsc->writeInt(1, 16);                  //id 1 (WHAT IS THIS!)
+	if(default_size == 0 &&  default_chunk_nsamples == 0)
+		throw "Don;t know how to deal with variable sample size and variable number of samples per chunk";
+
+	if(default_size == 0) { //video might put more samples in the same chunk, even a constant number, default_chunk_nsamples might be != 0
+		//TODO we should distinguish those cases.
+		//so if we don;t have a default number of samples per chunk we save one sample per chunk.
+		stsc->content.resize(4 +                //version
+							 4 +                //number of entries
+							 12);               //one sample per chunk.
+		stsc->writeInt(1,  4);
+		stsc->writeInt(1,  8);                  //first chunk (1 based)
+		stsc->writeInt(1, 12);                  //one sample per chunk
+		stsc->writeInt(1, 16);                  //id 1 (WHAT IS THIS!)
+	} else if(default_chunk_nsamples != 0) {
+		stsc->content.resize(4 +                //version
+							 4 +                //number of entries
+							 12);               //one sample per chunk.
+		stsc->writeInt(1,  4);
+		stsc->writeInt(1,  8);                  //first chunk (1 based)
+		stsc->writeInt(default_chunk_nsamples, 12);                  //one sample per chunk
+		stsc->writeInt(1, 16);                  //id 1 (WHAT IS THIS!)
+
+	} else { //default size but not default chunk nsamples
+		stsc->content.resize(4 +                //version
+							 4 +                //number of entries
+							 12*chunks.size());               //one sample per chunk.
+		stsc->writeInt(chunks.size(),  4);
+		for(int i = 0; i < chunks.size(); i++) {
+			stsc->writeInt(i+1,  8 + 12*i);                  //first chunk (1 based)
+			int chunk_nsamples = (default_chunk_nsamples == 0) ? chunks[i].size/ default_size : default_chunk_nsamples;
+			stsc->writeInt(chunk_nsamples, 12 + 12*i);                  //one sample per chunk
+			stsc->writeInt(1, 16 + 12*i);                  //id 1 (WHAT IS THIS!)
+		}
+	}
 }
 
 void Track::saveChunkOffsets() {

@@ -30,6 +30,7 @@ class File;
 
 
 class Atom;
+class BufferedAtom;
 struct AVFormatContext;
 
 
@@ -41,9 +42,10 @@ public:
     Mp4();
     ~Mp4();
 
-    void open     (std::string filename);
-    bool repair   (std::string corrupt_filename);
-	int64_t findMdat   (File &file);
+	void open(std::string filename);
+	bool repair(std::string corrupt_filename);
+	int64_t findMdat(File &file);
+	BufferedAtom *findMdat(std::string filename);
 
     bool save     (std::string output_filename);
     bool saveVideo(std::string output_filename) { return save(output_filename); }
@@ -52,6 +54,8 @@ public:
     void printAtoms();
 
 	void analyze(int analyze_track = -1, bool interactive = true);
+	//try to recover the working video, for debugging processing
+	void simulate();
 
     static bool makeStreamable(std::string filename, std::string output_filename);
 
@@ -64,6 +68,8 @@ protected:
     void close();
     bool parseTracks();
     void writeTracksToAtoms();
+
+	MatchGroup match(int64_t offset, BufferedAtom *mdat);
 };
 
 #endif // MP4_H

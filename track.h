@@ -48,6 +48,7 @@ public:
 
 	//if default size we work using chunks
 	int32_t nsamples;
+	int default_chunk_nsamples = 0;
 	int default_size = 0;
 	std::vector<int32_t> sizes;
 	std::vector<int64_t> offsets; //populated only if not default size

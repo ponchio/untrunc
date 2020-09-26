@@ -503,7 +503,7 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 
 		first_pack = false;
 
-		Log::debug << "Nal type: " << info.nal_type << endl;
+		//Log::debug << "Nal type: " << info.nal_type << endl;
 
 		switch(info.nal_type) {
 		case 1:

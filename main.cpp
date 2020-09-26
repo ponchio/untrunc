@@ -30,6 +30,7 @@ void usage() {
 	cout << "Usage: untrunc [-a -i -v -w] <ok.mp4> [<corrupt.mp4>]\n\n"
 		 << "	-i: info about codecs and mov structure\n"
 		 << "	-a: test the ok video\n"
+		 << "	-s: simulate recovering the ok video for debug purposes\n"
 		 << "	-q: silent\n"
 		 << "	-e: error\n"
 		 << "	-v; verbose\n"
@@ -40,6 +41,7 @@ int main(int argc, char *argv[]) {
 
 	bool info = false;
 	bool analyze = false;
+	bool simulate = false;
 	int analyze_track = -1;
 	int i = 1;
 	for(; i < argc; i++) {
@@ -48,6 +50,7 @@ int main(int argc, char *argv[]) {
 			switch(arg[1]) {
 			case 'i': info = true; break;
 			case 'a': analyze = true; break;
+			case 's': simulate = true; break;
 			case 't': analyze_track = atoi(argv[i+1]); i++; break;
 			case 'q': Logger::log_level = Logger::SILENT; break;
 			case 'e': Logger::log_level = Logger::ERROR; break;
@@ -81,6 +84,9 @@ int main(int argc, char *argv[]) {
 		if(analyze) {
 			mp4.analyze(analyze_track);
 		}
+		if(simulate)
+			mp4.simulate();
+
 		if(corrupt.size()) {
 
 			mp4.repair(corrupt);

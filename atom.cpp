@@ -412,6 +412,7 @@ BufferedAtom::BufferedAtom(string filename)
 {
 	if(!file.open(filename))
 		throw string("Could not open file");
+	file_end = file.length();
 }
 
 BufferedAtom::~BufferedAtom() {

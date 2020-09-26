@@ -15,6 +15,7 @@ struct AVCodec;
 class Atom;
 
 struct Match {
+	int64_t offset; //used for simulate only.
 	uint32_t id = 0;
 	uint32_t length = 0;
 	uint32_t duration = 0; //audio often provide a duration for the packet.
