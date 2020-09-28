@@ -433,8 +433,15 @@ bool Mp4::save(string output_filename) {
 
 	root->updateLength();
 
-	// Fix offsets.
+
+
+
+
+	//we need to add mdat header bytes
 	int64_t offset = moov->length + 8;
+	if(mdat->length64)
+		offset += 8;
+
 	if(ftyp)
 		offset += ftyp->length; // Not all .mov have an ftyp.
 
@@ -838,10 +845,9 @@ int64_t Mp4::findMdat(File &file) {
 //multiple of 1024. If it's all zeros skip.
 //if it's less than 8 bytes dont (might be alac?)
 //otherwise we need to search for the actual begin using matches.
-bool zeroskip(BufferedAtom *mdat, int64_t &offset) {
-	int64_t block_size = 1<<10;
-	int64_t size = std::min(block_size, mdat->contentSize() - offset);
-	unsigned char *start = mdat->getFragment(offset, block_size);
+int zeroskip(BufferedAtom *mdat, unsigned char *start, int64_t maxlength) {
+	int64_t block_size = std::min(int64_t(1<<10), maxlength);
+
 	//skip 4 bytes at a time.
 	int k = 0;
 	for(;k < block_size - 4; k+= 4) {
@@ -852,7 +858,7 @@ bool zeroskip(BufferedAtom *mdat, int64_t &offset) {
 
 	//don't skip very short zero sequences
 	if(k < 8)
-		return false;
+		return 0;
 
 	//play conservative of non aligned zero blocks
 	if(k < block_size)
@@ -861,8 +867,7 @@ bool zeroskip(BufferedAtom *mdat, int64_t &offset) {
 	//zero bytes block aligned.
 
 	Log::debug << "Skipping zero bytes: " << k << "\n";
-	offset += k;
-	return true;
+	return k;
 }
 
 bool Mp4::repair(string corrupt_filename) {
@@ -945,13 +950,26 @@ bool Mp4::repair(string corrupt_filename) {
 		unsigned char *start = mdat->getFragment(offset, maxlength64);
 		int maxlength = static_cast<int>(maxlength64);
 
-		unsigned int begin = readBE<int>(start); //mdat->readInt(offset);
 
-		zeroskip(mdat, offset);
+
+		unsigned int begin = readBE<int>(start); //mdat->readInt(offset);
 		unsigned int next  = readBE<int>(start + 4);//mdat->readInt(offset + 4);
+
 		Log::debug << "Offset: " << setw(10) << (mdat->file_begin + offset)
 					   << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
 		cout.flush();
+
+
+		if(begin == 0) {
+			int skipped = zeroskip(mdat, start, maxlength64);
+			if(skipped) {
+				Log::debug << "Skipping " << skipped << " zeroes!" << endl;
+				offset += skipped;
+				continue;
+			}
+		}
+
+
 
 		Log::flush();
 		//skip internal atoms
