@@ -632,8 +632,11 @@ void Mp4::simulate() {
 
 	std::vector<Match> packets;
 
+	std::string codecs[tracks.size()];
+
 	for(unsigned int t = 0; t < tracks.size(); ++t) {
 		Track &track = tracks[t];
+		codecs[t] = track.codec.name;
 		//if pcm -> offsets should be chunks!
 
 		if(track.default_size) {
@@ -675,37 +678,52 @@ void Mp4::simulate() {
 		mdat->file_begin = mdat->content_start = packets[0].offset;
 	}
 
+
+
 	int64_t offset = 0; //mdat->file_begin;
 	for(Match &m: packets) {
 		if(m.offset != mdat->file_begin + offset) {
-			Log::error << "Some empty space to be skipped!\n";
+			Log::error << "Some empty space to be skipped! Real start = " << m.offset << " mdat start guessed at: " << offset + mdat->file_begin << "\n";
 			break;
 		}
-		MatchGroup matches = match(offset, mdat);
-		Match &best = matches[0];
+
 		unsigned char *start = mdat->getFragment(offset, 8);
 		unsigned int begin = readBE<int>(start);
 		unsigned int next  = readBE<int>(start + 4);
-		Log::debug << "Offset: " << setw(10) << (mdat->file_begin + best.offset)
-					<< "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
+		Log::debug << "\n" << codecs[m.id] << " offset: " << setw(10) << (m.offset) << " Length: " << m.length
+					<< "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << "\n";
+
+		MatchGroup matches = match(offset, mdat);
+		Match &best = matches[0];
 
 		for(Match m: matches) {
-			Log::debug << "Match for: " << m.id << " chances: " << m.chances << " length: " << m.length << "\n";
+			Log::debug << "Match for: " << m.id << " (" << codecs[m.id] << ") chances: " << m.chances << " length: " << m.length << "\n";
 		}
 		if(best.chances == 0.0f) {
 			//we could not detect best, in reconstruction we need to backtrack
 			Log::error << "Could not match packet for track " << m.id << "\n";
 			Log::flush();
-			break;
+
+			Log::info << "  <Press [Enter] for next match>\r";
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+//			break;
 		}
 		if(m.id  != best.id) {
-			Log::error << "Mismatch! Packet track should be " << m.id << " it is: " << best.id << "\n";
+			Log::error << "Mismatch! Packet track should be on track: " << m.id << " (" << codecs[m.id] << ") it is: " << best.id << " (" << codecs[best.id] << ")\n";
 			Log::flush();
-			break;
+
+			Log::info << "  <Press [Enter] for next match>\r";
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+//			break;
 		}
 		if(m.length != best.length) {
 			Log::error << "Packet length is wrong." << endl;
 			Log::flush();
+
+			Log::info << "  <Press [Enter] for next match>\r";
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+//			break;
 		}
 		offset += m.length;
 	}
@@ -759,9 +777,9 @@ bool Mp4::parseTracks() {
 	return true;
 }
 
-BufferedAtom *Mp4::findMdat(std::string filename) {
+BufferedAtom *Mp4::findMdat(std::string filename, bool same_mdat_start, bool ignore_mdat_start) {
 	BufferedAtom *mdat = new BufferedAtom(filename);
-	int64_t start = findMdat(mdat->file);
+	int64_t start = findMdat(mdat->file, ignore_mdat_start);
 	if(start < 0) {
 		delete mdat;
 		return nullptr;
@@ -776,26 +794,53 @@ BufferedAtom *Mp4::findMdat(std::string filename) {
 	return mdat;
 }
 
-int64_t Mp4::findMdat(File &file) {
+/* strategy:
+ *
+ * 1) Look for mdat. It's almost always a good start, but sometime, the actual packets can start from 8 to 200000k and more after.
+ *     1.a) if non start guessable packets with fixed lenght are present we are blindly looking for them
+ *     2.b) if we have guessable start make a map of possible starts and check with what we have found, in that case we need to lookup find mdat start with a different approach.
+ * 2) if method 1 fails, we need to look for start guessable packets.
+ *
+ * Note: avc1 has size then start and for keyframes they are pretty guessable.
+ */
+
+int64_t Mp4::contentStart() {
+	vector<int64_t> offsets;
+	for(Track &track: tracks) {
+		for(Track::Chunk &chunk: track.chunks) {
+			offsets.push_back(chunk.offset);
+			break;
+		}
+	}
+	sort(offsets.begin(), offsets.end());
+	return offsets[0];
+}
+
+int64_t Mp4::findMdat(File &file, bool same_mdat_start, bool ignore_mdat_start) {
+
+	if(same_mdat_start)
+		return contentStart();
 
 	//look for mdat
 	int64_t mdat_offset = -1;
 	char m[4];
 	m[3] = 0;
-	for(uint64_t i = 0; i < file.size()-4 && i < 20000000; i++) {
-		char c;
-		file.readChar(&c, 1);
-		if(c != 'm') continue;
-		uint64_t pos = file.pos();
-		file.readChar(m, 3);
-		if(strcmp(m, "dat") != 0) {
-			file.seek(pos);
-			continue;
+	if(!ignore_mdat_start) {
+		for(uint64_t i = 0; i < file.size()-4 && i < 20000000; i++) {
+			char c;
+			file.readChar(&c, 1);
+			if(c != 'm') continue;
+			uint64_t pos = file.pos();
+			file.readChar(m, 3);
+			if(strcmp(m, "dat") != 0) {
+				file.seek(pos);
+				continue;
+			}
+			//first is not good enough sometimes it's the second.
+			//but not the last either, sometimes it is at the end.
+			mdat_offset = file.pos();
+			break;
 		}
-		//first is not good enough sometimes it's the second.
-		//but not the last either, sometimes it is at the end.
-		mdat_offset = file.pos();
-		break;
 	}
 	if(mdat_offset == -1) {
 		//TODO if we have some unique beginnigs, try to spot the first one.
@@ -803,9 +848,7 @@ int64_t Mp4::findMdat(File &file) {
 		for(uint64_t i = 0; i < file.size()-4 && i < 20000000; i++) {
 			file.seek(i);
 			int32_t begin32 = file.readInt();
-//			begin32 = readBE<int>((unsigned char *)&begin32);
-			if(i == 192)
-				Log::debug<< "begin: " << begin32 << endl;
+
 			if(begin32 == 0) continue;
 			bool found = false;
 			for(Track &track: tracks) {
@@ -857,7 +900,7 @@ int zeroskip(BufferedAtom *mdat, unsigned char *start, int64_t maxlength) {
 	}
 
 	//don't skip very short zero sequences
-	if(k < 8)
+	if(k < 12)
 		return 0;
 
 	//play conservative of non aligned zero blocks
@@ -870,7 +913,24 @@ int zeroskip(BufferedAtom *mdat, unsigned char *start, int64_t maxlength) {
 	return k;
 }
 
-bool Mp4::repair(string corrupt_filename) {
+int Mp4::searchNext(BufferedAtom *mdat, int64_t offset) {
+	int64_t maxlength64 = mdat->contentSize() - offset;
+	if(maxlength64 > MaxFrameLength)
+		maxlength64 = MaxFrameLength;
+	unsigned char *start = mdat->getFragment(offset, maxlength64);
+	int maxlength = static_cast<int>(maxlength64);
+	Match best;
+	best.chances = 0;
+	best.offset = 0;
+	for(Track &track: tracks) {
+		Match m = track.codec.search(start, maxlength);
+		if(m.chances != 0 && best.chances == 0 || m.offset < best.offset)
+			best = m;
+	}
+	return best.offset;
+}
+
+bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat_start) {
 	Log::info << "Repair: " << corrupt_filename << '\n';
 	BufferedAtom *mdat = NULL;
 	File file;
@@ -909,11 +969,13 @@ bool Mp4::repair(string corrupt_filename) {
 			break;
 		}
 	} else {
-		int64_t mdat_offset = findMdat(file);
+		int64_t mdat_offset= findMdat(file, same_mdat_start, ignore_mdat_start);
+
 		if(mdat_offset < 0) {
-			cerr << "Failed finding start" << endl;
+			Log::error << "Failed finding start" << endl;
 			return false;
 		}
+
 		mdat = new BufferedAtom(corrupt_filename);
 		mdat->start = mdat_offset;
 		memcpy(mdat->name, "mdat", 5);
@@ -943,7 +1005,6 @@ bool Mp4::repair(string corrupt_filename) {
 	//keep track of how many backtraced.
 	int backtracked = 0;
 	while(offset <  mdat->contentSize()) {
-		//unsigned char *start = &mdat->content[offset];
 		int64_t maxlength64 = mdat->contentSize() - offset;
 		if(maxlength64 > MaxFrameLength)
 			maxlength64 = MaxFrameLength;
@@ -979,7 +1040,7 @@ bool Mp4::repair(string corrupt_filename) {
 			!strncmp("moof", (char *)start + 4, 4) ||
 			!strncmp("wide", (char *)start + 4, 4)) {
 
-			Log::debug << "Skipping 'Container for all the Meta-data' atom (moov, free, wide): begin: 0x"
+			Log::debug << "Skipping containers for all the meta-data atom (moov, free, wide): begin: 0x"
 					   << hex << begin << dec << ".\n";
 			offset += begin;
 			continue;
@@ -1026,7 +1087,7 @@ bool Mp4::repair(string corrupt_filename) {
 
 			//we are at the end!
 			if(mdat->contentSize() -offset < 65000) {
-				cout << "We are at the end of the file: " << offset << endl;
+				Log::debug << "We are at the end of the file: " << offset << endl;
 				break;
 			}
 			//look for a different candidate in the past matches
@@ -1056,7 +1117,7 @@ bool Mp4::repair(string corrupt_filename) {
 				//no luck either, try another one looping
 			}
 			if(backtracked >= 7) {
-				cout << "Backtracked enough!" << endl;
+				Log::error << "Backtracked enough!" << endl;
 				break;
 			}
 
@@ -1073,7 +1134,16 @@ bool Mp4::repair(string corrupt_filename) {
 			offset += best.length;
 
 		} else {
-			throw "This should only happen with pcm codecs, and here we should search for the beginning of another codec";
+			Log::debug << "Unknown length, search for next beginning" << endl;
+			best.length = searchNext(mdat, offset);
+
+			if(!best.length) {
+				Log::error << "Could not guess length of best match" << endl;
+				//throw "Can't guess the length of any packet.";
+				break;
+			}
+			offset += best.length;
+			//This should only happen with pcm codecs, and here we should search for the beginning of another codec
 		}
 		matches.push_back(group);
 	}
@@ -1084,21 +1154,18 @@ bool Mp4::repair(string corrupt_filename) {
 	for(MatchGroup &group: matches) {
 		assert(group.size() > 0);
 		Match &match = group.back();
-/* Inspection for
-		if(match.id != previous_id) {
-			cout << "Track: " << previous_id << " found: " << count << endl;
-			previous_id = match.id;
-			count = 0;
-		}
-		count++;
-		*/
+
 		Track &track = tracks[match.id];
 		if(match.keyframe)
 			track.keyframes.push_back(track.offsets.size());
+
 		track.offsets.push_back(group.offset);
 		if(track.default_size) {
-			//TODO check for pcm!
-			track.nsamples += track.default_chunk_nsamples;
+			//if number of samples per chunk is variable, encode each sample in a different chunk.
+			if(track.default_chunk_nsamples == 0)
+				track.nsamples += 1;
+			else
+				track.nsamples += track.default_chunk_nsamples;
 		} else {
 			//TODO: this won't work for things with samples per chunk != 1;
 			track.nsamples++;
@@ -1115,6 +1182,7 @@ bool Mp4::repair(string corrupt_filename) {
 	Log::info << "Found " << matches.size() << " packets.\n";
 
 	for(unsigned int i = 0; i < tracks.size(); ++i) {
+		Log::info << "Found " << tracks[i].offsets.size() << " chunks for " << tracks[i].codec.name << endl;
 		if(audiotimes.size() == tracks[i].offsets.size())
 			swap(audiotimes, tracks[i].times);
 

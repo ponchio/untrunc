@@ -245,8 +245,7 @@ void Track::clear() {
 void Track::fixTimes() {
 	if(codec.name == "samr") {
 		times.clear();
-		assert(default_time == 160);
-		//times.resize(offsets.size(), 160);
+		default_time = 160;
 	}
 	if(default_time) {
 		if(default_size)
@@ -254,6 +253,7 @@ void Track::fixTimes() {
 		else
 			duration = default_time * nsamples;
 	} else {
+		assert(times.size() > 0);
 		while(times.size() < offsets.size())
 			times.insert(times.end(), times.begin(), times.end());
 		times.resize(offsets.size());
@@ -273,6 +273,7 @@ void Track::getSampleTimes(Atom *t) {
 		throw string("Missing 'Sync Sample Table' atom (stts)");
 
 	int32_t entries = stts->readInt(4);
+
 	for(int i = 0; i < entries; i++) {
 		int32_t nsamples = stts->readInt( 8 + 8*i);
 		int32_t time     = stts->readInt(12 + 8*i);
@@ -280,9 +281,25 @@ void Track::getSampleTimes(Atom *t) {
 			default_time = time;
 			break;
 		}
-		for(int i = 0; i < nsamples; i++)
+		for(int i = 0; i < nsamples; i++) {
 			times.push_back(time);
+		}
 	}
+	//check if times are always the same
+	if(!default_time) {
+		int common_time = times[0];
+		for(int t: times) {
+			if(t != common_time) {
+				common_time = 0;
+				break;
+			}
+		}
+		if(common_time) {
+			default_time = common_time;
+			times.clear();
+		}
+	}
+
 }
 
 void Track::getKeyframes(Atom *t) {
@@ -469,8 +486,10 @@ void Track::saveSampleToChunk() {
 	assert(stsc);
 	if(!stsc)
 		return;
-	if(default_size == 0 &&  default_chunk_nsamples == 0)
-		throw "Don;t know how to deal with variable sample size and variable number of samples per chunk";
+	if(default_chunk_nsamples == 0) {
+		default_chunk_nsamples = 1;
+		Log::debug <<  "Don;t know how to deal with variable sample size and variable number of samples per chunk. Trying with 1.\n";
+	}
 
 	if(default_size == 0) { //video might put more samples in the same chunk, even a constant number, default_chunk_nsamples might be != 0
 		//TODO we should distinguish those cases.
@@ -492,6 +511,7 @@ void Track::saveSampleToChunk() {
 		stsc->writeInt(1, 16);                  //id 1 (WHAT IS THIS!)
 
 	} else { //default size but not default chunk nsamples
+		assert(0 && "This will make sense if we can recover variable samples per chunk and rebuild the chunk structure");
 		stsc->content.resize(4 +                //version
 							 4 +                //number of entries
 							 12*chunks.size());               //one sample per chunk.

@@ -170,6 +170,25 @@ void Atom::write(File &file) {
 #endif
 }
 
+int readBits(int n, uint8_t *&buffer, int &offset) {
+	assert(buffer != NULL && offset >= 0);
+	int res = 0;
+	// Can't read in a single reading.
+	while(n + offset > 8) {
+		int d = 8 - offset;
+		res <<= d;
+		res |= *buffer & ((1 << d) - 1);
+		offset = 0;
+		buffer++;
+		n -= d;
+	}
+	// Read the remaining bits.
+	int d = (8 - offset - n);
+	res <<= n;
+	res |= (*buffer >> d) & ((1 << n) - 1);
+	return res;
+}
+
 void Atom::print(int offset) {
 	string indent(offset, ' ');
 
@@ -194,8 +213,110 @@ void Atom::print(int offset) {
 
 	} else if(name == string("stsd")) { //sample description: (which codec...)
 		//lets just read the first entry
-		char type[5];
-		readChar(type, 12, 4);
+		int nentries = readInt(4);
+		int off = 8;
+
+		for(int i = 0; i < nentries; i++) {
+			int bytes = readInt(off + 0);
+			char type[5];
+			readChar(type, 12, off + 4);
+
+			//TODO this actually depends on trak being soun or vide! Might be simpler to use the list here:
+			//https://developer.apple.com/library/archive/documentation/QuickTime/QTFF/QTFFChap3/qtff3.html#//apple_ref/doc/uid/TP40000939-CH205-75770
+			if(type == string("mp4a")) {
+				int nchannels = readInt16(off + 24);
+				int samplesize = readInt16(off + 26);
+				int comprid = readInt16(off + 28);
+				int packetsize = readInt16(off + 30);
+				uint16_t sampleRate = readInt16(off + 32); //16.16 fixed point integer.
+				Log::info << indent << "Media Sample Type: " << type << " N. channels: " << nchannels << " Sample size: " << samplesize
+						  << " Compression ID: " << comprid << " Packet size: " << packetsize
+						  << " Sample Rate: " << sampleRate << endl;
+
+			} else if(type == string("avc1")) {
+				int width = readInt16(off + 32);
+				int height = readInt16(off + 34);
+				int hres = readInt(off + 36);
+				int vres = readInt(off + 40);
+				int framecount = readInt16(off+48);
+				char compressor[33];
+				readChar(compressor, off+50, 32);
+				int depth = readInt16(off + 82);
+				int colorMap = readInt16(off + 84);
+				int extensionSize = readInt(off + 86);
+
+				Log::info << indent << "Media Sample Type: " << type << " w: " << width << " h: " << height << " compressor: " << (compressor+1) << " depth: " << depth << endl;
+				char extension[5] = { 0, 0, 0, 0, 0};
+				readChar(extension, off+90, 4);
+
+				if(extension == string("avcC")) {
+					Log::info << indent << "Extension: " << extension << endl;
+					int eoff = 94;
+					uint8_t sbuffer[extensionSize+1];
+					readChar((char *)sbuffer, eoff, extensionSize);
+
+					uint8_t *buffer = sbuffer;
+					int boff= 0; //offset in bits into extension
+					//buffer and boff are updated while reading bits.
+					int version               = readBits(8, buffer, boff);
+					int profile_indication    = readBits(8, buffer, boff);
+					int profile_compatibility = readBits(8, buffer, boff);
+					int level_code            = readBits(8, buffer, boff);
+					int reserved              = readBits(6, buffer, boff);
+					int lengthSizeMinusOne    = readBits(2, buffer, boff);
+					reserved                   = readBits(3, buffer, boff);
+
+					int numOfSeqParameterSets = readBits(5, buffer, boff);
+					std::vector<uint8_t> sequenceParameterSetNALUnit;
+					for (int i=0; i< numOfSeqParameterSets; i++) {
+						int sequenceParameterSetLength = readBits(16, buffer, boff);
+						for(int k = 0; k < sequenceParameterSetLength; k++) {
+							sequenceParameterSetNALUnit.push_back(readBits(8, buffer, boff));
+						}
+					}
+					int numOfPictureParameterSets = readBits(8, buffer, boff);
+					std::vector<uint8_t> pictureParameterSetNALUnit;
+					for (int i=0; i< numOfPictureParameterSets; i++) {
+						int pictureParameterSetLength = readBits(16, buffer, boff);
+						for(int k = 0; k < pictureParameterSetLength; k++) {
+							pictureParameterSetNALUnit.push_back(readBits(8, buffer, boff));
+						}
+					}
+					Log::info << indent << "Profile " << profile_indication << " SPS: " << hex;
+					for(uint8_t s: sequenceParameterSetNALUnit)
+						Log::info << (int)s << " ";
+					Log::info << " PPS: ";
+					for(uint8_t s: pictureParameterSetNALUnit)
+						Log::info << (int)s << " ";
+					Log::info << endl;
+
+					//might want to check for profile in sequenceParameterSet, or just use the length of the buffer.
+					/*
+				if( profile_idc == 100 || profile_idc == 110 ||
+				profile_idc == 122 || profile_idc == 144 )
+				{
+				bit(6) reserved = ‘111111’b;
+				unsigned int(2) chroma_format;
+				bit(5) reserved = ‘11111’b;
+				unsigned int(3) bit_depth_luma_minus8;
+				bit(5) reserved = ‘11111’b;
+				unsigned int(3) bit_depth_chroma_minus8;
+				unsigned int(8) numOfSequenceParameterSetExt;
+				for (i=0; i< numOfSequenceParameterSetExt; i++) {
+				unsigned int(16) sequenceParameterSetExtLength;
+				bit(8*sequenceParameterSetExtLength) sequenceParameterSetExtNALUnit;
+				}
+				} */
+
+
+
+				} else {
+					Log::info << indent << "Extension: " << extension << endl;
+				}
+			}
+			off += bytes;
+
+		}
 		//4 bytes zero
 		//4 bytes reference index (see stsc)
 		//additional fields
@@ -214,7 +335,7 @@ void Atom::print(int offset) {
 		//00 04 -> length of picture parameter set
 		//28 EE 16 20 -> picture parameter set. (28 ee 04 62),  (28 ee 1e 20)
 
-		Log::info << indent << " Entries: " << readInt(4) << " codec: " << type << '\n';
+		//Log::info << indent << " Entries: " << readInt(4) << " codec: " << type << '\n';
 
 	} else if(name == string("stts")) { //run length compressed duration of samples
 		//lets just read the first entry
@@ -357,6 +478,10 @@ void Atom::updateLength() {
 
 void Atom::contentResize(size_t newsize) {
 	content.resize(newsize);
+}
+
+uint8_t Atom::readUInt8(int64_t offset) {
+	return uint8_t(content[offset]);
 }
 
 int16_t Atom::readInt16(int64_t offset) {

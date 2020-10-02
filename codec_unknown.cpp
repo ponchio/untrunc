@@ -14,6 +14,26 @@ Match Codec::unknownMatch(const unsigned char *start, int maxlength) {
 	if(stats.fixed_size)
 		match.length = stats.fixed_size;
 
+	if(name == "samr") {
+		//samr special thing might be 160... or different values.
+
+		static const uint8_t amrnb_packed_size[16] = {
+			13, 14, 16, 18, 20, 21, 27, 32, 6, 1, 1, 1, 1, 1, 1, 1
+		};
+		static const uint8_t amrwb_packed_size[16] = {
+			18, 24, 33, 37, 41, 47, 51, 59, 61, 6, 1, 1, 1, 1, 1, 1
+		};
+		int mode = (start[0] >> 3) & 0xf;
+		if (mode > 9 || (start[0] & 0x4) != 0x4) {
+			match.chances = 0;
+			return match;
+		}
+		match.length = amrnb_packed_size[mode];
+		match.chances = 4;
+	}
+
+
+
 
 	int64_t begin64 = readBE<int64_t>(start);
 

@@ -22,7 +22,8 @@ public:
 	typedef std::basic_ostream<char, std::char_traits<char> > CoutType;
 	typedef CoutType& (*StandardEndLine)(CoutType&);
 	Logger& operator<<(StandardEndLine manip) {
-		std::cout << std::endl;
+		if(level <= Logger::log_level)
+			std::cout << std::endl;
 		return *this;
 	}
 

@@ -59,7 +59,12 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 		av_frame_free(&frame);
 	}
 	Log::debug << "Duration: " << duration << '\n';
-	if(consumed < 0) {
+
+	if(consumed == maxlength) {
+		Log::debug << "Codec can't determine length of the packet.";
+		match.chances = 4;
+		consumed = 0; //unknown length
+	} else if(consumed < 0) {
 		match.chances = 0.0f;
 		consumed = 0;
 	} else if(consumed == 6)
@@ -68,13 +73,26 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 //actually below 200 is pretty common! l
 //TODO use actual length of the good packets to assess a probability
 	else if(consumed < 400)
-
-        match.chances = 1;
+		match.chances = 3;
 	else
-		match.chances = 10000;
+		match.chances = 100;
 
 	match.duration = duration;
 	match.length = consumed;
+
+	/*
+	if(match.chances > 0) {
+		//count zeros.
+		int zeros = 0;
+		for(int i = 0; i < match.length; i++) {
+			if(start[i] == 0)
+				zeros++;
+		}
+		if(zeros*2 > match.length)
+			cout << "ZEROS! " << zeros << " / " << match.length << endl;
+		else
+			cout << "UNOS!" << endl;
+	}*/
 	return match;
 }
 

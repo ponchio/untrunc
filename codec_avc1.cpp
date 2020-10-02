@@ -36,6 +36,7 @@ public:
 
 
 void H264sps::parseSPS(const uint8_t *data, int size) {
+
 	assert(data != NULL);
 	if (data[0] != 1) {
 		Log::debug << "Uncharted territory...\n";
@@ -360,7 +361,6 @@ int Codec::avc1Search(const unsigned char *start, int maxlength) {
 
 
 Match Codec::avc1Match(const unsigned char *start, int maxlength) {
-
 	Match match;
 
 	// This works only for a very specific kind of video.
@@ -412,16 +412,22 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 	// See 7.4.1.2.4 Detection of the first VCL NAL unit of a primary coded picture
 	//  for rules on how to group NALs into a picture.
 
+	int64_t begin32 = readBE<int32_t>(start);
+	if(begin32 == 0)
+		return match;
 
 	// TODO: Use the first byte of the NAL: forbidden bit and type!
 	int nal_type = (start[4] & 0x1f);
 	// The other values are really uncommon on cameras...
+	if(nal_type > 12) {
+		Log::debug << "avc1: No match because of NAL type: " << nal_type << '\n';
+		return match;
+	}
 	if(nal_type > 29) {
 		//if(nal_type != 1 && !(nal_type >= 5 && nal_type <= 12)) {
 		Log::debug << "avc1: No match because of NAL type: " << nal_type << '\n';
 		return match;
 	}
-	match.keyframe = (start[4] & 0x1f) == 5;
 
 	if(!context)
 		return match;
@@ -495,7 +501,7 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 					info1.getNalInfo(sps, maxlength, pos);
 					return match;
 				}
-				goto final;
+				return match;
 			}
 			goto final;
 		}
@@ -503,9 +509,10 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 
 		first_pack = false;
 
-		//Log::debug << "Nal type: " << info.nal_type << endl;
+		Log::debug << "Nal type: " << info.nal_type << " Nal ref idc " << info.ref_idc << endl;
 
 		switch(info.nal_type) {
+		case 12: break; //filler data
 		case 1:
 		case 5:
 			if(!seen_slice) {
@@ -581,6 +588,10 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 			}
 			break;
 		}
+		if(info.nal_type == 5) {
+			match.keyframe = true;
+			Log::debug << "KeyFrame!" << endl;
+		}
 		pos       += info.length;
 		length    += info.length;
 		maxlength -= info.length;
@@ -592,18 +603,21 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 	match.chances = 1 + length/10;
 	if(maxlength < 8)
 		return match;
-	int64_t begin32 = readBE<int32_t>(start);
+
+	float stat_chanches = 0;
 	if(stats.beginnings32.count(begin32))
-		match.chances = stats.beginnings32[begin32];
+		stat_chanches = stats.beginnings32[begin32];
 	else {
 		//TODO this actually depends by the number of different beginnings.
 		//changes = (n -1); //se sono due le chanches sono davvero piccole.
-		match.chances = stats.beginnings32.size() -1;
+		stat_chanches = stats.beginnings32.size() -1;
 	}
 
 	int64_t begin64 = readBE<int64_t>(start);
 	if(stats.beginnings64.count(begin64))
-		match.chances = stats.beginnings64[begin64];
+		stat_chanches = stats.beginnings64[begin64];
+
+	match.chances = std::max(stat_chanches, match.chances);
 
 	Log::flush();
 	return match;

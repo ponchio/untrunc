@@ -77,6 +77,10 @@ Match rtpMatch(const unsigned char *start, int maxlength);
 
 
 Match Codec::match(const unsigned char *start, int maxlength) {
+	int64_t begin64 = readBE<int64_t>(start);
+	if(stats.beginnings64.size() <= 4 && !stats.beginnings64.count(begin64))
+		return Match();
+
 	if(name == "rtp ") {
 		return rtpMatch(start, maxlength);
 	} else if(name == "avc1") {
@@ -102,7 +106,46 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 }
 
 Match Codec::search(const unsigned char *start, int maxlength) {
+	Match match;
+	int count = 0;
+	for(int offset = 8; offset < maxlength - 8; offset++) {
+		if(count > maxlength)
+			throw "Something fishy";
+		int64_t begin64 = readBE<int64_t>(start+offset);
+		int32_t begin32 = readBE<int32_t>(start+offset);
+		int32_t next32 = readBE<int32_t>(start+offset+4);
 
+		//skip zeros
+		if(begin32 == 0) {
+			continue;
+		}
+
+		//skip atoms such as free/etc.
+		if(next32 == *(int32_t *)"free" || next32 == *(int32_t *)"moov" || next32 == *(int32_t *)"hoov"
+				|| next32 == *(int32_t *)"moof" || next32 == *(int32_t *)"wide") {
+			if(begin32 < maxlength && begin32 > 8)
+				offset += begin32 -1;
+			continue;
+		}
+
+		if(stats.beginnings64.count(begin64)) {
+			match = Codec::match(start + offset, maxlength - offset);
+			match.offset  = offset;
+			if(match.chances > 0) return match;
+		}
+		//if(name == "avc1") {
+
+		//} else {
+		if(stats.beginnings64.size() < 10)
+			continue;
+		if(stats.beginnings32.count(begin32)) {
+			match = Codec::match(start + offset, maxlength - offset);
+			match.offset  = offset;
+			if(match.chances > 0) return match;
+		}
+		//}
+		count++;
+	}
 	return Match();
 }
 

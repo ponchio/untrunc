@@ -65,6 +65,7 @@ public:
     static bool isDual     (const char *id);
     static bool isVersioned(const char *id);
 
+	virtual uint8_t readUInt8(int64_t offset);
 	virtual int16_t readInt16(int64_t offset);
     virtual int32_t readInt  (int64_t offset);
 	virtual uint32_t readUInt  (int64_t offset);
@@ -97,6 +98,9 @@ public:
 
     virtual int64_t contentSize() const { return file_end - file_begin; }
     virtual void    contentResize(size_t newsize);   //can't actually resize!
+
+	virtual uint8_t readUInt8(int64_t offset) { throw "unimplementd"; }
+	virtual int16_t readInt16(int64_t offset) { throw "unimplementd"; }
 
     virtual int32_t readInt  (int64_t offset);
     virtual int64_t readInt64(int64_t offset);
