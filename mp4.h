@@ -43,8 +43,8 @@ public:
     ~Mp4();
 
 	void open(std::string filename);
-	bool repair(std::string corrupt_filename, bool same_mdat_start = false, bool ignore_mdat_start = false);
-	int64_t findMdat(File &file,  bool same_mdat_start = false, bool ignore_mdat_start = false);
+	bool repair(std::string corrupt_filename, bool same_mdat_start = false, bool ignore_mdat_start = false, int64_t begin = -1);
+	int64_t findMdat(BufferedAtom *mdat,  bool same_mdat_start = false, bool ignore_mdat_start = false);
 	BufferedAtom *findMdat(std::string filename, bool same_mdat_start = false, bool ignore_mdat_start = false);
 	int64_t contentStart();
 	int searchNext(BufferedAtom *mdat, int64_t offset);

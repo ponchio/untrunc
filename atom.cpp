@@ -516,6 +516,15 @@ void Atom::writeInt64(int64_t value, int64_t offset) {
 	writeBE(&content[offset], value);
 }
 
+
+uint8_t *Atom::data(uint8_t *str, int64_t offset, int64_t length) {
+	assert(str != NULL);
+	assert(offset >= 0 && length >= 0 && content.size() >= uint64_t(offset) + uint64_t(length));
+	return &content[offset];
+}
+
+
+
 void Atom::readChar(char *str, int64_t offset, int64_t length) {
 	assert(str != NULL);
 	assert(offset >= 0 && length >= 0 && content.size() >= uint64_t(offset) + uint64_t(length));
@@ -557,8 +566,7 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
 			return buffer + (offset - buffer_begin);
 
 		//reallocate and reread
-		delete[] buffer;
-		buffer = NULL;
+		flush();
 	}
 
 	buffer_begin = offset;
@@ -569,6 +577,13 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
 	file.seek(file_begin + buffer_begin);
 	file.readChar((char *)buffer, buffer_end - buffer_begin);
 	return buffer;
+}
+void BufferedAtom::flush() {
+	if(buffer) {
+		delete []buffer;
+		buffer = nullptr;
+	}
+	buffer_begin = buffer_end = 0;
 }
 
 void BufferedAtom::updateLength() {

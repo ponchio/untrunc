@@ -73,7 +73,8 @@ public:
     virtual int64_t readInt64(int64_t offset);
     void writeInt  (int32_t value, int64_t offset);
     void writeInt64(int64_t value, int64_t offset);
-    void readChar(char *str, int64_t offset, int64_t length);
+	uint8_t *data(uint8_t *str, int64_t offset, int64_t length);
+	void readChar(char *str, int64_t offset, int64_t length);
 
 private:
     // Disable copying (BufferedAtom can't be copied, so children can't either).
@@ -94,6 +95,7 @@ public:
     virtual void write(File &file);
 
     unsigned char *getFragment(int64_t offset, int64_t size);
+	void flush();
     virtual void updateLength();
 
     virtual int64_t contentSize() const { return file_end - file_begin; }

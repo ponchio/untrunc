@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
 	int analyze_track = -1;
 	bool same_mdat_start = false; //if mdat can be found or starting of packets try using the same absolute offset.
 	bool ignore_mdat_start = false; //ignore mdat string and look for first recognizable packet.
+	int64_t begin = -1; //start of packets if specified.
 	int i = 1;
 	for(; i < argc; i++) {
 		string arg(argv[i]);
@@ -60,6 +61,7 @@ int main(int argc, char *argv[]) {
 			case 'w': Logger::log_level = Logger::DEBUG; break;
 			case 'm': same_mdat_start = true; break;
 			case 'M': ignore_mdat_start = true; break;
+			case 'b': begin = atoi(argv[i+1]); i++; break;
 			}
 		} else
 			break;
@@ -93,7 +95,7 @@ int main(int argc, char *argv[]) {
 
 		if(corrupt.size()) {
 
-			mp4.repair(corrupt, same_mdat_start, ignore_mdat_start);
+			mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);
 			size_t lastindex = corrupt.find_last_of(".");
 			string fixed = corrupt.substr(0, lastindex);
 			mp4.saveVideo(fixed + "_fixed.mp4");

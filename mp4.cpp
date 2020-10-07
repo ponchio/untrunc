@@ -779,7 +779,7 @@ bool Mp4::parseTracks() {
 
 BufferedAtom *Mp4::findMdat(std::string filename, bool same_mdat_start, bool ignore_mdat_start) {
 	BufferedAtom *mdat = new BufferedAtom(filename);
-	int64_t start = findMdat(mdat->file, ignore_mdat_start);
+	int64_t start = findMdat(mdat, ignore_mdat_start);
 	if(start < 0) {
 		delete mdat;
 		return nullptr;
@@ -816,7 +816,7 @@ int64_t Mp4::contentStart() {
 	return offsets[0];
 }
 
-int64_t Mp4::findMdat(File &file, bool same_mdat_start, bool ignore_mdat_start) {
+int64_t Mp4::findMdat(BufferedAtom *mdat, bool same_mdat_start, bool ignore_mdat_start) {
 
 	if(same_mdat_start)
 		return contentStart();
@@ -825,62 +825,55 @@ int64_t Mp4::findMdat(File &file, bool same_mdat_start, bool ignore_mdat_start) 
 	int64_t mdat_offset = -1;
 	char m[4];
 	m[3] = 0;
+	int64_t length = std::min(int64_t(20000000), mdat->file_end - mdat->file_begin);
+	uint8_t *data = mdat->getFragment(0, length);
 	if(!ignore_mdat_start) {
-		for(uint64_t i = 0; i < file.size()-4 && i < 20000000; i++) {
-			char c;
-			file.readChar(&c, 1);
-			if(c != 'm') continue;
-			uint64_t pos = file.pos();
-			file.readChar(m, 3);
-			if(strcmp(m, "dat") != 0) {
-				file.seek(pos);
+		for(uint64_t i = 4; i < length-4; i++) {
+			uint32_t c = readBE<uint32_t>(data + i);
+			if(c != 0x6D646174) //mdat
 				continue;
-			}
-			//first is not good enough sometimes it's the second.
-			//but not the last either, sometimes it is at the end.
-			mdat_offset = file.pos();
-			break;
+			mdat_offset = i+4;
+
+			//check if its 64bit mdat
+			uint32_t size = readBE<uint32_t>(data + i -4);
+			if(size == 1)
+				mdat_offset += 8;
+
+			mdat->flush();
+			mdat->start = i - 4;
+			mdat->content_start = mdat_offset;
+			return mdat_offset;
 		}
 	}
+
 	if(mdat_offset == -1) {
 		//TODO if we have some unique beginnigs, try to spot the first one.
+		for(uint64_t i = 4; i < length-4; i++) {
+			uint32_t c = readBE<uint32_t>(data + i);
+			if(c == 0) continue;
 
-		for(uint64_t i = 0; i < file.size()-4 && i < 20000000; i++) {
-			file.seek(i);
-			int32_t begin32 = file.readInt();
-
-			if(begin32 == 0) continue;
 			bool found = false;
 			for(Track &track: tracks) {
-				if(track.codec.stats.beginnings32.count(begin32)) {
+				//might want to look for video keyframes and actually skip the size of the frame (which is useless).
+				if(track.codec.stats.beginnings32.count(c)) {
 					found = true;
 					break;
 				}
 			}
-			if(found)
-				return i;
+			if(found) {
+
+				mdat->flush();
+				mdat_offset = i;
+				mdat->start = i - 8; //not really needed
+				mdat->content_start = mdat_offset;
+				return mdat_offset;
+			}
 		}
 	}
 
-	//wild guess with little hope.
-	if(mdat_offset == -1) {
-		uint32_t threshold = 0x00030000;
-		cerr << "Mdat not found!" << endl;
-		//look for low number.
-		for(uint64_t i = 0; i < file.size()-4; i++) {
-			file.seek(i);
-			uint32_t s = file.readUInt();
-			if(s > threshold) continue;
-			//let's hope that skipping foward that number we get another low number.
-			file.seek(i + s + 4);
-			s = file.readUInt();
-			if(s > threshold) continue;
-
-			mdat_offset = i;
-			break;
-		}
-	}
-	return mdat_offset;
+	Log::info << "Mdat not found!" << endl;
+	mdat->flush();
+	return -1;
 }
 
 
@@ -930,7 +923,7 @@ int Mp4::searchNext(BufferedAtom *mdat, int64_t offset) {
 	return best.offset;
 }
 
-bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat_start) {
+bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat_start, int64_t begin) {
 	Log::info << "Repair: " << corrupt_filename << '\n';
 	BufferedAtom *mdat = NULL;
 	File file;
@@ -969,15 +962,21 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 			break;
 		}
 	} else {
-		int64_t mdat_offset= findMdat(file, same_mdat_start, ignore_mdat_start);
+		mdat = new BufferedAtom(corrupt_filename);
+
+		int64_t mdat_offset = 0;
+		if(begin >= 0)
+			mdat_offset = begin;
+		else
+			mdat_offset = findMdat(mdat, same_mdat_start, ignore_mdat_start);
 
 		if(mdat_offset < 0) {
 			Log::error << "Failed finding start" << endl;
 			return false;
 		}
 
-		mdat = new BufferedAtom(corrupt_filename);
 		mdat->start = mdat_offset;
+		mdat->content_start = mdat_offset;
 		memcpy(mdat->name, "mdat", 5);
 		//	memcpy(mdat->head, atom.head, sizeof(mdat->head));
 		//memcpy(mdat->version, atom.version, sizeof(mdat->version));gedit
@@ -1185,8 +1184,8 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 		Log::info << "Found " << tracks[i].offsets.size() << " chunks for " << tracks[i].codec.name << endl;
 		if(audiotimes.size() == tracks[i].offsets.size())
 			swap(audiotimes, tracks[i].times);
-
-		tracks[i].fixTimes();
+		if(tracks[i].offsets.size())
+			tracks[i].fixTimes();
 	}
 
 	Atom *original_mdat = root->atomByName("mdat");
