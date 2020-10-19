@@ -288,7 +288,7 @@ void Atom::print(int offset) {
 					Log::info << " PPS: ";
 					for(uint8_t s: pictureParameterSetNALUnit)
 						Log::info << (int)s << " ";
-					Log::info << endl;
+					Log::info << dec << endl;
 
 					//might want to check for profile in sequenceParameterSet, or just use the length of the buffer.
 					/*

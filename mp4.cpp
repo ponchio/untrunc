@@ -390,7 +390,6 @@ bool Mp4::save(string output_filename) {
 		if(timescale == 0) continue;  // Shouldn't happen.
 		// Use default movie time scale if no track time scale was found.
 		int track_timescale = (track.timescale != 0) ? track.timescale : 600;
-		//int track_duration  = static_cast<int>(double(track.duration) * double(timescale) / double(track_timescale));
 		//convert track duration (in track.timescale units) to movie timesscale units.
 		int track_duration  = static_cast<int>((int64_t(track.duration) * timescale - 1 + track_timescale)
 											   / track_timescale);
@@ -1150,6 +1149,9 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 
 	//copy matches into tracks
 	int count = 0;
+	int64_t drift = 0; //difference in times between audio and video.
+	int64_t audio_current = 0;
+	int64_t video_current = 0;
 	for(MatchGroup &group: matches) {
 		assert(group.size() > 0);
 		Match &match = group.back();
@@ -1173,6 +1175,33 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 
 		if(match.duration)
 			audiotimes.push_back(match.duration);
+
+		//check timing drifting
+		int64_t t = track.default_time? track.default_time : track.times[count% track.times.size()];
+		if(track.type == string("vide")) {
+			video_current += t*timescale / track.timescale;
+		} else if(track.type == string("soun")) {
+			audio_current += t*timescale / track.timescale;
+		}
+		drift = audio_current - video_current;
+		//Log::debug << "Drift audio - video: " << drift << "\n";
+		count++;
+	}
+	if(drift > timescale || drift < -timescale) { //drifting of packets for more than 1 seconds
+		Log::debug << "Drift audio - video: " << drift << ". Fixing\n";
+		//fix video
+		for(Track &track: tracks) {
+			if(track.type != string("vide"))
+				continue;
+			//convert back drift to track timescale
+			drift = track.timescale * drift /timescale;
+			int64_t per_sample = drift /(int64_t)track.offsets.size();
+			if(track.default_time)
+				track.default_time += per_sample;
+			else
+				for(auto &t: track.times)
+					t -= per_sample;
+		}
 	}
 
 	mdat->file_end = mdat->file_begin + offset;

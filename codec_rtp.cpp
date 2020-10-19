@@ -1,6 +1,7 @@
 #include "codec.h"
 #include "log.h"
 
+//  https://developer.apple.com/standards/qtff-2001.pdf page 153
 
 Match Codec::rtpMatch(const unsigned char *start, int maxlength) {
 	Match match;
