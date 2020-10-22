@@ -1049,6 +1049,20 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 			offset += 8;
 			continue;
 		}
+
+		//skip RTP:
+		if(begin && 0xff00ffff) { // && readBE<uint16_t>(start);
+			if((mdat->file_begin + offset) == 129770)
+				Log::debug << "RTP test\n";
+			//testing up to
+			Match match = Codec::rtpMatch(start, maxlength);
+			if(match.chances) {
+				Log::debug << "Rtp packets. Lenght: " << match.length << "\n";
+				offset += match.length;
+				continue;
+			}
+		}
+
 		//new strategy: try to match all tracks.
 		//each codec can:
 		//matchable match with some probability.

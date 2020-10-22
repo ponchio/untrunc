@@ -73,7 +73,7 @@ bool Codec::parse(Atom *trak) {
 	return true;
 }
 
-Match rtpMatch(const unsigned char *start, int maxlength);
+//Match rtpMatch(const unsigned char *start, int maxlength);
 
 
 Match Codec::match(const unsigned char *start, int maxlength) {
