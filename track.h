@@ -69,7 +69,7 @@ public:
 
 	Track();
 
-	bool parse(Atom *trak, Atom *mdat);
+	bool parse(Atom *trak);
 	void clear();
 	void writeToAtoms();
 	void fixTimes();

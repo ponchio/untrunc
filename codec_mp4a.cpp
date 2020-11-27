@@ -58,7 +58,6 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 		av_packet_unref(&avp);
 		av_frame_free(&frame);
 	}
-	Log::debug << "Duration: " << duration << '\n';
 
 	if(consumed == maxlength) {
 		Log::debug << "Codec can't determine length of the packet.";

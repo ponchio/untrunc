@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 			mp4.analyze(analyze_track);
 		}
 		if(simulate)
-			mp4.simulate();
+			mp4.simulate(same_mdat_start, ignore_mdat_start, begin);
 
 		if(corrupt.size()) {
 

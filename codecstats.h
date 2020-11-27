@@ -6,11 +6,11 @@
 #include <stdint.h>
 
 class Track;
-class Atom;
+class BufferedAtom;
 
 class CodecStats {
 public:
-	void init(Track &track, Atom *mdat);
+	void init(Track &track, BufferedAtom *mdat);
 
 	//this is most useful for pcm, assuming we are lucky.
 	int fixed_size = 0; //zero we don't know

@@ -472,12 +472,13 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 		return;
 	}
 
-	Atom *mdat = root->atomByName("mdat");
-	if(!mdat) {
+	Atom *_mdat = root->atomByName("mdat");
+	if(!_mdat) {
 		Log::error << "Missing 'Media Data container' atom (mdat).\n";
 		return;
 	}
 
+	BufferedAtom *mdat = bufferedMdat(_mdat);
 	if(interactive) {
 		// For interactive analyzis, std::cin & std::cout must be connected to a terminal/tty.
 		if(!isATerminal(cin)) {
@@ -522,7 +523,8 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 				Log::debug << setw(8) << k
 						   << " Size: " << setw(6) << track.getSize(k)
 						   << " offset " << setw(10) << track.offsets[k]
-							  << "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next << dec << '\n';
+							  << "  begin: " << hex << setw(5) << begin << ' ' << setw(8) << next << dec
+							  << " time: " << (track.default_time ? track.default_time : track.times[i]) << '\n';
 			}
 		}
 
@@ -560,7 +562,8 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 				Log::info << " Size: " << setw(6) << chunk.size
 						  << " offset " << setw(10) << chunk.offset
 						  << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
-						  << " end: " << setw(8) << end << dec << '\n';
+						  << " end: " << setw(8) << end << dec
+						  << " time: " << (track.default_time ? track.default_time : track.times[i]) << '\n';
 			}
 		}
 
@@ -569,21 +572,24 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 		for(unsigned int i = 0; i < track.offsets.size(); ++i) {
 
 			int64_t offset = track.offsets[i] - mdat->content_start;
-			unsigned char *start = &(mdat->content[offset]);
-			int64_t maxlength64 = mdat->contentSize() - offset;
+			int64_t size = track.sizes[i] + 1; //match expect maxSize to be larger than the correct value.
+			unsigned char *start = mdat->getFragment(offset, size); //&(mdat->content[offset]);
+
+			/*int64_t maxlength64 = mdat->contentSize() - offset;
 			if(maxlength64 > MaxFrameLength)
 				maxlength64 = MaxFrameLength;
-			int maxlength = static_cast<int>(maxlength64);
+			int maxlength = static_cast<int>(maxlength64); */
 
 			int32_t begin = mdat->readInt(offset);
 			int32_t next  = mdat->readInt(offset + 4);
 			Log::info << " Size: " << setw(6) << track.getSize(i)
 					  << " offset " << setw(10) << track.offsets[i]
 						 << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
-						 <<  dec << '\n';
+						 <<  dec
+						 << " time: " << (track.default_time ? track.default_time : track.times[i]) << '\n';
 
 			Log::flush();
-			Match match = track.codec.match(start, maxlength);
+			Match match = track.codec.match(start, size);
 			if(match.length == track.sizes[i])
 				continue;
 
@@ -604,7 +610,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 	}
 }
 
-void Mp4::simulate() {
+void Mp4::simulate(bool same_mdat_start, bool ignore_mdat_start, int64_t begin) {
 
 	//TODO remove duplicated code with analyze.
 	Log::info << "Simulate:\n";
@@ -759,21 +765,33 @@ void Mp4::writeTracksToAtoms() {
 bool Mp4::parseTracks() {
 	assert(root != NULL);
 
-	Atom *mdat = root->atomByName("mdat");
-	if(!mdat) {
+	Atom *_mdat = root->atomByName("mdat");
+	if(!_mdat) {
 		Log::error << "Missing 'Media Data container' atom (mdat).\n";
 		return false;
 	}
+	BufferedAtom *mdat = bufferedMdat(_mdat);
+
 	vector<Atom *> traks = root->atomsByName("trak");
 	for(unsigned int i = 0; i < traks.size(); ++i) {
 		Track track;
 		track.codec.context = context->streams[i]->codec;
-		track.parse(traks[i], mdat);
+		track.parse(traks[i]);
 		track.codec.stats.init(track, mdat);
 
 		tracks.push_back(track);
 	}
 	return true;
+}
+
+BufferedAtom *Mp4::bufferedMdat(Atom *mdat) {
+	BufferedAtom *_mdat = new BufferedAtom(file_name);
+	_mdat->start = mdat->start;
+	memcpy(_mdat->name, "mdat", 5);
+	_mdat->content_start = mdat->start;
+	_mdat->file_begin = mdat->start;
+	_mdat->file_end = _mdat->file.length();
+	return _mdat;
 }
 
 BufferedAtom *Mp4::findMdat(std::string filename, bool same_mdat_start, bool ignore_mdat_start) {
@@ -1201,6 +1219,7 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 		//Log::debug << "Drift audio - video: " << drift << "\n";
 		count++;
 	}
+
 	if(drift > timescale || drift < -timescale) { //drifting of packets for more than 1 seconds
 		Log::debug << "Drift audio - video: " << drift << ". Fixing\n";
 		//fix video

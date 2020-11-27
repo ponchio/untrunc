@@ -29,7 +29,9 @@ SOURCES += main.cpp \
     codec_alac.cpp \
     codecstats.cpp \
     codec_unknown.cpp \
-    codec_text.cpp
+    codec_text.cpp \
+    codec_tmcd.cpp \
+    codec_fdsc.cpp
 
 HEADERS += \
     atom.h \

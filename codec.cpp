@@ -93,6 +93,8 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 		return mbexMatch(start, maxlength);
 	} else if(name == "text") {
 		return textMatch(start, maxlength);
+	} else if(name == "tmcd") {
+		return tmcdMatch(start, maxlength);
 	} else if(pcm) {
 		return pcmMatch(start, maxlength);
 	} else { //rtmd

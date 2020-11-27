@@ -61,6 +61,9 @@ private:
 	Match mbexMatch(const unsigned char *start, int maxlength);
 	Match pcmMatch(const unsigned char *start, int maxlength);
 	Match textMatch(const unsigned char *start, int maxlength);
+	Match fdscMatch(const unsigned char *start, int maxlength); //GOPRO proprietary codec, doesn't still work
+
+	Match tmcdMatch(const unsigned char *start, int maxlength);
 
 	//we just hope statistics on beginning and lenght is enough
 	Match unknownMatch(const unsigned char *start, int maxlength);

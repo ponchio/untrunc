@@ -10,7 +10,7 @@
 #include "log.h"
 using namespace std;
 
-void CodecStats::init(Track &track, Atom *mdat) {
+void CodecStats::init(Track &track, BufferedAtom *mdat) {
 	std::vector<Track::Chunk> &chunks = track.chunks;
 	if(!chunks.size())
 		return;
@@ -31,7 +31,7 @@ void CodecStats::init(Track &track, Atom *mdat) {
 
 		int64_t offset = chunk.offset - mdat->content_start;
 		for(int s = 0; s < chunk.nsamples; s++) {
-			unsigned char *start = &(mdat->content[offset]);
+			unsigned char *start = mdat->getFragment(offset, 8);// &(mdat->content[offset]);
 			int64_t begin64 = readBE<int64_t>(start);
 			int32_t begin32 = readBE<int32_t>(start);
 

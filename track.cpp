@@ -48,7 +48,7 @@ void Track::cleanUp() {
 	codec.clear();
 }
 
-bool Track::parse(Atom *t, Atom *mdat) {
+bool Track::parse(Atom *t) {
 	cleanUp();
 
 	if(!t) {
@@ -286,7 +286,7 @@ void Track::getSampleTimes(Atom *t) {
 		}
 	}
 	//check if times are always the same
-	if(!default_time) {
+	if(entries != 1) {
 		int common_time = times[0];
 		for(int t: times) {
 			if(t != common_time) {

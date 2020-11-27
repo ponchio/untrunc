@@ -137,7 +137,13 @@ void Atom::parse(File &file) {
 		assert(file.pos() == start + length);
 
 	} else {
+		//skip reading mdat content, it's not useful for analysis and potentially too big
 		int64_t content_size = length -(length64? 16 : 8);
+		if(name == string("mdat")) {
+			file.seek(file.pos() + content_size);
+			return;
+		}
+
 		content = file.read(content_size); //length includes header
 		if(content.size() < content_size)
 			throw string("Failed reading atom content: ") + name;

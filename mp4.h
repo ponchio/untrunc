@@ -48,6 +48,7 @@ public:
 	BufferedAtom *findMdat(std::string filename, bool same_mdat_start = false, bool ignore_mdat_start = false);
 	int64_t contentStart();
 	int searchNext(BufferedAtom *mdat, int64_t offset);
+	BufferedAtom *bufferedMdat(Atom *mdat);
 
 
     bool save     (std::string output_filename);
@@ -58,7 +59,7 @@ public:
 
 	void analyze(int analyze_track = -1, bool interactive = true);
 	//try to recover the working video, for debugging processing
-	void simulate();
+	void simulate(bool same_mdat_start, bool ignore_mdat_start, int64_t begin);
 
     static bool makeStreamable(std::string filename, std::string output_filename);
 
