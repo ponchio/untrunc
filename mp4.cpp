@@ -529,11 +529,11 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 		}
 
 		if(track.default_size) {
-			Log::info << "Constant size for packet: " << track.default_size << "\n";
+			Log::info << "Constant size for samples: " << track.default_size << "\n";
 		} else {
-			Log::info << "Sizes for packets: " << "\n";
-			for(int i = 0; i < 10 && i < track.sizes.size(); i++) {
-				Log::info << track.sizes[i] << " ";
+			Log::info << "Sizes for samples: " << "\n";
+			for(int i = 0; i < 10 && i < track.sample_sizes.size(); i++) {
+				Log::info << track.sample_sizes[i] << " ";
 			}
 			Log::info << "\n";
 		}
@@ -545,7 +545,6 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 		if(track.default_size) {
 			if(!track.codec.pcm) {
 				Log::info << "Not a PCM codec, default size though..  we have hope.\n";
-
 			}
 			for(Track::Chunk &chunk: track.chunks) {
 				int64_t offset = chunk.offset - mdat->content_start;
@@ -569,10 +568,11 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 
 
 
-		for(unsigned int i = 0; i < track.offsets.size(); ++i) {
+		for(unsigned int i = 0; i < track.chunks.size(); ++i) {
+			Track::Chunk &chunk = track.chunks[i];
 
-			int64_t offset = track.offsets[i] - mdat->content_start;
-			int64_t size = track.sizes[i] + 1; //match expect maxSize to be larger than the correct value.
+			int64_t offset = chunk.offset - mdat->content_start;
+			int64_t size = chunk.size + 1; //match expect maxSize to be larger than the correct value.
 			unsigned char *start = mdat->getFragment(offset, size); //&(mdat->content[offset]);
 
 			/*int64_t maxlength64 = mdat->contentSize() - offset;
@@ -583,14 +583,14 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 			int32_t begin = mdat->readInt(offset);
 			int32_t next  = mdat->readInt(offset + 4);
 			Log::info << " Size: " << setw(6) << track.getSize(i)
-					  << " offset " << setw(10) << track.offsets[i]
+					  << " offset " << setw(10) << chunk.offset
 						 << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
 						 <<  dec
 						 << " time: " << (track.default_time ? track.default_time : track.times[i]) << '\n';
 
 			Log::flush();
 			Match match = track.codec.match(start, size);
-			if(match.length == track.sizes[i])
+			if(match.length == chunk.size)
 				continue;
 
 			if(match.length == 0) {
@@ -664,7 +664,7 @@ void Mp4::simulate(bool same_mdat_start, bool ignore_mdat_start, int64_t begin) 
 
 				match.id = t;
 				match.offset = track.offsets[i];
-				match.length = track.sizes[i];
+				match.length = track.chunk_sizes[i];
 				match.duration = track.default_time? track.default_time : track.times[i];
 				packets.push_back(match);
 			}
@@ -934,7 +934,7 @@ int Mp4::searchNext(BufferedAtom *mdat, int64_t offset) {
 	best.offset = 0;
 	for(Track &track: tracks) {
 		Match m = track.codec.search(start, maxlength);
-		if(m.chances != 0 && best.chances == 0 || m.offset < best.offset)
+		if(m.chances != 0 && (best.chances == 0 || m.offset < best.offset))
 			best = m;
 	}
 	return best.offset;
@@ -1164,9 +1164,9 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 			offset += best.length;
 
 		} else {
-			Log::debug << "Unknown length, search for next beginning" << endl;
-			best.length = searchNext(mdat, offset);
 
+			best.length = searchNext(mdat, offset);
+			Log::debug << "Unknown length, search for next beginning, guessed as: " << best.length << endl;
 			if(!best.length) {
 				Log::error << "Could not guess length of best match" << endl;
 				//throw "Can't guess the length of any packet.";
@@ -1181,9 +1181,9 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 
 	//copy matches into tracks
 	int count = 0;
-	int64_t drift = 0; //difference in times between audio and video.
-	int64_t audio_current = 0;
-	int64_t video_current = 0;
+	double drift = 0; //difference in times between audio and video.
+	double audio_current = 0;
+	double video_current = 0;
 	for(MatchGroup &group: matches) {
 		assert(group.size() > 0);
 		Match &match = group.back();
@@ -1196,20 +1196,22 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 		if(track.default_size) {
 			//if number of samples per chunk is variable, encode each sample in a different chunk.
 			if(track.default_chunk_nsamples == 0)
-				track.nsamples += 1;
+				track.nsamples += match.length/track.default_size;
 			else
 				track.nsamples += track.default_chunk_nsamples;
 		} else {
-			//TODO: this won't work for things with samples per chunk != 1;
-			track.nsamples++;
-			track.sizes.push_back(match.length);
+			//might be wrong for variable number of samples per chunk.
+			track.nsamples++; //we just hope we get 1 sample
+			track.sample_sizes.push_back(match.length);
 		}
+		track.chunk_sizes.push_back(match.length);
+
 
 		if(match.duration)
 			audiotimes.push_back(match.duration);
 
 		//check timing drifting
-		int64_t t = track.default_time? track.default_time : track.times[count% track.times.size()];
+		double t = track.default_time? track.default_time : track.times[count% track.times.size()];
 		if(track.type == string("vide")) {
 			video_current += t*timescale / track.timescale;
 		} else if(track.type == string("soun")) {
@@ -1228,7 +1230,7 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 				continue;
 			//convert back drift to track timescale
 			drift = track.timescale * drift /timescale;
-			int64_t per_sample = drift /(int64_t)track.offsets.size();
+			int64_t per_sample = int64_t(drift /(double)track.offsets.size());
 			if(track.default_time)
 				track.default_time += per_sample;
 			else

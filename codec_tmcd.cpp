@@ -53,21 +53,19 @@ Match Codec::tmcdMatch(const unsigned char *start, int maxlength) {
 	if(stats.fixed_size)
 		match.length = stats.fixed_size;
 
-	uint32_t reserved = readBE<uint32_t>(start);
-	if(reserved != 0) return match;
+	/* This is how to read the time code IN THE STSD ATOM!, not here.
+	 * it is possible taht using this values we might guess which values are acceptable */
+
+/*	uint32_t reserved = readBE<uint32_t>(start);
 
 	uint32_t flags = readBE<uint32_t>(start + 4);
-	if(flags > 15) return match;
-
 	uint32_t timescale = readBE<uint32_t>(start + 8);
+
 	//dunno what values are reasonable (might use the value from the other video though.
 	uint32_t frameduration = readBE<uint32_t>(start + 12);
-
 	uint8_t nframes = readBE<uint8_t>(start + 16);
 	uint8_t empty = readBE<uint8_t>(start + 17);
-	if(empty != 0) return match;
+*/
 
-	match.chances = 1<<20;
-	match.length = readBE<uint32_t>(start + 18) + 22;
 	return match;
 }

@@ -63,6 +63,9 @@ private:
 	Match textMatch(const unsigned char *start, int maxlength);
 	Match fdscMatch(const unsigned char *start, int maxlength); //GOPRO proprietary codec, doesn't still work
 
+	Match apchMatch(const unsigned char *start, int maxlength);
+	Match apchSearch(const unsigned char *start, int maxlength);
+
 	Match tmcdMatch(const unsigned char *start, int maxlength);
 
 	//we just hope statistics on beginning and lenght is enough

@@ -42,7 +42,7 @@ void Track::cleanUp() {
 	duration  = 0;
 	offsets.clear();
 	chunks.clear();
-	sizes.clear();
+	sample_sizes.clear();
 	keyframes.clear();
 	times.clear();
 	codec.clear();
@@ -80,9 +80,9 @@ bool Track::parse(Atom *t) {
 	getChunkOffsets(t);
 	getSampleToChunk(t);
 
-	if(!default_time && !default_size && times.size() != sizes.size()) {
+	if(!default_time && !default_size && times.size() != sample_sizes.size()) {
 		Log::info << "Mismatch between time offsets and size offsets.\n";
-		Log::debug << "Time offsets: " << times.size() << " Size offsets: " << sizes.size() << '\n';
+		Log::debug << "Time offsets: " << times.size() << " Size offsets: " << sample_sizes.size() << '\n';
 	}
 	//assert(times.size() == sizes.size());
 /*	if(!default_time && times.size() != sample_to_chunk.size()) {
@@ -237,7 +237,7 @@ void Track::writeToAtoms() {
 void Track::clear() {
 	nsamples = 0;
 	offsets.clear();
-	sizes.clear();
+	sample_sizes.clear();
 	keyframes.clear();
 	//times.clear();
 }
@@ -318,20 +318,18 @@ void Track::getKeyframes(Atom *t) {
 
 void Track::getSampleSizes(Atom *t) {
 	assert(t != NULL);
-	sizes.clear();
+	sample_sizes.clear();
 	// Chunk offsets.
 	Atom *stsz = t->atomByName("stsz");
 	if(!stsz)
 		throw string("Missing 'Sample Sizes' atom (stsz)");
 
 	nsamples      = stsz->readInt(8);
-	int32_t default_size_t = stsz->readInt(4);
+	default_size = stsz->readInt(4);
 
-	if(default_size_t == 0) {
+	if(default_size == 0) {
 		for(int i = 0; i < nsamples; i++)
-			sizes.push_back(stsz->readInt(12 + 4*i));
-	} else {
-		default_size = default_size_t;
+			sample_sizes.push_back(stsz->readInt(12 + 4*i));
 	}
 }
 
@@ -398,7 +396,7 @@ void Track::getSampleToChunk(Atom *t){
 			} else {
 				uint64_t offset = chunks[k].offset;
 				for(int s = 0; s < chunks[k].nsamples; s++) {
-					int32_t size = sizes[count++];
+					int32_t size = sample_sizes[count++];
 					chunks[k].size += size;
 					offsets.push_back(offset);
 					offset += size;
@@ -467,15 +465,15 @@ void Track::saveSampleSizes() {
 	stsz->content.resize(4 +                //version
 						 4 +                //default size
 						 4 +                //entries
-						 4*sizes.size());   //size table
+						 4*sample_sizes.size());   //size table
 	stsz->writeInt(0, 4);
 	stsz->writeInt(default_size, 4);
 	if(default_size) {
 		stsz->writeInt(nsamples, 8);
 	} else {
-		stsz->writeInt(sizes.size(), 8);
-		for(unsigned int i = 0; i < sizes.size(); i++)
-			stsz->writeInt(sizes[i], 12 + 4*i);
+		stsz->writeInt(sample_sizes.size(), 8);
+		for(unsigned int i = 0; i < sample_sizes.size(); i++)
+			stsz->writeInt(sample_sizes[i], 12 + 4*i);
 	}
 }
 
@@ -486,7 +484,8 @@ void Track::saveSampleToChunk() {
 	assert(stsc);
 	if(!stsc)
 		return;
-	if(default_chunk_nsamples == 0) {
+	//for non pcm codecs we just assume 1
+	if(!codec.pcm && default_chunk_nsamples == 0) {
 		default_chunk_nsamples = 1;
 		Log::debug <<  "Don;t know how to deal with variable sample size and variable number of samples per chunk. Trying with 1.\n";
 	}
@@ -511,15 +510,14 @@ void Track::saveSampleToChunk() {
 		stsc->writeInt(1, 16);                  //id 1 (WHAT IS THIS!)
 
 	} else { //default size but not default chunk nsamples
-		assert(0 && "This will make sense if we can recover variable samples per chunk and rebuild the chunk structure");
 		stsc->content.resize(4 +                //version
 							 4 +                //number of entries
-							 12*chunks.size());               //one sample per chunk.
-		stsc->writeInt(chunks.size(),  4);
-		for(int i = 0; i < chunks.size(); i++) {
+							 12*chunk_sizes.size());               //one sample per chunk.
+		stsc->writeInt(chunk_sizes.size(),  4);
+		for(int i = 0; i < chunk_sizes.size(); i++) {
 			stsc->writeInt(i+1,  8 + 12*i);                  //first chunk (1 based)
-			int chunk_nsamples = (default_chunk_nsamples == 0) ? chunks[i].size/ default_size : default_chunk_nsamples;
-			stsc->writeInt(chunk_nsamples, 12 + 12*i);                  //one sample per chunk
+			int chunk_nsamples = chunk_sizes[i]/ default_size;
+			stsc->writeInt(chunk_nsamples, 12 + 12*i);
 			stsc->writeInt(1, 16 + 12*i);                  //id 1 (WHAT IS THIS!)
 		}
 	}

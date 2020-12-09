@@ -49,9 +49,12 @@ public:
 	//if default size we work using chunks
 	int32_t nsamples;
 	int default_chunk_nsamples = 0;
-	int default_size = 0;
-	std::vector<int32_t> sizes;
-	std::vector<int64_t> offsets; //populated only if not default size
+	int default_size = 0;  //default SAMPLE size
+	std::vector<int32_t> sample_sizes;   //SAMPLE sizes
+
+	//TODO use CHUNK instead!
+	std::vector<int32_t> chunk_sizes;
+	std::vector<int64_t> offsets; //CHUNK offsetspopulated only if not default size
 
 	std::vector<int> keyframes; // 0 based!
 
@@ -73,7 +76,7 @@ public:
 	void clear();
 	void writeToAtoms();
 	void fixTimes();
-	int getSize(size_t i) { if(sizes.size()) return sizes[i]; return default_size; }
+	int getSize(size_t i) { if(sample_sizes.size()) return sample_sizes[i]; return default_size; }
 	int getTimes(size_t i) { if(times.size()) return times[i]; return default_time; }
 
 protected:

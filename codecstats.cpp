@@ -46,7 +46,7 @@ void CodecStats::init(Track &track, BufferedAtom *mdat) {
 				beginnings32[begin32]+= step;
 			}
 			if(!track.default_size) { //pcm codecs with small samples.
-				offset += track.sizes[current_sample];
+				offset += track.sample_sizes[current_sample];
 				current_sample++;
 			} else if(track.default_size > 80) {
 				offset += track.default_size;

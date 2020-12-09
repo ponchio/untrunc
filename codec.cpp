@@ -47,6 +47,7 @@ bool Codec::parse(Atom *trak) {
 		name == "fl32" || //32-bit floating point PCM. (Presumably IEEE 32-bit; byte order?)
 		name == "fl64" || //64-bit floating point PCM. (Presumably IEEE 64-bit; byte order?)
 		name == "alaw" || //A-law logarithmic PCM.
+		name == "lpcm" ||
 		name == "ulaw") {
 			pcm = true;
 	}
@@ -78,8 +79,8 @@ bool Codec::parse(Atom *trak) {
 
 Match Codec::match(const unsigned char *start, int maxlength) {
 	int64_t begin64 = readBE<int64_t>(start);
-	if(stats.beginnings64.size() <= 4 && !stats.beginnings64.count(begin64))
-		return Match();
+	//if(stats.beginnings64.size() <= 4 && !stats.beginnings64.count(begin64))
+	//	return Match();
 
 	if(name == "rtp ") {
 		return rtpMatch(start, maxlength);
@@ -93,6 +94,8 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 		return mbexMatch(start, maxlength);
 	} else if(name == "text") {
 		return textMatch(start, maxlength);
+	} else if(name == "apch") {
+		return apchMatch(start, maxlength);
 	} else if(name == "tmcd") {
 		return tmcdMatch(start, maxlength);
 	} else if(pcm) {
@@ -108,7 +111,14 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 }
 
 Match Codec::search(const unsigned char *start, int maxlength) {
+	//alcuni codec sono searchabili! specialmente quelli che hanno la size in fronte.
+	if(name == "apch") {
+		return apchSearch(start, maxlength);
+	}
+
 	Match match;
+	return match;
+
 	int count = 0;
 	for(int offset = 8; offset < maxlength - 8; offset++) {
 		if(count > maxlength)
