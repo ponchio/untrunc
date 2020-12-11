@@ -1222,7 +1222,7 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 		count++;
 	}
 
-	if(drift > timescale || drift < -timescale) { //drifting of packets for more than 1 seconds
+	if(audio_current > 0 && video_current > 0 && (drift > timescale || drift < -timescale)) { //drifting of packets for more than 1 seconds
 		Log::debug << "Drift audio - video: " << drift << ". Fixing\n";
 		//fix video
 		for(Track &track: tracks) {
