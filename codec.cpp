@@ -94,8 +94,8 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 		return mbexMatch(start, maxlength);
 	} else if(name == "text") {
 		return textMatch(start, maxlength);
-	} else if(name == "apch") {
-		return apchMatch(start, maxlength);
+	//} else if(name == "apch") {
+	//	return apchMatch(start, maxlength);
 	} else if(name == "tmcd") {
 		return tmcdMatch(start, maxlength);
 	} else if(pcm) {
@@ -112,9 +112,9 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 
 Match Codec::search(const unsigned char *start, int maxlength) {
 	//alcuni codec sono searchabili! specialmente quelli che hanno la size in fronte.
-	if(name == "apch") {
-		return apchSearch(start, maxlength);
-	}
+	//if(name == "apch") {
+	//	return apchSearch(start, maxlength);
+	//}
 
 	Match match;
 	return match;
