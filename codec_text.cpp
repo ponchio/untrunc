@@ -36,7 +36,13 @@ Match Codec::textMatch(const unsigned char *start, int maxlength) {
 	offset += size + 2; //length does not include size word
 
 	//TODO if text is ascii changes might be significantly higher!
-	match.chances = 256.0f;
+
+	int32_t begin = readBE<int32_t>(start);
+	if(stats.fixed_size && stats.beginnings32.count(begin)) {
+		match.chances =stats.beginnings32[begin];
+		match.length = size+2;
+		return match;
+	}
 
 	const char *atoms[9] = { "encd", "styl", "ftab", "hlit", "hclr", "drpo", "drpt", "imag", "metr" };
 	while(offset < maxlength - 10) { //shortest atom has length(4) name(4) shadow transparency(2)
