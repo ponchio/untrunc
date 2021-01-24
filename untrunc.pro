@@ -11,6 +11,7 @@ TARGET = untrunc
 CONFIG += console
 CONFIG -= -qt app_bundle
 
+QMAKE_CXXFLAGS += -std=c++11
 
 TEMPLATE = app
 

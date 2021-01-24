@@ -22,6 +22,7 @@
 #include "atom.h"
 #include "log.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <string>
 using namespace std;

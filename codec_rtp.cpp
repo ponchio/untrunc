@@ -1,6 +1,6 @@
 #include "codec.h"
 #include "log.h"
-#include <math.h>
+#include <cmath>
 #include <limits>
 
 //  https://developer.apple.com/standards/qtff-2001.pdf page 153
