@@ -247,12 +247,13 @@ void Track::fixTimes() {
 		times.clear();
 		default_time = 160;
 	}
-	if(default_time) {
+	if(default_time || times.size() == 0) {
 		if(default_size)
 			duration = default_time * nsamples;
 		else
 			duration = default_time * nsamples;
 	} else {
+
 		assert(times.size() > 0);
 		while(times.size() < offsets.size())
 			times.insert(times.end(), times.begin(), times.end());

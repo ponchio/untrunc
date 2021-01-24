@@ -8,7 +8,7 @@ Match Codec::unknownMatch(const unsigned char *start, int maxlength) {
 	Match match;
 
 	//probably no samples
-	if(!stats.fixed_size && !stats.fixed_begin32 && !stats.fixed_begin64)
+	if(!stats.fixed_size)
 		return match;
 
 	if(stats.fixed_size)
@@ -36,8 +36,9 @@ Match Codec::unknownMatch(const unsigned char *start, int maxlength) {
 
 
 	int64_t begin64 = readBE<int64_t>(start);
+	int32_t begin32 = readBE<int32_t>(start);
 
-	if(stats.fixed_begin64) {
+	/*if(stats.fixed_begin64) {
 		if(stats.fixed_begin64 == begin64)
 			match.chances = 1e40f;
 		else
@@ -45,14 +46,13 @@ Match Codec::unknownMatch(const unsigned char *start, int maxlength) {
 		return match;
 	}
 
-	int32_t begin32 = readBE<int32_t>(start);
 	if(stats.fixed_begin32) {
 		if(stats.fixed_begin32 == begin32)
 			match.chances = 1e20f;
 		else
 			match.chances = 0.0f;
 		return match;
-	}
+	}*/
 
 	//if we have a probability with the beginnig we can do something otherwise just lower it below 2 (for pcm)
 	//we will have to look up for patterns, and when chances are really low, use search!

@@ -67,6 +67,8 @@ private:
 	Match apchSearch(const unsigned char *start, int maxlength);
 
 	Match tmcdMatch(const unsigned char *start, int maxlength);
+	Match mijdMatch(const unsigned char *start, int maxlength);
+	Match mijdSearch(const unsigned char *start, int maxlength);
 
 	//we just hope statistics on beginning and lenght is enough
 	Match unknownMatch(const unsigned char *start, int maxlength);

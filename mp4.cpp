@@ -586,7 +586,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 					  << " offset " << setw(10) << chunk.offset
 						 << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
 						 <<  dec
-						 << " time: " << (track.default_time ? track.default_time : track.times[i]) << '\n';
+						 << " time: " << (track.default_time || track.times.size() == 0 ? track.default_time : track.times[i]) << '\n';
 
 			Log::flush();
 			Match match = track.codec.match(start, size);
@@ -1211,7 +1211,7 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 			audiotimes.push_back(match.duration);
 
 		//check timing drifting
-		double t = track.default_time? track.default_time : track.times[count% track.times.size()];
+		double t = track.default_time || track.times.size() == 0 ? track.default_time : track.times[count% track.times.size()];
 		if(track.type == string("vide")) {
 			video_current += t*timescale / track.timescale;
 		} else if(track.type == string("soun")) {
