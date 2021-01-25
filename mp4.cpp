@@ -567,44 +567,40 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 		}
 
 
-
+		int sample = 0;
 		for(unsigned int i = 0; i < track.chunks.size(); ++i) {
 			Track::Chunk &chunk = track.chunks[i];
-
 			int64_t offset = chunk.offset - mdat->content_start;
-			int64_t size = chunk.size + 1; //match expect maxSize to be larger than the correct value.
-			unsigned char *start = mdat->getFragment(offset, size); //&(mdat->content[offset]);
+			for(int k = 0; k < chunk.nsamples; k++) {
+				int64_t size = track.getSize(sample);
+				unsigned char *start = mdat->getFragment(offset, size+200); //&(mdat->content[offset]);
+				int32_t begin = mdat->readInt(offset);
+				int32_t next  = mdat->readInt(offset + 4);
+				Log::info << " Size: " << setw(6) << size
+									  << " offset " << setw(10) << offset + mdat->content_start
+									  << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next <<  dec << '\n';
 
-			/*int64_t maxlength64 = mdat->contentSize() - offset;
-			if(maxlength64 > MaxFrameLength)
-				maxlength64 = MaxFrameLength;
-			int maxlength = static_cast<int>(maxlength64); */
 
-			int32_t begin = mdat->readInt(offset);
-			int32_t next  = mdat->readInt(offset + 4);
-			Log::info << " Size: " << setw(6) << track.getSize(i)
-					  << " offset " << setw(10) << chunk.offset
-						 << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
-						 <<  dec
-						 << " time: " << (track.default_time || track.times.size() == 0 ? track.default_time : track.times[i]) << '\n';
+				sample++;
+				offset += size;
 
-			Log::flush();
-			Match match = track.codec.match(start, size);
-			if(match.length == chunk.size)
-				continue;
+				Match match = track.codec.match(start, size+200);
+				if(match.length == size)
+					continue;
 
-			if(match.length == 0) {
-				Log::error << "- Match failed!\n";
-			} else if(match.length < 0 || match.length > MaxFrameLength) {
-				Log::error << "- Invalid length!\n";
-			} else {
-				Log::error << "- Length mismatch!\n";
-			}
+				if(match.length == 0) {
+					Log::error << "- Match failed!\n";
+				} else if(match.length < 0 || match.length > MaxFrameLength) {
+					Log::error << "- Invalid length!\n";
+				} else {
+					Log::error << "- Length mismatch: got " << match.length << " expected: " << size << "\n";
+				}
 
-			Log::info << "Match: length " << match.length << "\n";
-			if(interactive) {
-				Log::info << "  <Press [Enter] for next match>\r";
-				cin.ignore(numeric_limits<streamsize>::max(), '\n');
+				if(interactive) {
+					Log::info << "  <Press [Enter] for next match>\r";
+					cin.ignore(numeric_limits<streamsize>::max(), '\n');
+				}
+
 			}
 		}
 	}
