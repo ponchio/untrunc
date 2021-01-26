@@ -69,13 +69,6 @@ Follow the above steps for "Installing on other operating system", but use the f
 
 Jose1711 kindly provides an arch package here: https://aur.archlinux.org/packages/untrunc-git/
 
-## Docker container
-
-You can use the included Dockerfile to build and execute the package as a container
-```
-docker build -t untrunc .
-docker run -v /path/to/files/:/files untrunc /files/working_video /files/broken_video
-```    
 ## Using
 
 You need both the broken video and an example working video (ideally from the same camera, if not the chances to fix it are slim).
@@ -90,6 +83,17 @@ That's it you're done!
 
 (Thanks to Tom Sparrow for providing the guide)
 
+## Docker container
+
+You can use the included Dockerfile to build and execute the package as a container
+```
+docker build -t untrunc .
+```
+Then e.g. to fix the file `/path/to/videos/broken_video` use this command to mount your video-folder into the folder `/files`
+inside the docker container and call `untrunc` also inside the docker container:
+```
+docker run -v /path/to/videos/:/files untrunc /files/working_video /files/broken_video
+```
 
 ### Help/Support
 
