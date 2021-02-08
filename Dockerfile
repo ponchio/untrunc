@@ -6,7 +6,7 @@ RUN apt-get update
 RUN apt-get -y install libavformat-dev libavcodec-dev libavutil-dev unzip g++ wget make nasm zlib1g-dev
 
 # download and extract
-RUN wget https://github.com/ponchio/untrunc/archive/master.zip
+RUN wget https://www.github.com/ponchio/untrunc/archive/master.zip
 RUN unzip master.zip 
 WORKDIR /untrunc-master
 RUN wget https://github.com/libav/libav/archive/v12.3.zip && unzip v12.3.zip
