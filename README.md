@@ -73,7 +73,7 @@ If `configure` complains about `nasm/yasm not found`, you can either install Nas
 
 Build the untrunc executable:
 
-    g++ -o untrunc -I./libav-12.3 file.cpp main.cpp track.cpp atom.cpp mp4.cpp -L./libav-12.3/libavformat -lavformat -L./libav-12.3/libavcodec -lavcodec -L./libav-12.3/libavresample -lavresample -L./libav-12.3/libavutil -lavutil -lpthread -lz
+    g++ -o untrunc -I./libav-12.3 file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav-12.3/libavformat -lavformat -L./libav-12.3/libavcodec -lavcodec -L./libav-12.3/libavresample -lavresample -L./libav-12.3/libavutil -lavutil -lpthread -lz
 
 Depending on your system and Libav configure options you might need to add extra flags to the command line:
 - add `-lbz2`   for errors like `undefined reference to 'BZ2_bzDecompressInit'`,
