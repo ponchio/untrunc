@@ -1011,8 +1011,18 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 	int64_t offset = 0;
 
 
+//GOPRO TMCD is a single packet with a timestamp
+
+	int tmcd_id = -1;
+	for(unsigned int i = 0; i < tracks.size(); ++i) {
+		Track &track = tracks[i];
+		if(string(track.codec.name) == "tmcd")
+			tmcd_id = i;
+	}
+
 
 	std::vector<MatchGroup> matches;
+
 
 	//keep track of how many backtraced.
 	int backtracked = 0;
@@ -1127,6 +1137,9 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 				backtracked++;
 
 				MatchGroup &last = matches.back();
+				if(best.id == tmcd_id)
+					tracks[best.id].codec.tmcd_seen = false;
+
 				//last packet found in previous group wasn't good.
 				last.pop_back();
 
@@ -1137,6 +1150,8 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 				}
 				Match &candidate = last.back();
 				if(candidate.chances > 0.0f && candidate.length > 0 ) {
+					if(candidate.id == tmcd_id)
+						tracks[candidate.id].codec.tmcd_seen = true;
 					offset = last.offset + candidate.length;
 					break;
 				}
@@ -1171,6 +1186,8 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 			offset += best.length;
 			//This should only happen with pcm codecs, and here we should search for the beginning of another codec
 		}
+		if(best.id == tmcd_id)
+			tracks[best.id].codec.tmcd_seen = true; //id in tracks start from 1.
 		matches.push_back(group);
 	}
 

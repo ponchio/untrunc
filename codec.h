@@ -38,10 +38,12 @@ public:
 	/* Codec properties */
 	uint32_t pcm_bytes_per_sample = 0; //sample size.
 	bool pcm = false;
+	bool tmcd_seen = false;
 //	bool knows_start = false;
 //	bool guess_start = false;
 //	bool knows_length = false;
 	CodecStats stats;
+
 
 	Codec();
 

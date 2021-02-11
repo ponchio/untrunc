@@ -98,6 +98,8 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 		return apchMatch(start, maxlength);
 	} else if(name == "tmcd") {
 		return tmcdMatch(start, maxlength);
+	} else if(name == "fdsc") {
+		return fdscMatch(start, maxlength);
 	} else if(name == "priv") {
 		return mijdMatch(start, maxlength);
 	} else if(pcm) {

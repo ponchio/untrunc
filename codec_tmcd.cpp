@@ -47,11 +47,24 @@ This entry contains a text item specifying the name of the source tape.
 */
 
 
+#include <iostream>
+using namespace std;
 Match Codec::tmcdMatch(const unsigned char *start, int maxlength) {
 
 	Match match;
-	if(stats.fixed_size)
-		match.length = stats.fixed_size;
+
+	if(tmcd_seen)
+		return match;
+
+	unsigned int timestamp = readBE<unsigned int>(start);
+
+	if( timestamp > 2592000)
+		match.chances = 0;
+	else {
+		match.length = 4;
+		match.chances = 1024;
+	}
+	return match;
 
 	/* This is how to read the time code IN THE STSD ATOM!, not here.
 	 * it is possible taht using this values we might guess which values are acceptable */
