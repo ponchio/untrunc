@@ -28,6 +28,7 @@ RUN ./configure && make -j
 WORKDIR /untrunc
 ADD . .
 RUN /usr/bin/g++ -o untrunc \
+    main.cpp \
     atom.cpp \
     mp4.cpp \
     file.cpp \
