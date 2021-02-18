@@ -20,6 +20,8 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 		Log::debug << "mp4a: Success because of horrible hack.\n";
 	}
 
+	if(start[0] == 0)
+		return match;
 
 	uint32_t duration = 0;
 

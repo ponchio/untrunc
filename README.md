@@ -6,64 +6,42 @@ Restore a damaged (truncated) mp4, m4v, mov, 3gp video. Provided you have a simi
 You need:
 
 * Another video file which isn't broken
-* [Libav](https://libav.org/)
+* [Libav 12](https://libav.org/)
 * Basic ability to use a command line
 
+## Installing on CentOS 7
 
-## Installing on Ubuntu
+    yum install https://extras.getpagespeed.com/release-el7-latest.rpm
+    yum install untrunc
 
-If you have an old Ubuntu version or other operational system, you might need to manually install a recent Libav version, go to the bottom of the page for instructions.
-
-Install some pre-requisite libraries with this command:
-
-    sudo apt-get install libavformat-dev libavcodec-dev libavutil-dev
-
-Download the source code from GitHub at https://github.com/ponchio/untrunc
-
-    wget https://github.com/ponchio/untrunc/archive/master.zip
-
-Unzip the source code:
-
-    unzip master.zip
-
-Go into the directory where it's been unzipped:
-
-    cd untrunc-master
-
-Compile the source code using this command (all one line):
-
-    g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -L/usr/local/lib -lavformat -lavcodec -lavutil
-
-
-## Installing on other operating systems (Manual Libav installation)
+## Installing
 
 Because Untrunc uses Libav internal headers and internal headers are not included in application development packages, you must build Libav from source.
-
-Download the [Untrunc](https://github.com/ponchio/untrunc) source code from GitHub:
-
-    wget https://github.com/ponchio/untrunc/archive/master.zip
 
 Download the Libav sources from either [the download page](https://libav.org/download/) or its [GitHub mirror](https://github.com/libav/libav/releases):
 
     wget https://libav.org/releases/libav-12.3.tar.xz
     [or:  wget https://github.com/libav/libav/archive/v12.3.zip ]
 
+Download the source code from GitHub at https://github.com/ponchio/untrunc
+
+    wget https://github.com/ponchio/untrunc/archive/master.zip
+
 Unzip the Untrunc source code:
 
     unzip master.zip
 
+    
 Unzip the Libav source code into the Untrunc source directory with either:
 
     tar -xJf libav-12.3.tar.xz -C untrunc-master
     [or:  unzip v12.3.zip -d untrunc-master ]
 
-Go into the directory where it's been unzipped:
+Go into the libav directory and build it:
 
     cd untrunc-master
 
-Build the Libav library:
-
-    cd libav-12.3/
+    cd untrunc-master/libav-12.3/
     ./configure
     make
     cd ..
@@ -73,7 +51,7 @@ If `configure` complains about `nasm/yasm not found`, you can either install Nas
 
 Build the untrunc executable:
 
-    g++ -o untrunc -I./libav-12.3 file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav-12.3/libavformat -lavformat -L./libav-12.3/libavcodec -lavcodec -L./libav-12.3/libavresample -lavresample -L./libav-12.3/libavutil -lavutil -lpthread -lz
+    g++ -o untrunc -I./libav-12.3 file.cpp main.cpp track.cpp atom.cpp mp4.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav-12.3/libavformat -lavformat -L./libav-12.3/libavcodec -lavcodec -L./libav-12.3/libavresample -lavresample -L./libav-12.3/libavutil -lavutil -lpthread -lz
 
 Depending on your system and Libav configure options you might need to add extra flags to the command line:
 - add `-lbz2`   for errors like `undefined reference to 'BZ2_bzDecompressInit'`,
@@ -90,19 +68,12 @@ On macOS add the following (tested on OSX 10.12.6):
 
 Follow the above steps for "Installing on other operating system", but use the following g++ command:
 
-	g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -I./libav-0.8.7 -L./libav-0.8.7/libavformat -lavformat -L./libav-0.8.7/libavcodec -lavcodec -L./libav-0.8.7/libavutil -lavutil -lpthread -lz -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration -lbz2 -DOSX
+	g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -I./libav-12.3 -L./libav-12.3/libavformat -lavformat -L./libav-12.3/libavcodec -lavcodec -L./libav-12.3/libavresample -lavresample -L./libav-12.3/libavutil -lavutil -lpthread -lz -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration -lbz2 -DOSX
 
 ## Arch package
 
 Jose1711 kindly provides an arch package here: https://aur.archlinux.org/packages/untrunc-git/
 
-## Docker container
-
-You can use the included Dockerfile to build and execute the package as a container
-```
-docker build -t untrunc .
-docker run -v /path/to/files/:/files untrunc /files/working_video /files/broken_video
-```    
 ## Using
 
 You need both the broken video and an example working video (ideally from the same camera, if not the chances to fix it are slim).
@@ -117,6 +88,17 @@ That's it you're done!
 
 (Thanks to Tom Sparrow for providing the guide)
 
+## Docker container
+
+You can use the included Dockerfile to build and execute the package as a container
+```
+docker build -t untrunc .
+```
+Then e.g. to fix the file `/path/to/videos/broken_video` use this command to mount your video-folder into the folder `/files`
+inside the docker container and call `untrunc` also inside the docker container:
+```
+docker run -v /path/to/videos/:/files untrunc /files/working_video /files/broken_video
+```
 
 ### Help/Support
 
