@@ -1024,9 +1024,15 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 	std::vector<MatchGroup> matches;
 
 
+	int percent = 0;
 	//keep track of how many backtraced.
 	int backtracked = 0;
 	while(offset <  mdat->contentSize()) {
+		int p = 100*offset / mdat->contentSize();
+		if(p > percent) {
+			percent = p;
+			Log::info << "Processed: " << percent << "%\n";
+		}
 		int64_t maxlength64 = mdat->contentSize() - offset;
 		if(maxlength64 > MaxFrameLength)
 			maxlength64 = MaxFrameLength;
@@ -1190,6 +1196,9 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 			tracks[best.id].codec.tmcd_seen = true; //id in tracks start from 1.
 		matches.push_back(group);
 	}
+
+	if(matches.size() < 4) //to few packets.
+		return false;
 
 
 	//copy matches into tracks

@@ -100,7 +100,17 @@ int main(int argc, char *argv[]) {
 
 		if(corrupt.size()) {
 
-			mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);
+			bool success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);
+			if(!success && !same_mdat_start) {
+				same_mdat_start = true;
+				success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);
+				if(!success && !ignore_mdat_start)
+					success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);
+			}
+			if(!success) {
+				Log::error << "Failed recovering the file\n";
+			}
+
 			size_t lastindex = corrupt.find_last_of(".");
 			string fixed = corrupt.substr(0, lastindex);
 			mp4.saveVideo(fixed + "_fixed.mp4");
