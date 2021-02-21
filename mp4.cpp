@@ -192,10 +192,12 @@ void Mp4::open(string filename) {
 
 			root->children.push_back(atom);
 		} while(!file.atEnd());
+
 	} catch(const string &error) {
 		Log::info << error << "\n";
 		Log::flush();
-		throw string("Failed parsing working mp4. Maybe the broken and working files got inverted.");
+		if(!root->atomByName("moov"))
+			throw string("Failed parsing working mp4. Maybe the broken and working files got inverted.");
 	}/* catch(...) {
 		throw string("Failed parsing working mp4. Maybe the broken and working files got inverted.");
 	}*/
