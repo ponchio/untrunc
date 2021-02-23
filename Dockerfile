@@ -59,5 +59,9 @@ RUN /usr/bin/g++ -o untrunc \
 FROM ubuntu:bionic
 COPY --from=build /untrunc/untrunc /untrunc
 
+# user
+RUN useradd untrunc
+USER untrunc
+
 # execution
 ENTRYPOINT ["/untrunc"]

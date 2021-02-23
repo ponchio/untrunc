@@ -88,6 +88,10 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 		return avc1Match(start, maxlength);
 	} else if(name == "mp4a") {
 		return mp4aMatch(start, maxlength);
+
+	} else if(name == "hev1") {
+		return hev1Match(start, maxlength);
+
 	} else if(name == "alac") {
 		return alacMatch(start, maxlength);
 	} else if(name == "mebx") {

@@ -20,7 +20,8 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 		Log::debug << "mp4a: Success because of horrible hack.\n";
 	}
 
-	if(start[0] == 0)
+	int64_t begin32 = readBE<int32_t>(start);
+	if(start[0] == 0 && begin32 < 1000000)
 		return match;
 
 	uint32_t duration = 0;

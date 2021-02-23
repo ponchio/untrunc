@@ -68,6 +68,8 @@ private:
 	Match apchMatch(const unsigned char *start, int maxlength);
 	Match apchSearch(const unsigned char *start, int maxlength);
 
+	Match hev1Match(const unsigned char *start, int maxlength);
+
 	Match tmcdMatch(const unsigned char *start, int maxlength);
 	Match mijdMatch(const unsigned char *start, int maxlength);
 	Match mijdSearch(const unsigned char *start, int maxlength);

@@ -34,7 +34,8 @@ SOURCES += main.cpp \
     codec_tmcd.cpp \
     codec_fdsc.cpp \
     codec_apch.cpp \
-    codec_mijd.cpp
+    codec_mijd.cpp \
+    codec_hev1.cpp
 
 HEADERS += \
     atom.h \
