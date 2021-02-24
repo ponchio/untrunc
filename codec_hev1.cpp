@@ -25,7 +25,7 @@ public:
 		is_ok = parseNal(start, max_size);
 	}
 
-	uint length_ = 0;
+	uint32_t length_ = 0;
 	int nuh_layer_id_ = 0;
 	int nal_type_ = 0;
 	int nuh_temporal_id_plus1 = 0;
