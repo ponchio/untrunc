@@ -68,7 +68,7 @@ On macOS add the following (tested on OSX 10.12.6):
 
 Follow the above steps for "Installing on other operating system", but use the following g++ command:
 
-	g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp -I./libav-12.3 -L./libav-12.3/libavformat -lavformat -L./libav-12.3/libavcodec -lavcodec -L./libav-12.3/libavresample -lavresample -L./libav-12.3/libavutil -lavutil -lpthread -lz -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration -lbz2 -DOSX
+	g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp mp4.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -I./libav-12.3 -L./libav-12.3/libavformat -lavformat -L./libav-12.3/libavcodec -lavcodec -L./libav-12.3/libavresample -lavresample -L./libav-12.3/libavutil -lavutil -lpthread -lz -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration -lbz2 -DOSX
 
 ## Arch package
 
