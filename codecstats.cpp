@@ -10,6 +10,18 @@
 #include "log.h"
 using namespace std;
 
+
+int GCD(int a, int b) {
+	if (a == 0)
+		return b;
+	if(b == 0)
+		return a;
+	if (a > b)
+		return GCD(a-b, b);
+	return GCD(a, b-a);
+}
+
+
 void CodecStats::init(Track &track, BufferedAtom *mdat) {
 	std::vector<Track::Chunk> &chunks = track.chunks;
 	if(!chunks.size())
@@ -24,6 +36,16 @@ void CodecStats::init(Track &track, BufferedAtom *mdat) {
 		}
 	}
 
+	//it might happens that chunks get just grouped, find GCD
+	if(!fixed_size && track.codec.pcm) {
+		int gcd = 0;
+		for(size_t i = 0; i < chunks.size()-1; i++) {
+			gcd = GCD(gcd, chunks[i].size);
+		}
+		if(gcd >= 128)
+			fixed_size = gcd;
+	}
+
 	float step = 1e20/track.chunks.size();
 
 	int current_sample = 0;
@@ -31,9 +53,18 @@ void CodecStats::init(Track &track, BufferedAtom *mdat) {
 
 		int64_t offset = chunk.offset - mdat->content_start;
 		for(int s = 0; s < chunk.nsamples; s++) {
+
+			int size = track.getSize(s);
+			largestSample = std::max(size, largestSample);
+			smallestSample = std::min(size, smallestSample);
+
 			unsigned char *start = mdat->getFragment(offset, 8);// &(mdat->content[offset]);
 			int64_t begin64 = readBE<int64_t>(start);
 			int32_t begin32 = readBE<int32_t>(start);
+			if(track.codec.name == "avc1") {
+				begin64 = readBE<int32_t>(start + 4);
+				begin32 = readBE<int32_t>(start + 4) && 0x0000ffff;
+			}
 
 			if(!beginnings64.count(begin64)) {
 				beginnings64[begin64] = 1;

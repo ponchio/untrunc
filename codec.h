@@ -56,8 +56,9 @@ public:
 	//sometimes (maybe) rtp info is present without a track
 static	Match rtpMatch(const unsigned char *start, int maxlength);
 
-private:
 	Match avc1Match(const unsigned char *start, int maxlength);
+	Match avc1Search(const unsigned char *start, int maxlength);
+
 	Match mp4aMatch(const unsigned char *start, int maxlength);
 	Match alacMatch(const unsigned char *start, int maxlength);
 	Match mbexMatch(const unsigned char *start, int maxlength);
@@ -77,7 +78,6 @@ private:
 	//we just hope statistics on beginning and lenght is enough
 	Match unknownMatch(const unsigned char *start, int maxlength);
 
-	int avc1Search(const unsigned char *start, int maxlength);
 
 
 

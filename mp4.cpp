@@ -116,9 +116,9 @@ public:
 	#endif
 	{
 		av_log_set_flags(DEFAULT_AVLOG_FLAGS);
-		cout.flush();   // Flush C++ standard streams.
+//		cout.flush();   // Flush C++ standard streams.
 		//cerr.flush();   // Unbuffered -> nothing to flush.
-		clog.flush();
+//		clog.flush();
 	}
 
 	explicit AvLog(int level, int flags = DEFAULT_AVLOG_FLAGS)
@@ -574,7 +574,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 			Track::Chunk &chunk = track.chunks[i];
 			int64_t offset = chunk.offset - mdat->content_start;
 			for(int k = 0; k < chunk.nsamples; k++) {
-				int64_t size = track.getSize(sample);
+				int64_t size = track.getSize(k);
 				unsigned char *start = mdat->getFragment(offset, size+200); //&(mdat->content[offset]);
 				int32_t begin = mdat->readInt(offset);
 				int32_t next  = mdat->readInt(offset + 4);
@@ -938,6 +938,24 @@ int Mp4::searchNext(BufferedAtom *mdat, int64_t offset) {
 	return best.offset;
 }
 
+/* Entropy could be used to detect wrong sowt packets. */
+double entropy(uint8_t *data, int size) {
+	int count[256];
+	memset(count, 0, 256*sizeof(int));
+	for(int i = 0; i < size; i++)
+		count[data[i]]++;
+	double e = 0.0;
+	double log2 = log(2.0);
+	for(int i = 0; i < 256; i++) {
+		if(count[i] == 0)
+			continue;
+		double p = count[i]/(double)size;
+		e -= p*log(p)/log2;
+	}
+	return e;
+}
+
+
 bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat_start, int64_t begin) {
 	Log::info << "Repair: " << corrupt_filename << '\n';
 	BufferedAtom *mdat = NULL;
@@ -1048,7 +1066,7 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 
 		Log::debug << "Offset: " << setw(10) << (mdat->file_begin + offset)
 					   << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
-		cout.flush();
+//		cout.flush();
 
 
 		if(begin == 0) {
@@ -1093,6 +1111,12 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 				offset += match.length;
 				continue;
 			}
+		}
+
+		//skip MISOUDAT: seen in a free container, but repeated just after outside of the free.
+		if(!strncmp("MISOUDAT", (char *)start, 8)) {
+			offset += 72;
+			continue;
 		}
 
 		//new strategy: try to match all tracks.

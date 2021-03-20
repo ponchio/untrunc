@@ -121,6 +121,8 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 Match Codec::search(const unsigned char *start, int maxlength) {
 	if(name == "apch") {
 		return apchSearch(start, maxlength);
+	} else if(name == "avc1") {
+		return avc1Search(start, maxlength);
 	}
 
 	Match match;

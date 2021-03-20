@@ -339,24 +339,28 @@ bool NalInfo::getNalInfo(const H264sps &sps, uint32_t maxlength, const uint8_t *
 
 
 
-
-
-
-int Codec::avc1Search(const unsigned char *start, int maxlength) {
+Match Codec::avc1Search(const unsigned char *start, int maxlength) {
+	Match match;
 	for(int offset = 0; offset < maxlength - 8; offset++) {
 		if(start[offset] != 0)
 			continue;
 		uint32_t len = readBE<uint32_t>(start + offset);
+		//too might use smallestSample and largestSample to constrain the size
 		if(len < 8 || len > NalInfo::MaxAVC1Length)
 			continue;
-		if(start[4] & (1 << 7))
+		//todo common values for 4 and 5 bytes should be usedc
+		//if(start[offset+4] != 0x41 || start[offset+5] != 0x9a ) continue;
+		if(start[offset + 4] & (1 << 7))
 			continue;
-		int nal_type = start[4] & 0x1f;
+		int nal_type = start[offset + 4] & 0x1f;
 		if(nal_type > 21)
 			continue;
 		//this looks like it might be a packet. might want to do a more thorough check.
-		return offset;
+		match.offset = offset;
+		match.chances = 10;
+		return match;
 	}
+	return match;
 }
 
 

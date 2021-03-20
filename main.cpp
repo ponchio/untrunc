@@ -34,7 +34,7 @@ void usage() {
 		 << "	-s: simulate recovering the ok video for debug purposes\n"
 		 << "	-t: analyze track\n"
 		 << "	-m: use the same offset for mdat beginning\n"
-		 << "	-M: serach for probable packet starts for mdat\n"
+		 << "	-M: search for probable packet starts for mdat\n"
 		 << "	-b: specify initial byte for mdat content\n"
 		 << "	-q: silent\n"
 		 << "	-e: error\n"
