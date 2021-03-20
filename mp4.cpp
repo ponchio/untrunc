@@ -1147,6 +1147,27 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 
 		Match &best = group.back();
 		//no hope!
+
+		if(best.id == 1) {
+			double e = entropy(start, best.length);
+			if(e > 6) {
+				cout << "Old Offset: " << offset + mdat->start << endl;
+				while(offset < mdat->contentSize() + maxlength) {
+					uint8_t *restart = mdat->getFragment(offset, maxlength);
+					Match m = tracks[1].codec.avc1Search(restart, maxlength);
+					if(m.offset == 0) { //eigher at the end of the buffer or we just failed.
+						offset = mdat->contentSize();
+						break;
+					}
+					if(m.chances > 0) {
+						offset = offset + m.offset - 2048;
+						cout << "New Offset: " << offset + mdat->start + 2048 << endl;
+						break;
+					}
+				}
+				continue;
+			}
+		}
 		if(best.chances == 0.0f) {
 
 			Log::flush();

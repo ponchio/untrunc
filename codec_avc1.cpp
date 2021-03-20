@@ -349,7 +349,7 @@ Match Codec::avc1Search(const unsigned char *start, int maxlength) {
 		if(len < 8 || len > NalInfo::MaxAVC1Length)
 			continue;
 		//todo common values for 4 and 5 bytes should be usedc
-		//if(start[offset+4] != 0x41 || start[offset+5] != 0x9a ) continue;
+		if(start[offset+4] != 0x41 || start[offset+5] != 0x9a ) continue;
 		if(start[offset + 4] & (1 << 7))
 			continue;
 		int nal_type = start[offset + 4] & 0x1f;
