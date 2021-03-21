@@ -1151,6 +1151,7 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 		if(best.id == 1) {
 			double e = entropy(start, best.length);
 			if(e > 6) {
+				bool wasaudio = false;
 				cout << "Old Offset: " << offset + mdat->start << endl;
 				while(offset < mdat->contentSize() + maxlength) {
 					uint8_t *restart = mdat->getFragment(offset, maxlength);
@@ -1159,13 +1160,18 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 						offset = mdat->contentSize();
 						break;
 					}
+					if(m.offset % 2048 == 0)  { //it was an audio packet after all!
+						wasaudio = true;
+					}
+
 					if(m.chances > 0) {
 						offset = offset + m.offset - 2048;
 						cout << "New Offset: " << offset + mdat->start + 2048 << endl;
 						break;
 					}
 				}
-				continue;
+				if(!wasaudio)
+					continue;
 			}
 		}
 		if(best.chances == 0.0f) {
