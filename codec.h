@@ -60,6 +60,9 @@ static	Match rtpMatch(const unsigned char *start, int maxlength);
 	Match avc1Search(const unsigned char *start, int maxlength);
 
 	Match mp4aMatch(const unsigned char *start, int maxlength);
+	Match mp4vMatch(const unsigned char *start, int maxlength);
+	Match mp4vSearch(const unsigned char *start, int maxlength);
+
 	Match alacMatch(const unsigned char *start, int maxlength);
 	Match mbexMatch(const unsigned char *start, int maxlength);
 	Match pcmMatch(const unsigned char *start, int maxlength);

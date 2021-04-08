@@ -78,16 +78,16 @@ bool Codec::parse(Atom *trak) {
 
 
 Match Codec::match(const unsigned char *start, int maxlength) {
-	int64_t begin64 = readBE<int64_t>(start);
-	//if(stats.beginnings64.size() <= 4 && !stats.beginnings64.count(begin64))
-	//	return Match();
 
 	if(name == "rtp ") {
 		return rtpMatch(start, maxlength);
 	} else if(name == "avc1") {
 		return avc1Match(start, maxlength);
+
 	} else if(name == "mp4a") {
 		return mp4aMatch(start, maxlength);
+	} else if(name == "mp4v") {
+		return mp4vMatch(start, maxlength);
 
 	} else if(name == "hev1") {
 		return hev1Match(start, maxlength);
@@ -123,6 +123,8 @@ Match Codec::search(const unsigned char *start, int maxlength) {
 		return apchSearch(start, maxlength);
 	} else if(name == "avc1") {
 		return avc1Search(start, maxlength);
+	} else if(name == "mp4v") {
+		return mp4vSearch(start, maxlength);
 	}
 
 	Match match;

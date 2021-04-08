@@ -1149,6 +1149,12 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 		//no hope!
 		if(best.chances == 0.0f) {
 
+			//maybe the lenght is almost correct just a few padding bytes.
+			int next = searchNext(mdat, offset);
+			if(next  < 16) {
+				offset += next;
+				continue;
+			}
 			Log::flush();
 			//can we backtrack? if not, we are done
 
