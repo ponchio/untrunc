@@ -39,6 +39,7 @@ RUN /usr/bin/g++ -o untrunc \
     codec_avc1.cpp \
     codec_hev1.cpp \
     codec_mp4a.cpp \
+    codec_mp4v.cpp \
     codec_pcm.cpp \
     codec_mbex.cpp \
     codec_alac.cpp \
