@@ -46,7 +46,7 @@ Go into the libav directory and build it:
     make
     cd ..
 
-Depending on your system you may need to install additional packages if configure complains about them.
+Depending on your system you may need to install additional packages if configure complains about them (eg. libz, libbz2, liblzma, libdl, libvdpau, libX11)
 If `configure` complains about `nasm/yasm not found`, you can either install Nasm or Yasm or tell `configure` not to use a stand-alone assembler with `--disable-yasm`.
 
 Build the untrunc executable:
