@@ -7,6 +7,14 @@
 Match Codec::unknownMatch(const unsigned char *start, int maxlength) {
 	Match match;
 
+	if(name == "rtmd") {
+		int32_t begin32 = readBE<int32_t>(start);
+
+		if(stats.beginnings32.count(begin32))
+			match.chances = 10*stats.beginnings32[begin32];
+		match.length = 1024;
+		return match;
+	}
 	//probably no samples
 	if(!stats.fixed_size)
 		return match;

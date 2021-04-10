@@ -21,6 +21,28 @@ Match Codec::fdscMatch(const unsigned char *start, int maxlength) {
 	match.chances = 1<<16;
 	match.length = 0;
 
+
+	uint8_t type = start[2]; //assuming it's a single byte and actualy is a type.
+	//type 00 seems to be followed always by 03
+
+	match.length = 16;
+	if(type == 0) {
+		//this seems to be a marker for the next sample.
+		uint32_t next_sample_length = readBE<int>(start +4);
+	}
+
+	if(type == 3) { //it seems this is a thumbnail type pointing to the first frame of the video, similar to type 0, but longer.
+		//match.length = 16;
+		//match.length += 4 + readBE<int>(start +16); //maybe here is a lenght, but it's not the last one. and padding is possible,
+
+		match.length = 152; //found 152 in the single sample I got.
+	}
+
+	if(type == 4 || type == 5) { //contains some data.
+		//a length is int32 at byte 4, don't kwnow which data.
+		match.length = readBE<int>(start +4) + 16;
+	}
+	/*
 	static int idx = -1;
 	idx++;
 	if (idx == 0) {
@@ -33,7 +55,7 @@ Match Codec::fdscMatch(const unsigned char *start, int maxlength) {
 	} else if (idx == 1) {
 		match.length = 152;
 	} else
-		match.length = 16;
+		match.length = 16; */
 
 	return match;
 }

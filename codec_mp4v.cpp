@@ -10,7 +10,7 @@ Match Codec::mp4vSearch(const unsigned char *start, int maxlength) {
 		int32_t begin32 = readBE<int32_t>(start + offset);
 		if(begin32 == 0x1b3 || begin32 == 0x1b6) {
 			match.offset = offset;
-			match.chances = 1e20;
+			match.chances = 1<<20;
 			break;
 		}
 	}
@@ -26,7 +26,7 @@ Match Codec::mp4vMatch(const unsigned char *start, int maxlength) {
 	int32_t begin32 = readBE<int32_t>(start);
 	if(begin32 != 0x1b3 && begin32 != 0x1b6)
 		return match;
-	match.chances = 1e20;
+	match.chances = 1<<20;
 
 
 	uint32_t duration = 0;

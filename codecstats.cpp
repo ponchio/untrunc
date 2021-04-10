@@ -46,7 +46,7 @@ void CodecStats::init(Track &track, BufferedAtom *mdat) {
 			fixed_size = gcd;
 	}
 
-	float step = 1e20/track.chunks.size();
+	float step = (1<<20)/track.chunks.size();
 
 	int current_sample = 0;
 	for(Track::Chunk &chunk: track.chunks) {

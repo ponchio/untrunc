@@ -56,7 +56,7 @@ Match Codec::textMatch(const unsigned char *start, int maxlength) {
 		bool atom_found = false;
 		for(int i = 0; i < 9; i++) {
 			if(!strncmp(atoms[i], atom, 4)) {
-				match.chances *= 1e20;
+				match.chances = 1<<20;
 				match.length = offset + length ;
 				atom_found = true;
 			}

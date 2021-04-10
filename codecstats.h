@@ -18,7 +18,7 @@ public:
 	int64_t fixed_begin64 = 0;
 	int32_t fixed_begin32 = 0;
 	int32_t largestSample = 0;
-	int32_t smallestSample = 1e20;
+	int32_t smallestSample = (1<<20);
 
 	std::map<int32_t, float> beginnings32;
 	std::map<int64_t, float> beginnings64;
