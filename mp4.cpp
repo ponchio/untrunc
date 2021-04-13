@@ -897,6 +897,7 @@ int64_t Mp4::findMdat(BufferedAtom *mdat, bool same_mdat_start, bool ignore_mdat
 //if it's less than 8 bytes dont (might be alac?)
 //otherwise we need to search for the actual begin using matches.
 int zeroskip(BufferedAtom *mdat, unsigned char *start, int64_t maxlength) {
+	return 0;
 	int64_t block_size = std::min(int64_t(1<<10), maxlength);
 
 	//skip 4 bytes at a time.
@@ -908,7 +909,7 @@ int zeroskip(BufferedAtom *mdat, unsigned char *start, int64_t maxlength) {
 	}
 
 	//don't skip very short zero sequences
-	if(k < 12)
+	if(k < 16)
 		return 0;
 
 	//play conservative of non aligned zero blocks
@@ -1033,11 +1034,14 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 
 //GOPRO TMCD is a single packet with a timestamp
 
+	bool haspcm = false;
 	int tmcd_id = -1;
 	for(unsigned int i = 0; i < tracks.size(); ++i) {
 		Track &track = tracks[i];
 		if(string(track.codec.name) == "tmcd")
 			tmcd_id = i;
+		if(track.codec.pcm)
+			haspcm = true;
 	}
 
 
@@ -1069,7 +1073,8 @@ bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat
 //		cout.flush();
 
 
-		if(begin == 0) {
+		//zeros in pcm are possible, if mixed with zero padding it becames impossible to correctly detect the start.
+		if(begin == 0 && !haspcm) {
 			int skipped = zeroskip(mdat, start, maxlength64);
 			if(skipped) {
 				Log::debug << "Skipping " << skipped << " zeroes!" << endl;
