@@ -422,6 +422,9 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 
 	// TODO: Use the first byte of the NAL: forbidden bit and type!
 	int nal_type = (start[4] & 0x1f);
+
+	if(nal_type == 0)
+		return match;
 	// The other values are really uncommon on cameras...
 	if(nal_type > 12) {
 		Log::debug << "avc1: No match because of NAL type: " << nal_type << '\n';

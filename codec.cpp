@@ -42,6 +42,7 @@ bool Codec::parse(Atom *trak) {
 	if(name == "raw " || //unsigned, linear PCM. 8-bit data
 		name == "twos" || //signed (i.e. twos-complement) linear PCM. 16-bit data is stored in big endian format.
 		name == "sowt" || //signed linear PCM. However, 16-bit data is stored in little endian format.
+		name == "twos" ||
 		name == "in24" || //24-bit, big endian, linear PCM.
 		name == "in32" || //32-bit, big endian, linear PCM.
 		name == "fl32" || //32-bit floating point PCM. (Presumably IEEE 32-bit; byte order?)
@@ -89,7 +90,7 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 	} else if(name == "mp4v") {
 		return mp4vMatch(start, maxlength);
 
-	} else if(name == "hev1") {
+	} else if(name == "hev1" || name == "hvc1") {
 		return hev1Match(start, maxlength);
 
 	} else if(name == "alac") {

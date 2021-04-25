@@ -86,10 +86,10 @@ bool H265NalInfo::parseNal(const unsigned char *buffer, uint32_t maxlength) {
 	if((nal_type_ == NAL_EOB_NUT && nuh_temporal_id_plus1) || (nal_type_ != NAL_EOB_NUT && !nuh_temporal_id_plus1))
 		return false;
 
-	if(isSlice())
+	if(isSlice()) {
 		data_ = buffer+2;
-
-	isInNewFrame = *data_ >> 7;
+		isInNewFrame = *data_ >> 7;
+	}
 
 	return true;
 }

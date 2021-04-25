@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
 	int analyze_track = -1;
 	bool same_mdat_start = false; //if mdat can be found or starting of packets try using the same absolute offset.
 	bool ignore_mdat_start = false; //ignore mdat string and look for first recognizable packet.
+	bool skip_zeros = true;
 	int64_t begin = -1; //start of packets if specified.
 	int i = 1;
 	for(; i < argc; i++) {
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
 			case 'm': same_mdat_start = true; break;
 			case 'M': ignore_mdat_start = true; break;
 			case 'b': begin = atoi(argv[i+1]); i++; break;
+			case 'B': skip_zeros = false; break;
 			}
 		} else
 			break;
@@ -100,7 +102,7 @@ int main(int argc, char *argv[]) {
 
 		if(corrupt.size()) {
 
-			bool success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);
+			bool success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin, skip_zeros);
 			if(!success && !same_mdat_start) {
 				same_mdat_start = true;
 				success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);

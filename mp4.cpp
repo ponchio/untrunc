@@ -574,7 +574,9 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 			Track::Chunk &chunk = track.chunks[i];
 			int64_t offset = chunk.offset - mdat->content_start;
 			for(int k = 0; k < chunk.nsamples; k++) {
-				int64_t size = track.getSize(k);
+				int64_t size = track.getSize(chunk.first_sample + k);
+				if(track.codec.pcm)
+					size = chunk.size;
 				unsigned char *start = mdat->getFragment(offset, size+200); //&(mdat->content[offset]);
 				int32_t begin = mdat->readInt(offset);
 				int32_t next  = mdat->readInt(offset + 4);
@@ -957,7 +959,7 @@ double entropy(uint8_t *data, int size) {
 }
 
 
-bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat_start, int64_t begin) {
+bool Mp4::repair(string corrupt_filename, bool same_mdat_start, bool ignore_mdat_start, int64_t begin, bool skip_zeros) {
 	Log::info << "Repair: " << corrupt_filename << '\n';
 	BufferedAtom *mdat = NULL;
 	File file;
