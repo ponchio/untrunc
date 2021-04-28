@@ -5,7 +5,7 @@ Restore a damaged (truncated) mp4, m4v, mov, 3gp video. Provided you have a simi
 
 You need:
 
-* Another video file which isn't broken
+* Another video file (taken from the same camera/app) which isn't broken
 * [Libav 12](https://libav.org/)
 * Basic ability to use a command line
 
