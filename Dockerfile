@@ -47,6 +47,7 @@ RUN /usr/bin/g++ -o untrunc \
     codec_unknown.cpp \
     codec_text.cpp \
     codec_tmcd.cpp \
+    codec_gpmd.cpp \
     codec_fdsc.cpp \
     codec_apch.cpp \
     codec_mijd.cpp \

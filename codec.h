@@ -75,6 +75,8 @@ static	Match rtpMatch(const unsigned char *start, int maxlength);
 	Match hev1Match(const unsigned char *start, int maxlength);
 
 	Match tmcdMatch(const unsigned char *start, int maxlength);
+	Match gpmdMatch(const unsigned char *start, int maxlength);
+
 	Match mijdMatch(const unsigned char *start, int maxlength);
 	Match mijdSearch(const unsigned char *start, int maxlength);
 

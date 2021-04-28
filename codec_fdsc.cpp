@@ -10,8 +10,11 @@
 	always starts with GP, but I have no idea how to guess the length of the packet.
 	maybe follows a pattern? 264, 152 16 16 16...
 
-	https://github.com/stilldavid/gopro-utils can parse the gmpd codec.
+	https://github.com/stilldavid/gopro-utils can parse the gpmd codec.
 	*/
+
+#include <iostream>
+using namespace std;
 
 Match Codec::fdscMatch(const unsigned char *start, int maxlength) {
 
@@ -21,6 +24,12 @@ Match Codec::fdscMatch(const unsigned char *start, int maxlength) {
 	match.chances = 1<<16;
 	match.length = 0;
 
+
+
+	if(start[2] == 'R' && start[3] == 'O') {
+		match.length = *(uint16_t *)(start + 4);
+		return match;
+	}
 
 	uint8_t type = start[2]; //assuming it's a single byte and actualy is a type.
 	//type 00 seems to be followed always by 03
@@ -40,8 +49,11 @@ Match Codec::fdscMatch(const unsigned char *start, int maxlength) {
 
 	if(type == 4 || type == 5) { //contains some data.
 		//a length is int32 at byte 4, don't kwnow which data.
-		match.length = readBE<int>(start +4) + 16;
+		match.length = 16;
 	}
+	cout << "Type: " << (int)type << endl;
+	if(type == 15) //another wild guess.
+		match.length = 220;
 	/*
 	static int idx = -1;
 	idx++;
