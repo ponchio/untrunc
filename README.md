@@ -5,7 +5,7 @@ Restore a damaged (truncated) mp4, m4v, mov, 3gp video. Provided you have a simi
 
 You need:
 
-* Another video file which isn't broken
+* Another video file (taken from the same camera/app) which isn't broken
 * [Libav 12](https://libav.org/)
 * Basic ability to use a command line
 
@@ -90,7 +90,7 @@ That's it you're done!
 
 ## Docker container
 
-You can use the included Dockerfile to build and execute the package as a container
+You can use the included Dockerfile to build and execute the package as a container (you might need to add docker group: sudo usermod -a -G docker $USER)
 ```
 docker build -t untrunc .
 ```
