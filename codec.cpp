@@ -130,6 +130,10 @@ Match Codec::search(const unsigned char *start, int maxlength) {
 		return avc1Search(start, maxlength);
 	} else if(name == "mp4v") {
 		return mp4vSearch(start, maxlength);
+	} else if(name == "gpmd") {
+		return gpmdSearch(start, maxlength);
+	} else if(name == "fdsc") {
+		return fdscSearch(start, maxlength);
 	}
 
 	Match match;

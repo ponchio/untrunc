@@ -36,6 +36,7 @@ void usage() {
 		 << "	-m: use the same offset for mdat beginning\n"
 		 << "	-M: search for probable packet starts for mdat\n"
 		 << "	-b: specify initial byte for mdat content\n"
+		 << "	-N: don't skip zeros. (useful for pcm audio)"
 		 << "	-q: silent\n"
 		 << "	-e: error\n"
 		 << "	-v; verbose\n"
@@ -48,10 +49,11 @@ int main(int argc, char *argv[]) {
 	bool analyze = false;
 	bool simulate = false;
 	int analyze_track = -1;
-	bool same_mdat_start = false; //if mdat can be found or starting of packets try using the same absolute offset.
-	bool ignore_mdat_start = false; //ignore mdat string and look for first recognizable packet.
+	Mp4::MdatStrategy mdat_strategy = Mp4::FIRST;
+	//bool same_mdat_start = false; //if mdat can be found or starting of packets try using the same absolute offset.
+	//bool ignore_mdat_start = false; //ignore mdat string and look for first recognizable packet.
 	bool skip_zeros = true;
-	int64_t begin = -1; //start of packets if specified.
+	int64_t mdat_begin = -1; //start of packets if specified.
 	int i = 1;
 	for(; i < argc; i++) {
 		string arg(argv[i]);
@@ -65,9 +67,9 @@ int main(int argc, char *argv[]) {
 			case 'e': Logger::log_level = Logger::ERROR; break;
 			case 'v': Logger::log_level = Logger::INFO; break;
 			case 'w': Logger::log_level = Logger::DEBUG; break;
-			case 'm': same_mdat_start = true; break;
-			case 'M': ignore_mdat_start = true; break;
-			case 'b': begin = atoi(argv[i+1]); i++; break;
+			case 'm': mdat_strategy = Mp4::SAME; break;
+			case 'M': mdat_strategy = Mp4::SEARCH; break;
+			case 'b': mdat_strategy = Mp4::SPECIFIED; mdat_begin = atoi(argv[i+1]); i++; break;
 			case 'B': skip_zeros = false; break;
 			}
 		} else
@@ -98,16 +100,19 @@ int main(int argc, char *argv[]) {
 			mp4.analyze(analyze_track);
 		}
 		if(simulate)
-			mp4.simulate(same_mdat_start, ignore_mdat_start, begin);
+			mp4.simulate(mdat_strategy, mdat_begin);
 
 		if(corrupt.size()) {
 
-			bool success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin, skip_zeros);
-			if(!success && !same_mdat_start) {
-				same_mdat_start = true;
-				success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);
-				if(!success && !ignore_mdat_start)
-					success = mp4.repair(corrupt, same_mdat_start, ignore_mdat_start, begin);
+			bool success = mp4.repair(corrupt, mdat_strategy, mdat_begin, skip_zeros);
+			//if the user didn't specify the strategy, try them all.
+			if(!success  && mdat_strategy == Mp4::FIRST) {
+				vector<Mp4::MdatStrategy> strategies = { Mp4::SAME, Mp4::SEARCH, Mp4::LAST };
+				for(Mp4::MdatStrategy strategy: strategies) {
+					Log::info << "\n\nTrying a different approach to locate mdat start" << endl;
+					success = mp4.repair(corrupt, strategy, mdat_begin, skip_zeros);
+					if(success) break;
+				}
 			}
 			if(!success) {
 				Log::error << "Failed recovering the file\n";

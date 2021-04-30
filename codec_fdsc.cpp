@@ -16,6 +16,23 @@
 #include <iostream>
 using namespace std;
 
+Match Codec::fdscSearch(const unsigned char *start, int maxlength) {
+	Match match;
+	const unsigned char *end = start + maxlength - 8;
+	const  unsigned char *current = start;
+
+	while(current < end) {
+		if(current[0] == 'G' && current[1] == 'P') {
+			match.chances = 1<<20;
+			match.offset = current - start;
+			return match;
+		}
+		current++;
+	}
+	return match;
+}
+
+
 Match Codec::fdscMatch(const unsigned char *start, int maxlength) {
 
 	Match match;
@@ -51,7 +68,6 @@ Match Codec::fdscMatch(const unsigned char *start, int maxlength) {
 		//a length is int32 at byte 4, don't kwnow which data.
 		match.length = 16;
 	}
-	cout << "Type: " << (int)type << endl;
 	if(type == 15) //another wild guess.
 		match.length = 220;
 	/*

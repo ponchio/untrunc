@@ -38,14 +38,21 @@ class Mp4 {
 public:
     int timescale;
     int duration;
+	enum MdatStrategy {
+		FIRST,  //first mdat in file
+		SAME,   //same offset as the working sample (sometimes the start is fixed and NOT at he beginning of mdat.
+		SEARCH, //look for some packet signature
+		LAST,    //last mdat in file (sometimes the first mdat is spurious.
+		SPECIFIED //user supplied start.
+	};
 
     Mp4();
     ~Mp4();
 
 	void open(std::string filename);
-	bool repair(std::string corrupt_filename, bool same_mdat_start = false, bool ignore_mdat_start = false, int64_t begin = -1, bool skip_zeros = true);
-	int64_t findMdat(BufferedAtom *mdat,  bool same_mdat_start = false, bool ignore_mdat_start = false);
-	BufferedAtom *findMdat(std::string filename, bool same_mdat_start = false, bool ignore_mdat_start = false);
+	bool repair(std::string corrupt_filename, Mp4::MdatStrategy strategy = FIRST, int64_t begin = -1, bool skip_zeros = true);
+	int64_t findMdat(BufferedAtom *mdat,  MdatStrategy strategy = FIRST);
+	BufferedAtom *findMdat(std::string filename, MdatStrategy strategy);
 	int64_t contentStart();
 	int searchNext(BufferedAtom *mdat, int64_t offset);
 	BufferedAtom *bufferedMdat(Atom *mdat);
@@ -59,7 +66,7 @@ public:
 
 	void analyze(int analyze_track = -1, bool interactive = true);
 	//try to recover the working video, for debugging processing
-	void simulate(bool same_mdat_start, bool ignore_mdat_start, int64_t begin);
+	void simulate(MdatStrategy strategy, int64_t begin);
 
     static bool makeStreamable(std::string filename, std::string output_filename);
 
