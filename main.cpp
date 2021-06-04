@@ -37,6 +37,7 @@ void usage() {
 		 << "	-M: search for probable packet starts for mdat\n"
 		 << "	-b: specify initial byte for mdat content\n"
 		 << "	-N: don't skip zeros. (useful for pcm audio)"
+		 << "	-d: attepmt to fix audio/video drifting"
 		 << "	-q: silent\n"
 		 << "	-e: error\n"
 		 << "	-v; verbose\n"
@@ -49,6 +50,7 @@ int main(int argc, char *argv[]) {
 	bool analyze = false;
 	bool simulate = false;
 	int analyze_track = -1;
+	bool drifting = false;
 	Mp4::MdatStrategy mdat_strategy = Mp4::FIRST;
 	//bool same_mdat_start = false; //if mdat can be found or starting of packets try using the same absolute offset.
 	//bool ignore_mdat_start = false; //ignore mdat string and look for first recognizable packet.
@@ -62,6 +64,7 @@ int main(int argc, char *argv[]) {
 			case 'i': info = true; break;
 			case 'a': analyze = true; break;
 			case 's': simulate = true; break;
+			case 'd': drifting = true; break;
 			case 't': analyze_track = atoi(argv[i+1]); i++; break;
 			case 'q': Logger::log_level = Logger::SILENT; break;
 			case 'e': Logger::log_level = Logger::ERROR; break;
@@ -104,7 +107,7 @@ int main(int argc, char *argv[]) {
 
 		if(corrupt.size()) {
 
-			bool success = mp4.repair(corrupt, mdat_strategy, mdat_begin, skip_zeros);
+			bool success = mp4.repair(corrupt, mdat_strategy, mdat_begin, skip_zeros, drifting);
 			//if the user didn't specify the strategy, try them all.
 			if(!success  && mdat_strategy == Mp4::FIRST) {
 				vector<Mp4::MdatStrategy> strategies = { Mp4::SAME, Mp4::SEARCH, Mp4::LAST };

@@ -959,7 +959,7 @@ double entropy(uint8_t *data, int size) {
 }
 
 
-bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t mdat_begin, bool skip_zeros) {
+bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t mdat_begin, bool skip_zeros, bool drifting) {
 	Log::info << "Repair: " << corrupt_filename << '\n';
 	BufferedAtom *mdat = NULL;
 	File file;
@@ -1291,8 +1291,8 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		//Log::debug << "Drift audio - video: " << drift << "\n";
 		count++;
 	}
-
-	if(audio_current > 0 && video_current > 0 && (drift > timescale || drift < -timescale)) { //drifting of packets for more than 1 seconds
+	//move drifting fix into som other function.
+	if(drifting && audio_current > 0 && video_current > 0 && (drift > timescale || drift < -timescale)) { //drifting of packets for more than 1 seconds
 		Log::debug << "Drift audio - video: " << drift << ". Fixing\n";
 		//fix video
 		for(Track &track: tracks) {
@@ -1303,9 +1303,14 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 			int64_t per_sample = int64_t(drift /(double)track.offsets.size());
 			if(track.default_time)
 				track.default_time += per_sample;
-			else
+			else {
+				if(per_sample > track.times[0]) {
+					Log::debug << "Something got really wrong with the timing...\n";
+					continue;
+				}
 				for(auto &t: track.times)
 					t -= per_sample;
+			}
 		}
 	}
 
