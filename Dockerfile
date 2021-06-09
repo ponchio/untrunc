@@ -22,7 +22,7 @@ RUN wget https://github.com/libav/libav/archive/v12.3.zip && \
 
 # build libav
 WORKDIR /untrunc/libav-12.3/
-RUN ./configure && make -j
+RUN ./configure && make -j8
 
 # build untrunc
 WORKDIR /untrunc
