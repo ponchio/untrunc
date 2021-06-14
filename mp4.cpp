@@ -21,6 +21,7 @@
 
 #include <cassert>
 #include <vector>
+#include <set>
 #include <algorithm>
 #include <functional>
 #include <string>
@@ -467,6 +468,14 @@ bool Mp4::save(string output_filename) {
 	return true;
 }
 
+//used for variable sample time attempt to guess
+class ChunkTime: public Track::Chunk {
+public:
+	int sample_time;
+	int track;
+	bool operator<(const ChunkTime &c) { return offset < c.offset; }
+};
+
 void Mp4::analyze(int analyze_track, bool interactive) {
 	Log::info << "Analyze:\n";
 	if(!root) {
@@ -498,12 +507,15 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 #endif
 	}
 
-	for(unsigned int i = 0; i < tracks.size(); ++i) {
+	//sample time analysis
+	vector<ChunkTime> chunktimes;
 
-		if(analyze_track != -1 && i != analyze_track)
+	for(unsigned int t = 0; t < tracks.size(); ++t) {
+
+		if(analyze_track != -1 && t != analyze_track)
 			continue;
-		Log::info << "\n\nTrack " << i << endl;
-		Track &track = tracks[i];
+		Log::info << "\n\nTrack " << t << endl;
+		Track &track = tracks[t];
 
 		if(track.hint_track) {
 			Log::info << "Hint track for track: " << track.hinted_id << "\n";
@@ -549,6 +561,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 			if(!track.codec.pcm) {
 				Log::info << "Not a PCM codec, default size though..  we have hope.\n";
 			}
+			int i = 0;
 			for(Track::Chunk &chunk: track.chunks) {
 				int64_t offset = chunk.offset - mdat->content_start;
 
@@ -566,28 +579,39 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 						  << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next
 						  << " end: " << setw(8) << end << dec
 						  << " time: " << (track.default_time ? track.default_time : track.times[i]) << '\n';
+				i++;
 			}
 		}
 
 		int sample = 0;
 		for(unsigned int i = 0; i < track.chunks.size(); ++i) {
 			Track::Chunk &chunk = track.chunks[i];
+
+			ChunkTime chunktime;
+			chunktime.offset = chunk.offset;
+			chunktime.nsamples = chunk.nsamples;
+			chunktime.size = chunk.size;
+			chunktime.track = t;
+			chunktime.sample_time = 0;
+
 			int64_t offset = chunk.offset - mdat->content_start;
 			for(int k = 0; k < chunk.nsamples; k++) {
 				int64_t size = track.getSize(chunk.first_sample + k);
 				if(track.codec.pcm)
 					size = chunk.size;
-				unsigned char *start = mdat->getFragment(offset, size+200); //&(mdat->content[offset]);
+				int64_t extenededsize = std::min(mdat->contentSize() - offset, size + 200);
+				unsigned char *start = mdat->getFragment(offset, extenededsize); //&(mdat->content[offset]);
 				int32_t begin = mdat->readInt(offset);
 				int32_t next  = mdat->readInt(offset + 4);
 				Log::info << " Size: " << setw(6) << size
 									  << " offset " << setw(10) << offset + mdat->content_start
 									  << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next <<  dec << '\n';
 
+				chunktime.sample_time += track.default_time ? track.default_time : track.times[sample];
 				sample++;
 				offset += size;
 
-				Match match = track.codec.match(start, size+200);
+				Match match = track.codec.match(start, extenededsize);
 				if(match.length == size)
 					continue;
 
@@ -605,8 +629,19 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 				}
 
 			}
+			chunktimes.push_back(chunktime);
+
 		}
 	}
+	cout << "Chunks " << tracks[1].chunks.size() << " times: " << tracks[1].times.size() << endl;
+	std::sort(chunktimes.begin(), chunktimes.end());
+	vector<float> times(tracks.size(), 0);
+	int count = 0;
+	for(ChunkTime &c: chunktimes) {
+		times[c.track] += c.sample_time / (float)tracks[c.track].timescale;
+		cout << "Track: " << c.track <<  " time: " << c.sample_time << " nsamples: " << c.nsamples << " tot: " << times[c.track] << endl;
+		if(count++ > 200)
+			break;	}
 }
 
 void Mp4::simulate(Mp4::MdatStrategy strategy, int64_t begin) {
@@ -1291,8 +1326,13 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		//Log::debug << "Drift audio - video: " << drift << "\n";
 		count++;
 	}
+	if(drifting) {
+		fixTiming();
+
+
+	}
 	//move drifting fix into som other function.
-	if(drifting && audio_current > 0 && video_current > 0 && (drift > timescale || drift < -timescale)) { //drifting of packets for more than 1 seconds
+	if(0 && drifting && audio_current > 0 && video_current > 0 && (drift > timescale || drift < -timescale)) { //drifting of packets for more than 1 seconds
 		Log::debug << "Drift audio - video: " << drift << ". Fixing\n";
 		//fix video
 		for(Track &track: tracks) {
@@ -1342,6 +1382,90 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 	delete original_mdat;
 
 	return true;
+}
+void Mp4::fixTiming() {
+	//check if some track has variable timing and some has fixed timing,
+	int best_fixed = -1;
+	int best_fixed_size = 0;
+	std::set<int> variables;
+	for(int t = 0; t < tracks.size(); t++) {
+		if(tracks[t].default_time == 0)
+			variables.insert(t);
+		else if(best_fixed == -1 || best_fixed_size < tracks[t].chunks.size()) {
+			best_fixed = t;
+			best_fixed_size = tracks[t].chunks.size();
+		}
+	}
+	if(best_fixed != -1 && variables.size()) {
+
+		//create index of offset and timings for fixed one
+		Track &fixed = tracks[best_fixed];
+
+		for(int t: variables) {
+			Track &track = tracks[t];
+
+			if(!track.chunks.size())  //check if there is something to fix.
+				continue;
+
+			track.times.clear();
+
+			double average_time = 0.0; //used when no other indications.
+			for(int i = 0; i < track.times[i]; i++)
+				average_time += track.times[i];
+			average_time /= track.times.size();
+
+			//variable gets before first fixed packet or after?
+			bool before = track.chunks[0].offset < fixed.chunks[0].offset;
+
+
+			int fix = 0; //current fixed chunk
+			int var = 0; //current variable chunk
+			int start_var = 0; //where the group of variable is.
+			int nsamples = 0;
+			int fixed_time = 0;  //time elapsed in the fixed group
+			int previous_fixed_time = 0;
+			//this is good for after.
+			int status = before? 0 : 1; //0 advance track, 1 advance fixed, 2 start track 3 start fixed
+			while(1) {
+				if(status == 0) {
+					cout << "Status 0, var: " << var << endl;
+					if(var < track.chunks.size() && track.chunks[var].offset < fixed.chunks[fix].offset) {
+						nsamples += track.chunks[var].nsamples;
+						var++;
+					} else { //var new group (or past the last)
+						status = 1;
+					}
+				} else if(status == 2) {
+					cout << "Status 2, var: " << var << endl;
+
+					int time = (before ? fixed_time : previous_fixed_time) / nsamples;
+					time = time*track.timescale / fixed.timescale;
+					for(int i = start_var; i < var; i++) {
+						for(int k = 0; k < nsamples; k++)
+							track.times.push_back(time);
+					}
+					start_var = var;
+					nsamples = 0;
+					status = 0;
+					previous_fixed_time = fixed_time;
+					fixed_time = 0;
+					if(var == track.chunks.size())
+						break;
+				} else if(status == 1) {
+					cout << "Status 1, var: " << var << endl;
+
+					if((var >= track.chunks.size() || fixed.chunks[fix].offset < track.chunks[var].offset) && fix < fixed.chunks.size()) {
+						fixed_time += fixed.chunks[fix].nsamples*fixed.default_time;
+						fix++;
+					} else {
+						status = 2
+								;
+					}
+				}
+			}
+		}
+
+	}
 }
 
 // vim:set ts=4 sw=4 sts=4 noet:

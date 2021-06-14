@@ -32,6 +32,7 @@ void usage() {
 		 << "	-i: info about codecs and mov structure\n"
 		 << "	-a: test the ok video\n"
 		 << "	-s: simulate recovering the ok video for debug purposes\n"
+		 << "	-d: fix variable timing per frame issues\n3"
 		 << "	-t: analyze track\n"
 		 << "	-m: use the same offset for mdat beginning\n"
 		 << "	-M: search for probable packet starts for mdat\n"

@@ -51,6 +51,7 @@ public:
 
 	void open(std::string filename);
 	bool repair(std::string corrupt_filename, Mp4::MdatStrategy strategy = FIRST, int64_t begin = -1, bool skip_zeros = true, bool drifting = false);
+	void fixTiming();
 	int64_t findMdat(BufferedAtom *mdat,  MdatStrategy strategy = FIRST);
 	BufferedAtom *findMdat(std::string filename, MdatStrategy strategy);
 	int64_t contentStart();
