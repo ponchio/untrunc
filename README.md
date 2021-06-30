@@ -9,12 +9,20 @@ You need:
 * [Libav 12](https://libav.org/)
 * Basic ability to use a command line
 
-## Installing on CentOS 7
+## Docker container
+
+You can use the included Dockerfile to build and execute the package as a container
+```
+docker build -t untrunc .
+docker run -v /path/to/files/:/files untrunc /files/working_video /files/broken_video
+```    
+
+## Installing on CentOS 7 (requires getpagespeed subscription)
 
     yum install https://extras.getpagespeed.com/release-el7-latest.rpm
     yum install untrunc
 
-## Installing
+## Installing on Ubuntu
 
 Because Untrunc uses Libav internal headers and internal headers are not included in application development packages, you must build Libav from source.
 
@@ -36,6 +44,10 @@ Unzip the Libav source code into the Untrunc source directory with either:
 
     tar -xJf libav-12.3.tar.xz -C untrunc-master
     [or:  unzip v12.3.zip -d untrunc-master ]
+    
+Install build-essential and zlib
+
+    apt install build-essential libz-dev
 
 Go into the libav directory and build it:
 
