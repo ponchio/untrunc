@@ -51,10 +51,11 @@ void searchFile(std::string ok, std::vector<uint8_t> search) {
 		cerr << "Could not open file: " << ok << endl;
 		return;
 	}
-	uint8_t buffer[1<<20];
+	int batch = 1<<20;
+	uint8_t buffer[batch];
 	size_t pos = 0;
 	while(1) {
-		int readed = fread(buffer, 1, 1<<20, fp);
+		int readed = fread(buffer, 1, batch, fp);
 		if(readed <= search.size()) break;
 		for(int k = 0; k < readed - search.size(); k++) {
 			int i = 0;
@@ -67,7 +68,7 @@ void searchFile(std::string ok, std::vector<uint8_t> search) {
 				cout << "Found at:" << pos + k << endl;
 			}
 		}
-		pos += 1<<20 - search.size();
+		pos += readed - search.size();
 		fseek(fp, - search.size(), SEEK_CUR);
 	}
 }
