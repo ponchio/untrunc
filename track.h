@@ -49,7 +49,7 @@ public:
 	//if default size we work using chunks
 	int32_t nsamples;
 	int default_chunk_nsamples = 0;
-	int default_size = 0;  //default SAMPLE size
+	int default_size = 0;  //default SAMPLE size (number of samples!!!!)
 	std::vector<int32_t> sample_sizes;   //SAMPLE sizes
 
 	//TODO use CHUNK instead!

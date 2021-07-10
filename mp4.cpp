@@ -599,8 +599,8 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 				int64_t size = track.getSize(chunk.first_sample + k);
 				if(track.codec.pcm)
 					size = chunk.size;
-				int64_t extenededsize = std::min(mdat->contentSize() - offset, size + 200);
-				unsigned char *start = mdat->getFragment(offset, extenededsize); //&(mdat->content[offset]);
+				int64_t extendedsize = std::min(mdat->contentSize() - offset, size + 200000);
+				unsigned char *start = mdat->getFragment(offset, extendedsize); //&(mdat->content[offset]);
 				int32_t begin = mdat->readInt(offset);
 				int32_t next  = mdat->readInt(offset + 4);
 				Log::info << " Size: " << setw(6) << size
@@ -611,7 +611,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 				sample++;
 				offset += size;
 
-				Match match = track.codec.match(start, extenededsize);
+				Match match = track.codec.match(start, extendedsize);
 				if(match.length == size)
 					continue;
 
@@ -1301,7 +1301,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		if(track.default_size) {
 			//if number of samples per chunk is variable, encode each sample in a different chunk.
 			if(track.default_chunk_nsamples == 0)
-				track.nsamples += match.length/track.default_size;
+				track.nsamples += match.length/(track.default_size*track.codec.pcm_bytes_per_sample);
 			else
 				track.nsamples += track.default_chunk_nsamples;
 		} else {

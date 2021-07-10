@@ -248,10 +248,7 @@ void Track::fixTimes() {
 		default_time = 160;
 	}
 	if(default_time || times.size() == 0) {
-		if(default_size)
-			duration = default_time * nsamples;
-		else
-			duration = default_time * nsamples;
+		duration = default_time * nsamples;
 	} else {
 
 		assert(times.size() > 0);
@@ -391,7 +388,7 @@ void Track::getSampleToChunk(Atom *t){
 
 			if(default_size) {
 				//assert(codec.pcm_bytes_per_sample > 0);
-				chunks[k].size = chunks[k].nsamples * default_size; //codec.pcm_bytes_per_sample;
+				chunks[k].size = chunks[k].nsamples * default_size*codec.pcm_bytes_per_sample;
 				count += chunks[k].nsamples ;
 
 			} else {

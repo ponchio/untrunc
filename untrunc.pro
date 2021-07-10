@@ -11,7 +11,7 @@ TARGET = untrunc
 CONFIG += console
 CONFIG -= -qt app_bundle
 
-QMAKE_CXXFLAGS += -std=c++11
+QMAKE_CXXFLAGS += -std=c++17
 
 TEMPLATE = app
 
@@ -62,6 +62,8 @@ LIBS += ../libav-12.3/libavformat/libavformat.a \
 DEFINES += _FILE_OFFSET_BITS=64 VERBOSE VERBOSE1
 
 LIBS += -lz
+
+#libbz2-dev e libz-dev for ubuntu.
 
 #QMAKE_LFLAGS += -static
 #LIBS += /usr/lib/x86_64-linux-gnu/libavcodec.a \
