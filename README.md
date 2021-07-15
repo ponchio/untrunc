@@ -90,7 +90,7 @@ That's it you're done!
 
 ## Docker container
 
-You can use the included Dockerfile to build and execute the package as a container (you might need to add docker group: sudo usermod -a -G docker $USER)
+You can use the included Dockerfile to build and execute the package as a container (you might need to add docker group: sudo usermod -a -G docker $USER, and you might want to add the --network=host option in case of   "Temporary failure resolving")
 ```
 docker build -t untrunc .
 ```
