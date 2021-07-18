@@ -1,0 +1,4 @@
+[submodule "libav"]
+	path = libav
+	url = https://github.com/libav/libav.git
+	branch = master
