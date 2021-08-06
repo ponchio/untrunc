@@ -28,11 +28,11 @@
 using namespace std;
 
 void usage() {
-	cout << "Usage: untrunc [-a -i -v -w] <ok.mp4> [<corrupt.mp4>]\n\n"
+	cout << "Usage: untrunc [-aisdetmMbNvwqeo] <ok.mp4> [<corrupt.mp4>]\n\n"
+		 << "	-o: output filename (if repairing)\n"
 		 << "	-i: info about codecs and mov structure\n"
 		 << "	-a: test the ok video\n"
 		 << "	-s: simulate recovering the ok video for debug purposes\n"
-		 << "	-d: fix variable timing per frame issues\n3"
 		 << "	-t: analyze track\n"
 		 << "	-m: use the same offset for mdat beginning\n"
 		 << "	-M: search for probable packet starts for mdat\n"
@@ -94,6 +94,7 @@ std::vector<uint8_t> hexToStr(const char *str) {
 
 int main(int argc, char *argv[]) {
 
+	std::string output_filename;
 	bool info = false;
 	bool analyze = false;
 	bool simulate = false;
@@ -110,6 +111,7 @@ int main(int argc, char *argv[]) {
 		string arg(argv[i]);
 		if(arg[0] == '-') {
 			switch(arg[1]) {
+			case 'o': output_filename = std::string(argv[i+1]); i++; break;
 			case 'i': info = true; break;
 			case 'a': analyze = true; break;
 			case 's': simulate = true; break;
@@ -177,8 +179,9 @@ int main(int argc, char *argv[]) {
 			}
 
 			size_t lastindex = corrupt.find_last_of(".");
-			string fixed = corrupt.substr(0, lastindex);
-			mp4.saveVideo(fixed + "_fixed.mp4");
+			if(output_filename.size() == 0)
+				output_filename = corrupt.substr(0, lastindex) + "_fixed.mp4";
+			mp4.saveVideo(output_filename);
 		}
 	} catch(string e) {
 		Log::error << e << endl;
