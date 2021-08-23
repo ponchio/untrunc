@@ -1000,6 +1000,7 @@ double entropy(uint8_t *data, int size) {
 	return e;
 }
 
+#ifdef __GEAR360__
 int Mp4::align_128bit (int input){
 	
 	int reminder=input % 16;
@@ -1015,6 +1016,7 @@ int Mp4::align_128bit (int input){
 	return (output);
 
 }
+#endif
 
 bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t mdat_begin, bool skip_zeros, bool drifting) {
 	Log::info << "Repair: " << corrupt_filename << '\n';
@@ -1117,8 +1119,11 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 	int percent = 0;
 	//keep track of how many backtraced.
 	int backtracked = 0;
+#ifdef __GEAR360_TEST__
 	int track0=0;
 	int track1=0;
+#endif
+
 	while(offset <  mdat->contentSize()) {
 		int p = 100*offset / mdat->contentSize();
 		if(p > percent) {
@@ -1271,9 +1276,11 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 						tracks[candidate.id].codec.tmcd_seen = true;
 					offset = last.offset + candidate.length;
 
-					// Arrotonda il prossimo offset allineato a 16 byte
+#ifdef __GEAR360__
+					// offsets are 128 bit aligned
 					offset = align_128bit(offset);
 					Log::debug << "New offset: " << offset<< endl;	
+#endif
 					break;
 				}
 				//no luck either, try another one looping
@@ -1296,17 +1303,20 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 			offset += best.length;
 			Log::debug << "New offset best length: " << offset<< endl;
 			Log::debug << "Allinea 16: " << offset % 16<< endl;
-			// FDA allinea a 16 byte
+#ifdef __GEAR360__
+			// offsets are 128 bit aligned
 			offset = align_128bit(offset);
 			Log::debug << "New offset: " << offset<< endl;
+#endif
+
+// Used when processing a correct file to see if every chunk is properly identified. 
+// Stops when next offset is not aligned with the known correct value
+#ifdef __GEAR360_TEST__
 			if (best.id==0)
 				track0++;
 			else 
 				track1++;
 
-// Used when processing a correct file to see if every chunk is properly identified. 
-// Stops when next offset is not aligned with the known correct value
-#ifdef __FDA_TEST__
 			Log::debug << "New offset 0[" << track0 <<"] "<< tracks[0].offsets[track0]-64 << "size: "<<tracks[0].chunk_sizes[track0] <<endl;
 			Log::debug << "New offset 1[" << track1 <<"] "<< tracks[1].offsets[track1]-64 << "size: "<<tracks[1].chunk_sizes[track1]<< endl;
 
@@ -1328,9 +1338,11 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 			}
 			offset += best.length;
 			Log::debug << "New offset best length: " << offset<< endl;
-			// FDA allinea a 16 byte
+#ifdef __GEAR360__
+			// offsets are 128 bit aligned
 			offset = align_128bit(offset);
 			Log::debug << "New offset: " << offset<< endl;
+#endif
 
 			//This should only happen with pcm codecs, and here we should search for the beginning of another codec
 		}

@@ -108,8 +108,14 @@ Match Codec::hev1Match(const unsigned char *start, int maxlength) {
 		iter++;
 		Log::debug << "In While loop [" << iter << "] :" << (void *) pos  << '\n';
 		H265NalInfo nal_info(pos, maxlength);
+#ifdef __GEAR360__
 		// I never have more than 2 iterations in this test for Gear 360
+		// In case I find 3 iteratinons that this leads to an error in 
+		// content parsing
 		if((!nal_info.is_ok)|| (iter >=2 ))
+#else
+		if (!nal_info.is_ok)
+#endif
 			return match;
 
 		if (nal_info.isKeyFrame())
