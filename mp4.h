@@ -71,6 +71,8 @@ public:
 
     static bool makeStreamable(std::string filename, std::string output_filename);
 
+	int align_128bit (int input);
+
 protected:
     std::string file_name;
     Atom *root;
