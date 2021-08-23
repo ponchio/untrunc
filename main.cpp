@@ -157,13 +157,15 @@ int main(int argc, char *argv[]) {
 			mp4.printAtoms();
 		}
 		if(analyze) {
+			Log::debug << "Main->Analyze" << endl;
 			mp4.analyze(analyze_track);
 		}
 		if(simulate)
+			Log::debug << "Main->Simulate" << endl;
 			mp4.simulate(mdat_strategy, mdat_begin);
 
 		if(corrupt.size()) {
-
+			Log::debug << "Main->Repair" << endl;
 			bool success = mp4.repair(corrupt, mdat_strategy, mdat_begin, skip_zeros, drifting);
 			//if the user didn't specify the strategy, try them all.
 			if(!success  && mdat_strategy == Mp4::FIRST) {

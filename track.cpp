@@ -141,6 +141,8 @@ bool Track::parse(Atom *t) {
 	{
 		AvLog useAvLog();
 		codec.codec = avcodec_find_decoder(codec.context->codec_id);
+		Log::debug << "Codec: " << codec.codec << "\n";
+
 		if(!codec.codec) {
 			Log::info <<  "No codec found for track of type: " << type << "\n";
 			return true;
@@ -317,6 +319,7 @@ void Track::getKeyframes(Atom *t) {
 void Track::getSampleSizes(Atom *t) {
 	assert(t != NULL);
 	sample_sizes.clear();
+	chunk_sizes.clear();
 	// Chunk offsets.
 	Atom *stsz = t->atomByName("stsz");
 	if(!stsz)
@@ -326,8 +329,11 @@ void Track::getSampleSizes(Atom *t) {
 	default_size = stsz->readInt(4);
 
 	if(default_size == 0) {
-		for(int i = 0; i < nsamples; i++)
-			sample_sizes.push_back(stsz->readInt(12 + 4*i));
+		for(int i = 0; i < nsamples; i++) {
+				sample_sizes.push_back(stsz->readInt(12 + 4*i));
+				chunk_sizes.push_back(stsz->readInt(12 + 4*i));
+			}
+
 	}
 }
 

@@ -240,6 +240,7 @@ void Mp4::open(string filename) {
 			throw string("Could not find stream info");
 	}  // {
 
+    Log::debug << "Parsing Tracks\n";		
 	parseTracks();
 }
 
@@ -649,7 +650,6 @@ void Mp4::simulate(Mp4::MdatStrategy strategy, int64_t begin) {
 	//TODO remove duplicated code with analyze.
 	Log::info << "Simulate:\n";
 
-	Log::info << "Analyze:\n";
 	if(!root) {
 		Log::error << "No file opened.\n";
 		return;
@@ -695,8 +695,9 @@ void Mp4::simulate(Mp4::MdatStrategy strategy, int64_t begin) {
 
 			for(unsigned int i = 0; i < track.offsets.size(); ++i) {
 				Match match;
-
+				
 				match.id = t;
+
 				match.offset = track.offsets[i];
 				match.length = track.chunk_sizes[i];
 				match.duration = track.default_time? track.default_time : track.times[i];
@@ -807,9 +808,13 @@ bool Mp4::parseTracks() {
 	BufferedAtom *mdat = bufferedMdat(_mdat);
 
 	vector<Atom *> traks = root->atomsByName("trak");
+	
 	for(unsigned int i = 0; i < traks.size(); ++i) {
 		Track track;
 		track.codec.context = context->streams[i]->codec;
+	
+		Log::debug << "Parsing track: " << i <<" - "<< track.codec.context << '\n';
+
 		track.parse(traks[i]);
 		track.codec.stats.init(track, mdat);
 
@@ -855,6 +860,7 @@ BufferedAtom *Mp4::findMdat(std::string filename, Mp4::MdatStrategy strategy) {
  * Note: avc1 has size then start and for keyframes they are pretty guessable.
  */
 
+ // Ricava dal file di input l'offset del primo chunk che inizia prima
 int64_t Mp4::contentStart() {
 	vector<int64_t> offsets;
 	for(Track &track: tracks) {
@@ -921,10 +927,11 @@ int64_t Mp4::findMdat(BufferedAtom *mdat, Mp4::MdatStrategy strategy) {
 	if(mdat_offset != -1) {
 		mdat->start = mdat_offset - 8;
 		mdat->content_start = mdat_offset;
-
+		Log::info << "Mdat found!" << endl;
 	}
+	else
+		Log::error << "Mdat not found!" << endl;
 
-	Log::info << "Mdat not found!" << endl;
 	return mdat_offset;
 }
 
@@ -993,11 +1000,28 @@ double entropy(uint8_t *data, int size) {
 	return e;
 }
 
+int Mp4::align_128bit (int input){
+	
+	int reminder=input % 16;
+	int output=0;
+
+	Log::debug << "Align :" << input << endl;
+	if ( reminder ==0)
+		output=input;
+	else
+		output=input + 16-reminder;
+
+	Log::debug << "Aligned :" << output << endl;
+	return (output);
+
+}
 
 bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t mdat_begin, bool skip_zeros, bool drifting) {
 	Log::info << "Repair: " << corrupt_filename << '\n';
 	BufferedAtom *mdat = NULL;
 	File file;
+
+	Log::debug << "Repair" << endl;
 	if(!file.open(corrupt_filename))
 		throw "Could not open file: " + corrupt_filename;
 
@@ -1046,6 +1070,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 			return false;
 		}
 
+
 		mdat->start = mdat_offset;
 		mdat->content_start = mdat_offset;
 		memcpy(mdat->name, "mdat", 5);
@@ -1056,7 +1081,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		mdat->file_end   = file.length();
 	}
 
-	Log::debug << "Mdat start: " << mdat->file_begin << " end: " << mdat->file_end << endl;
+	Log::debug << "MP4 - Mdat start: " << mdat->file_begin << " end: " << mdat->file_end << endl;
 	for(unsigned int i = 0; i < tracks.size(); ++i)
 		tracks[i].clear();
 
@@ -1092,6 +1117,8 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 	int percent = 0;
 	//keep track of how many backtraced.
 	int backtracked = 0;
+	int track0=0;
+	int track1=0;
 	while(offset <  mdat->contentSize()) {
 		int p = 100*offset / mdat->contentSize();
 		if(p > percent) {
@@ -1188,6 +1215,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 			group.push_back(m);
 			//if(track.codec.pcm)
 			//	step = track.codec.pcm_bytes_per_sample;
+			Log::debug << "Chance  track: " << i << " - " << m.chances << endl;
 		}
 		sort(group.begin(), group.end());
 
@@ -1242,6 +1270,10 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 					if(candidate.id == tmcd_id)
 						tracks[candidate.id].codec.tmcd_seen = true;
 					offset = last.offset + candidate.length;
+
+					// Arrotonda il prossimo offset allineato a 16 byte
+					offset = align_128bit(offset);
+					Log::debug << "New offset: " << offset<< endl;	
 					break;
 				}
 				//no luck either, try another one looping
@@ -1262,6 +1294,28 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		if(best.length) {
 			Log::debug << "Matched track: " << best.id << " length: " << best.length << "\n";
 			offset += best.length;
+			Log::debug << "New offset best length: " << offset<< endl;
+			Log::debug << "Allinea 16: " << offset % 16<< endl;
+			// FDA allinea a 16 byte
+			offset = align_128bit(offset);
+			Log::debug << "New offset: " << offset<< endl;
+			if (best.id==0)
+				track0++;
+			else 
+				track1++;
+
+// Used when processing a correct file to see if every chunk is properly identified. 
+// Stops when next offset is not aligned with the known correct value
+#ifdef __FDA_TEST__
+			Log::debug << "New offset 0[" << track0 <<"] "<< tracks[0].offsets[track0]-64 << "size: "<<tracks[0].chunk_sizes[track0] <<endl;
+			Log::debug << "New offset 1[" << track1 <<"] "<< tracks[1].offsets[track1]-64 << "size: "<<tracks[1].chunk_sizes[track1]<< endl;
+
+			if ((offset!= tracks[0].offsets[track0]-64 ) && (offset!= tracks[1].offsets[track1]-64 ))
+			{
+
+				exit (0);
+			}
+#endif
 
 		} else {
 
@@ -1273,10 +1327,16 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 				break;
 			}
 			offset += best.length;
+			Log::debug << "New offset best length: " << offset<< endl;
+			// FDA allinea a 16 byte
+			offset = align_128bit(offset);
+			Log::debug << "New offset: " << offset<< endl;
+
 			//This should only happen with pcm codecs, and here we should search for the beginning of another codec
 		}
 		if(best.id == tmcd_id)
 			tracks[best.id].codec.tmcd_seen = true; //id in tracks start from 1.
+
 		matches.push_back(group);
 	}
 
@@ -1328,9 +1388,8 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 	}
 	if(drifting) {
 		fixTiming();
-
-
 	}
+
 	//move drifting fix into som other function.
 	if(0 && drifting && audio_current > 0 && video_current > 0 && (drift > timescale || drift < -timescale)) { //drifting of packets for more than 1 seconds
 		Log::debug << "Drift audio - video: " << drift << ". Fixing\n";
