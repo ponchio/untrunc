@@ -91,7 +91,7 @@ bool H265NalInfo::parseNal(const unsigned char *buffer, uint32_t maxlength) {
 		data_ = buffer+2;
 		isInNewFrame = *data_ >> 7;
 	}
-
+	Log::debug << "NAL Type :" << nal_type_  << endl;
 	return true;
 }
 
