@@ -26,6 +26,12 @@ cd ..
 g++ -o untrunc -I./libav file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav/libavformat -lavformat -L./libav/libavcodec -lavcodec -L./libav/libavresample -lavresample -L./libav/libavutil -lavutil -lpthread -lz
 sudo install -vpm 755 ./untrunc /usr/local/bin/
 which -a untrunc
+```  
+If compiling for Samsung GEAR 360:  
+```bash
+g++ -o untrunc -D __GEAR360__ -I./libav file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav/libavformat -lavformat -L./libav/libavcodec -lavcodec -L./libav/libavresample -lavresample -L./libav/libavutil -lavutil -lpthread -lz
+sudo install -vpm 755 ./untrunc /usr/local/bin/
+which -a untrunc
 ```
 
 Depending on your system and Libav configure options you might need to add extra flags to the command line:
