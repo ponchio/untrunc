@@ -37,7 +37,8 @@ SOURCES += main.cpp \
     codec_mijd.cpp \
     codec_hev1.cpp \
     codec_mp4v.cpp \
-    codec_gpmd.cpp
+    codec_gpmd.cpp \
+    codev_camm.cpp
 
 HEADERS += \
     atom.h \

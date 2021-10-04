@@ -1042,7 +1042,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 			mdat_offset = findMdat(mdat, strategy);
 
 		if(mdat_offset < 0) {
-			Log::error << "Failed finding start" << endl;
+			Log::debug << "Failed finding start" << endl;
 			return false;
 		}
 

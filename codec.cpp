@@ -105,6 +105,8 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 		return tmcdMatch(start, maxlength);		
 	} else if(name == "gpmd") {
 		return gpmdMatch(start, maxlength);
+	} else if(name == "camm") {
+		return cammMatch(start, maxlength);
 
 
 	} else if(name == "fdsc") {
@@ -131,6 +133,8 @@ Match Codec::search(const unsigned char *start, int maxlength) {
 	} else if(name == "mp4v") {
 		return mp4vSearch(start, maxlength);
 	} else if(name == "gpmd") {
+		return gpmdSearch(start, maxlength);
+	} else if(name == "camm") {
 		return gpmdSearch(start, maxlength);
 	} else if(name == "fdsc") {
 		return fdscSearch(start, maxlength);
