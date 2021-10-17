@@ -18,7 +18,7 @@ You need:
 
 Type the folling commands to build from git :
 ```bash
-git clone https://github.com/ponchio/untrunc
+git clone --recurse-submodules https://github.com/ponchio/untrunc
 cd untrunc/libav
 ./configure
 make
