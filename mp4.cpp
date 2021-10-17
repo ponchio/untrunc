@@ -473,7 +473,7 @@ class ChunkTime: public Track::Chunk {
 public:
 	int sample_time;
 	int track;
-	bool operator<(const ChunkTime &c) { return offset < c.offset; }
+	bool operator<(const ChunkTime &c) const { return offset < c.offset; }
 };
 
 void Mp4::analyze(int analyze_track, bool interactive) {
