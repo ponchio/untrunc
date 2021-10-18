@@ -21,7 +21,7 @@ struct Match {
 	uint32_t duration = 0; //audio often provide a duration for the packet.
 	float chances = 0.0f; //1/chances is the probability to NOT be a match
 	bool keyframe = false;
-	bool operator<(const Match &b) { return chances < b.chances; }
+	bool operator<(const Match &b) const { return chances < b.chances; }
 };
 
 //the last one is the chosen candidate.
