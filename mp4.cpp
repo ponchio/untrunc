@@ -1096,7 +1096,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		int p = 100*offset / mdat->contentSize();
 		if(p > percent) {
 			percent = p;
-			Log::info << "Processed: " << percent << "%\n";
+			Log::info << "Processed: " << percent << "%\r";
 		}
 		int64_t maxlength64 = mdat->contentSize() - offset;
 		if(maxlength64 > MaxFrameLength)
