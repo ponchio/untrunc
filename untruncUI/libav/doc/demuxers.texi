@@ -1,0 +1,113 @@
+@chapter Demuxers
+@c man begin DEMUXERS
+
+Demuxers are configured elements in Libav which allow to read the
+multimedia streams from a particular type of file.
+
+When you configure your Libav build, all the supported demuxers
+are enabled by default. You can list all available ones using the
+configure option "--list-demuxers".
+
+You can disable all the demuxers using the configure option
+"--disable-demuxers", and selectively enable a single demuxer with
+the option "--enable-demuxer=@var{DEMUXER}", or disable it
+with the option "--disable-demuxer=@var{DEMUXER}".
+
+The option "-formats" of the av* tools will display the list of
+enabled demuxers.
+
+The description of some of the currently available demuxers follows.
+
+@section image2
+
+Image file demuxer.
+
+This demuxer reads from a list of image files specified by a pattern.
+
+The pattern may contain the string "%d" or "%0@var{N}d", which
+specifies the position of the characters representing a sequential
+number in each filename matched by the pattern. If the form
+"%d0@var{N}d" is used, the string representing the number in each
+filename is 0-padded and @var{N} is the total number of 0-padded
+digits representing the number. The literal character '%' can be
+specified in the pattern with the string "%%".
+
+If the pattern contains "%d" or "%0@var{N}d", the first filename of
+the file list specified by the pattern must contain a number
+inclusively contained between 0 and 4, all the following numbers must
+be sequential. This limitation may be hopefully fixed.
+
+The pattern may contain a suffix which is used to automatically
+determine the format of the images contained in the files.
+
+For example the pattern "img-%03d.bmp" will match a sequence of
+filenames of the form @file{img-001.bmp}, @file{img-002.bmp}, ...,
+@file{img-010.bmp}, etc.; the pattern "i%%m%%g-%d.jpg" will match a
+sequence of filenames of the form @file{i%m%g-1.jpg},
+@file{i%m%g-2.jpg}, ..., @file{i%m%g-10.jpg}, etc.
+
+The size, the pixel format, and the format of each image must be the
+same for all the files in the sequence.
+
+The following example shows how to use @command{avconv} for creating a
+video from the images in the file sequence @file{img-001.jpeg},
+@file{img-002.jpeg}, ..., assuming an input framerate of 10 frames per
+second:
+@example
+avconv -i 'img-%03d.jpeg' -r 10 out.mkv
+@end example
+
+Note that the pattern must not necessarily contain "%d" or
+"%0@var{N}d", for example to convert a single image file
+@file{img.jpeg} you can employ the command:
+@example
+avconv -i img.jpeg img.png
+@end example
+
+@table @option
+@item -pixel_format @var{format}
+Set the pixel format (for raw image)
+@item -video_size   @var{size}
+Set the frame size (for raw image)
+@item -framerate    @var{rate}
+Set the frame rate
+@item -loop         @var{bool}
+Loop over the images
+@item -start_number @var{start}
+Specify the first number in the sequence
+@end table
+
+@section applehttp
+
+Apple HTTP Live Streaming demuxer.
+
+This demuxer presents all AVStreams from all variant streams.
+The id field is set to the bitrate variant index number. By setting
+the discard flags on AVStreams (by pressing 'a' or 'v' in avplay),
+the caller can decide which variant streams to actually receive.
+The total bitrate of the variant that the stream belongs to is
+available in a metadata key named "variant_bitrate".
+
+@section flv
+
+Adobe Flash Video Format demuxer.
+
+This demuxer is used to demux FLV files and RTMP network streams.
+
+@table @option
+@item -flv_metadata @var{bool}
+Allocate the streams according to the onMetaData array content.
+@end table
+
+@section asf
+
+Advanced Systems Format demuxer.
+
+This demuxer is used to demux ASF files and MMS network streams.
+
+@table @option
+@item -no_resync_search @var{bool}
+Do not try to resynchronize by looking for a certain optional start code.
+@end table
+
+@c man end INPUT DEVICES

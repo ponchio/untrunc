@@ -1,0 +1,4 @@
+054264098fa7da0a04d154a7e76ae0e5 *tests/data/fate/vsynth2-mpeg4-error.avi
+248248 tests/data/fate/vsynth2-mpeg4-error.avi
+d341895eb9a76a2236f0eac8b4e331c3 *tests/data/fate/vsynth2-mpeg4-error.out.rawvideo
+stddev:    6.52 PSNR: 31.83 MAXDIFF:  209 bytes:  7603200/  7603200

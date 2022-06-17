@@ -1,0 +1,638 @@
+@chapter Muxers
+@c man begin MUXERS
+
+Muxers are configured elements in Libav which allow writing
+multimedia streams to a particular type of file.
+
+When you configure your Libav build, all the supported muxers
+are enabled by default. You can list all available muxers using the
+configure option @code{--list-muxers}.
+
+You can disable all the muxers with the configure option
+@code{--disable-muxers} and selectively enable / disable single muxers
+with the options @code{--enable-muxer=@var{MUXER}} /
+@code{--disable-muxer=@var{MUXER}}.
+
+The option @code{-formats} of the av* tools will display the list of
+enabled muxers.
+
+A description of some of the currently available muxers follows.
+
+@anchor{crc}
+@section crc
+
+CRC (Cyclic Redundancy Check) testing format.
+
+This muxer computes and prints the Adler-32 CRC of all the input audio
+and video frames. By default audio frames are converted to signed
+16-bit raw audio and video frames to raw video before computing the
+CRC.
+
+The output of the muxer consists of a single line of the form:
+CRC=0x@var{CRC}, where @var{CRC} is a hexadecimal number 0-padded to
+8 digits containing the CRC for all the decoded input frames.
+
+For example to compute the CRC of the input, and store it in the file
+@file{out.crc}:
+@example
+avconv -i INPUT -f crc out.crc
+@end example
+
+You can print the CRC to stdout with the command:
+@example
+avconv -i INPUT -f crc -
+@end example
+
+You can select the output format of each frame with @command{avconv} by
+specifying the audio and video codec and format. For example to
+compute the CRC of the input audio converted to PCM unsigned 8-bit
+and the input video converted to MPEG-2 video, use the command:
+@example
+avconv -i INPUT -c:a pcm_u8 -c:v mpeg2video -f crc -
+@end example
+
+See also the @ref{framecrc} muxer.
+
+@anchor{dash}
+@section dash
+
+Dynamic Adaptive Streaming over HTTP (DASH) muxer that creates segments
+and manifest files according to the MPEG-DASH standard ISO/IEC 23009-1:2014.
+
+For more information see:
+
+@itemize @bullet
+@item
+ISO DASH Specification: @url{http://standards.iso.org/ittf/PubliclyAvailableStandards/c065274_ISO_IEC_23009-1_2014.zip}
+@item
+WebM DASH Specification: @url{https://sites.google.com/a/webmproject.org/wiki/adaptive-streaming/webm-dash-specification}
+@end itemize
+
+It creates a MPD manifest file and segment files for each stream.
+
+The segment filename might contain pre-defined identifiers used with SegmentTemplate
+as defined in section 5.3.9.4.4 of the standard. Available identifiers are "$RepresentationID$",
+"$Number$", "$Bandwidth$" and "$Time$".
+
+@example
+avconv -re -i <input> -map 0 -map 0 -c:a libfdk_aac -c:v libx264
+-b:v:0 800k -b:v:1 300k -s:v:1 320x170 -profile:v:1 baseline
+-profile:v:0 main -bf 1 -keyint_min 120 -g 120 -sc_threshold 0
+-b_strategy 0 -ar:a:1 22050 -use_timeline 1 -use_template 1
+-window_size 5 -adaptation_sets "id=0,streams=v id=1,streams=a"
+-f dash /path/to/out.mpd
+@end example
+
+@table @option
+@item -min_seg_duration @var{microseconds}
+Set the segment length in microseconds.
+@item -window_size @var{size}
+Set the maximum number of segments kept in the manifest.
+@item -extra_window_size @var{size}
+Set the maximum number of segments kept outside of the manifest before removing from disk.
+@item -remove_at_exit @var{remove}
+Enable (1) or disable (0) removal of all segments when finished.
+@item -use_template @var{template}
+Enable (1) or disable (0) use of SegmentTemplate instead of SegmentList.
+@item -use_timeline @var{timeline}
+Enable (1) or disable (0) use of SegmentTimeline in SegmentTemplate.
+@item -single_file @var{single_file}
+Enable (1) or disable (0) storing all segments in one file, accessed using byte ranges.
+@item -single_file_name @var{file_name}
+DASH-templated name to be used for baseURL. Implies @var{single_file} set to "1".
+@item -init_seg_name @var{init_name}
+DASH-templated name to used for the initialization segment. Default is "init-stream$RepresentationID$.m4s"
+@item -media_seg_name @var{segment_name}
+DASH-templated name to used for the media segments. Default is "chunk-stream$RepresentationID$-$Number%05d$.m4s"
+@item -utc_timing_url @var{utc_url}
+URL of the page that will return the UTC timestamp in ISO format. Example: "https://time.akamai.com/?iso"
+@item -adaptation_sets @var{adaptation_sets}
+Assign streams to AdaptationSets. Syntax is "id=x,streams=a,b,c id=y,streams=d,e" with x and y being the IDs
+of the adaptation sets and a,b,c,d and e are the indices of the mapped streams.
+
+To map all video (or audio) streams to an AdaptationSet, "v" (or "a") can be used as stream identifier instead of IDs.
+
+When no assignment is defined, this defaults to an AdaptationSet for each stream.
+@end table
+
+@anchor{framecrc}
+@section framecrc
+
+Per-frame CRC (Cyclic Redundancy Check) testing format.
+
+This muxer computes and prints the Adler-32 CRC for each decoded audio
+and video frame. By default audio frames are converted to signed
+16-bit raw audio and video frames to raw video before computing the
+CRC.
+
+The output of the muxer consists of a line for each audio and video
+frame of the form: @var{stream_index}, @var{frame_dts},
+@var{frame_size}, 0x@var{CRC}, where @var{CRC} is a hexadecimal
+number 0-padded to 8 digits containing the CRC of the decoded frame.
+
+For example to compute the CRC of each decoded frame in the input, and
+store it in the file @file{out.crc}:
+@example
+avconv -i INPUT -f framecrc out.crc
+@end example
+
+You can print the CRC of each decoded frame to stdout with the command:
+@example
+avconv -i INPUT -f framecrc -
+@end example
+
+You can select the output format of each frame with @command{avconv} by
+specifying the audio and video codec and format. For example, to
+compute the CRC of each decoded input audio frame converted to PCM
+unsigned 8-bit and of each decoded input video frame converted to
+MPEG-2 video, use the command:
+@example
+avconv -i INPUT -c:a pcm_u8 -c:v mpeg2video -f framecrc -
+@end example
+
+See also the @ref{crc} muxer.
+
+@anchor{hls}
+@section hls
+
+Apple HTTP Live Streaming muxer that segments MPEG-TS according to
+the HTTP Live Streaming specification.
+
+It creates a playlist file and numbered segment files. The output
+filename specifies the playlist filename; the segment filenames
+receive the same basename as the playlist, a sequential number and
+a .ts extension.
+
+Make sure to require a closed GOP when encoding and to set the GOP
+size to fit your segment time constraint.
+
+@example
+avconv -i in.mkv -c:v h264 -flags +cgop -g 30 -hls_time 1 out.m3u8
+@end example
+
+@table @option
+@item -hls_time @var{seconds}
+Set the segment length in seconds.
+@item -hls_list_size @var{size}
+Set the maximum number of playlist entries.
+@item -hls_wrap @var{wrap}
+Set the number after which index wraps.
+@item -start_number @var{number}
+Start the sequence from @var{number}.
+@item -hls_base_url @var{baseurl}
+Append @var{baseurl} to every entry in the playlist.
+Useful to generate playlists with absolute paths.
+@item -hls_allow_cache @var{allowcache}
+Explicitly set whether the client MAY (1) or MUST NOT (0) cache media segments
+@item -hls_version @var{version}
+Set the protocol version. Enables or disables version-specific features
+such as the integer (version 2) or decimal EXTINF values (version 3).
+@item -hls_enc @var{enc}
+Enable (1) or disable (0) the AES128 encryption.
+When enabled every segment generated is encrypted and the encryption key
+is saved as @var{playlist name}.key.
+@item -hls_enc_key @var{key}
+Use the specified hex-coded 16byte key to encrypt the segments, by default it
+is randomly generated.
+@item -hls_enc_key_url @var{keyurl}
+If set, @var{keyurl} is prepended instead of @var{baseurl} to the key filename
+in the playlist.
+@item -hls_enc_iv @var{iv}
+Use a specified hex-coded 16byte initialization vector for every segment instead
+of the autogenerated ones.
+@end table
+
+@anchor{image2}
+@section image2
+
+Image file muxer.
+
+The image file muxer writes video frames to image files.
+
+The output filenames are specified by a pattern, which can be used to
+produce sequentially numbered series of files.
+The pattern may contain the string "%d" or "%0@var{N}d", this string
+specifies the position of the characters representing a numbering in
+the filenames. If the form "%0@var{N}d" is used, the string
+representing the number in each filename is 0-padded to @var{N}
+digits. The literal character '%' can be specified in the pattern with
+the string "%%".
+
+If the pattern contains "%d" or "%0@var{N}d", the first filename of
+the file list specified will contain the number 1, all the following
+numbers will be sequential.
+
+The pattern may contain a suffix which is used to automatically
+determine the format of the image files to write.
+
+For example the pattern "img-%03d.bmp" will specify a sequence of
+filenames of the form @file{img-001.bmp}, @file{img-002.bmp}, ...,
+@file{img-010.bmp}, etc.
+The pattern "img%%-%d.jpg" will specify a sequence of filenames of the
+form @file{img%-1.jpg}, @file{img%-2.jpg}, ..., @file{img%-10.jpg},
+etc.
+
+The following example shows how to use @command{avconv} for creating a
+sequence of files @file{img-001.jpeg}, @file{img-002.jpeg}, ...,
+taking one image every second from the input video:
+@example
+avconv -i in.avi -vsync 1 -r 1 -f image2 'img-%03d.jpeg'
+@end example
+
+Note that with @command{avconv}, if the format is not specified with the
+@code{-f} option and the output filename specifies an image file
+format, the image2 muxer is automatically selected, so the previous
+command can be written as:
+@example
+avconv -i in.avi -vsync 1 -r 1 'img-%03d.jpeg'
+@end example
+
+Note also that the pattern must not necessarily contain "%d" or
+"%0@var{N}d", for example to create a single image file
+@file{img.jpeg} from the input video you can employ the command:
+@example
+avconv -i in.avi -f image2 -frames:v 1 img.jpeg
+@end example
+
+@table @option
+@item -start_number @var{number}
+Start the sequence from @var{number}.
+
+@item -update @var{number}
+If @var{number} is nonzero, the filename will always be interpreted as just a
+filename, not a pattern, and this file will be continuously overwritten with new
+images.
+
+@end table
+
+@section matroska
+
+Matroska container muxer.
+
+This muxer implements the matroska and webm container specs.
+
+The recognized metadata settings in this muxer are:
+
+@table @option
+
+@item title=@var{title name}
+Name provided to a single track
+@end table
+
+@table @option
+
+@item language=@var{language name}
+Specifies the language of the track in the Matroska languages form
+@end table
+
+@table @option
+
+@item STEREO_MODE=@var{mode}
+Stereo 3D video layout of two views in a single video track
+@table @option
+@item mono
+video is not stereo
+@item left_right
+Both views are arranged side by side, Left-eye view is on the left
+@item bottom_top
+Both views are arranged in top-bottom orientation, Left-eye view is at bottom
+@item top_bottom
+Both views are arranged in top-bottom orientation, Left-eye view is on top
+@item checkerboard_rl
+Each view is arranged in a checkerboard interleaved pattern, Left-eye view being first
+@item checkerboard_lr
+Each view is arranged in a checkerboard interleaved pattern, Right-eye view being first
+@item row_interleaved_rl
+Each view is constituted by a row based interleaving, Right-eye view is first row
+@item row_interleaved_lr
+Each view is constituted by a row based interleaving, Left-eye view is first row
+@item col_interleaved_rl
+Both views are arranged in a column based interleaving manner, Right-eye view is first column
+@item col_interleaved_lr
+Both views are arranged in a column based interleaving manner, Left-eye view is first column
+@item anaglyph_cyan_red
+All frames are in anaglyph format viewable through red-cyan filters
+@item right_left
+Both views are arranged side by side, Right-eye view is on the left
+@item anaglyph_green_magenta
+All frames are in anaglyph format viewable through green-magenta filters
+@item block_lr
+Both eyes laced in one Block, Left-eye view is first
+@item block_rl
+Both eyes laced in one Block, Right-eye view is first
+@end table
+@end table
+
+For example a 3D WebM clip can be created using the following command line:
+@example
+avconv -i sample_left_right_clip.mpg -an -c:v libvpx -metadata STEREO_MODE=left_right -y stereo_clip.webm
+@end example
+
+This muxer supports the following options:
+
+@table @option
+
+@item reserve_index_space
+By default, this muxer writes the index for seeking (called cues in Matroska
+terms) at the end of the file, because it cannot know in advance how much space
+to leave for the index at the beginning of the file. However for some use cases
+-- e.g.  streaming where seeking is possible but slow -- it is useful to put the
+index at the beginning of the file.
+
+If this option is set to a non-zero value, the muxer will reserve a given amount
+of space in the file header and then try to write the cues there when the muxing
+finishes. If the available space does not suffice, muxing will fail. A safe size
+for most use cases should be about 50kB per hour of video.
+
+Note that cues are only written if the output is seekable and this option will
+have no effect if it is not.
+
+@end table
+
+@section mov, mp4, ismv
+
+The mov/mp4/ismv muxer supports fragmentation. Normally, a MOV/MP4
+file has all the metadata about all packets stored in one location
+(written at the end of the file, it can be moved to the start for
+better playback using the @command{qt-faststart} tool). A fragmented
+file consists of a number of fragments, where packets and metadata
+about these packets are stored together. Writing a fragmented
+file has the advantage that the file is decodable even if the
+writing is interrupted (while a normal MOV/MP4 is undecodable if
+it is not properly finished), and it requires less memory when writing
+very long files (since writing normal MOV/MP4 files stores info about
+every single packet in memory until the file is closed). The downside
+is that it is less compatible with other applications.
+
+Fragmentation is enabled by setting one of the AVOptions that define
+how to cut the file into fragments:
+
+@table @option
+@item -movflags frag_keyframe
+Start a new fragment at each video keyframe.
+@item -frag_duration @var{duration}
+Create fragments that are @var{duration} microseconds long.
+@item -frag_size @var{size}
+Create fragments that contain up to @var{size} bytes of payload data.
+@item -movflags frag_custom
+Allow the caller to manually choose when to cut fragments, by
+calling @code{av_write_frame(ctx, NULL)} to write a fragment with
+the packets written so far. (This is only useful with other
+applications integrating libavformat, not from @command{avconv}.)
+@item -min_frag_duration @var{duration}
+Don't create fragments that are shorter than @var{duration} microseconds long.
+@end table
+
+If more than one condition is specified, fragments are cut when
+one of the specified conditions is fulfilled. The exception to this is
+@code{-min_frag_duration}, which has to be fulfilled for any of the other
+conditions to apply.
+
+Additionally, the way the output file is written can be adjusted
+through a few other options:
+
+@table @option
+@item -movflags empty_moov
+Write an initial moov atom directly at the start of the file, without
+describing any samples in it. Generally, an mdat/moov pair is written
+at the start of the file, as a normal MOV/MP4 file, containing only
+a short portion of the file. With this option set, there is no initial
+mdat atom, and the moov atom only describes the tracks but has
+a zero duration.
+
+This option is implicitly set when writing ismv (Smooth Streaming) files.
+@item -movflags separate_moof
+Write a separate moof (movie fragment) atom for each track. Normally,
+packets for all tracks are written in a moof atom (which is slightly
+more efficient), but with this option set, the muxer writes one moof/mdat
+pair for each track, making it easier to separate tracks.
+
+This option is implicitly set when writing ismv (Smooth Streaming) files.
+@item -movflags faststart
+Run a second pass moving the index (moov atom) to the beginning of the file.
+This operation can take a while, and will not work in various situations such
+as fragmented output, thus it is not enabled by default.
+@item -movflags disable_chpl
+Disable Nero chapter markers (chpl atom).  Normally, both Nero chapters
+and a QuickTime chapter track are written to the file. With this option
+set, only the QuickTime chapter track will be written. Nero chapters can
+cause failures when the file is reprocessed with certain tagging programs.
+@item -movflags omit_tfhd_offset
+Do not write any absolute base_data_offset in tfhd atoms. This avoids
+tying fragments to absolute byte positions in the file/streams.
+@item -movflags default_base_moof
+Similarly to the omit_tfhd_offset, this flag avoids writing the
+absolute base_data_offset field in tfhd atoms, but does so by using
+the new default-base-is-moof flag instead. This flag is new from
+14496-12:2012. This may make the fragments easier to parse in certain
+circumstances (avoiding basing track fragment location calculations
+on the implicit end of the previous track fragment).
+@end table
+
+Smooth Streaming content can be pushed in real time to a publishing
+point on IIS with this muxer. Example:
+@example
+avconv -re @var{<normal input/transcoding options>} -movflags isml+frag_keyframe -f ismv http://server/publishingpoint.isml/Streams(Encoder1)
+@end example
+
+@section mp3
+
+The MP3 muxer writes a raw MP3 stream with the following optional features:
+@itemize @bullet
+@item
+An ID3v2 metadata header at the beginning (enabled by default). Versions 2.3 and
+2.4 are supported, the @code{id3v2_version} private option controls which one is
+used (3 or 4). Setting @code{id3v2_version} to 0 disables the ID3v2 header
+completely.
+
+The muxer supports writing attached pictures (APIC frames) to the ID3v2 header.
+The pictures are supplied to the muxer in form of a video stream with a single
+packet. There can be any number of those streams, each will correspond to a
+single APIC frame.  The stream metadata tags @var{title} and @var{comment} map
+to APIC @var{description} and @var{picture type} respectively. See
+@url{http://id3.org/id3v2.4.0-frames} for allowed picture types.
+
+Note that the APIC frames must be written at the beginning, so the muxer will
+buffer the audio frames until it gets all the pictures. It is therefore advised
+to provide the pictures as soon as possible to avoid excessive buffering.
+
+@item
+A Xing/LAME frame right after the ID3v2 header (if present). It is enabled by
+default, but will be written only if the output is seekable. The
+@code{write_xing} private option can be used to disable it.  The frame contains
+various information that may be useful to the decoder, like the audio duration
+or encoder delay.
+
+@item
+A legacy ID3v1 tag at the end of the file (disabled by default). It may be
+enabled with the @code{write_id3v1} private option, but as its capabilities are
+very limited, its usage is not recommended.
+@end itemize
+
+Examples:
+
+Write an mp3 with an ID3v2.3 header and an ID3v1 footer:
+@example
+avconv -i INPUT -id3v2_version 3 -write_id3v1 1 out.mp3
+@end example
+
+Attach a picture to an mp3:
+@example
+avconv -i input.mp3 -i cover.png -c copy -metadata:s:v title="Album cover"
+-metadata:s:v comment="Cover (Front)" out.mp3
+@end example
+
+Write a "clean" MP3 without any extra features:
+@example
+avconv -i input.wav -write_xing 0 -id3v2_version 0 out.mp3
+@end example
+
+@section mpegts
+
+MPEG transport stream muxer.
+
+This muxer implements ISO 13818-1 and part of ETSI EN 300 468.
+
+The muxer options are:
+
+@table @option
+@item -mpegts_original_network_id @var{number}
+Set the original_network_id (default 0x0001). This is unique identifier
+of a network in DVB. Its main use is in the unique identification of a
+service through the path Original_Network_ID, Transport_Stream_ID.
+@item -mpegts_transport_stream_id @var{number}
+Set the transport_stream_id (default 0x0001). This identifies a
+transponder in DVB.
+@item -mpegts_service_id @var{number}
+Set the service_id (default 0x0001) also known as program in DVB.
+@item -mpegts_pmt_start_pid @var{number}
+Set the first PID for PMT (default 0x1000, max 0x1f00).
+@item -mpegts_start_pid @var{number}
+Set the first PID for data packets (default 0x0100, max 0x0f00).
+@item -muxrate @var{number}
+Set a constant muxrate (default VBR).
+@item -pcr_period @var{numer}
+Override the default PCR retransmission time (default 20ms), ignored
+if variable muxrate is selected.
+@end table
+
+The recognized metadata settings in mpegts muxer are @code{service_provider}
+and @code{service_name}. If they are not set the default for
+@code{service_provider} is "Libav" and the default for
+@code{service_name} is "Service01".
+
+@example
+avconv -i file.mpg -c copy \
+     -mpegts_original_network_id 0x1122 \
+     -mpegts_transport_stream_id 0x3344 \
+     -mpegts_service_id 0x5566 \
+     -mpegts_pmt_start_pid 0x1500 \
+     -mpegts_start_pid 0x150 \
+     -metadata service_provider="Some provider" \
+     -metadata service_name="Some Channel" \
+     -y out.ts
+@end example
+
+@section null
+
+Null muxer.
+
+This muxer does not generate any output file, it is mainly useful for
+testing or benchmarking purposes.
+
+For example to benchmark decoding with @command{avconv} you can use the
+command:
+@example
+avconv -benchmark -i INPUT -f null out.null
+@end example
+
+Note that the above command does not read or write the @file{out.null}
+file, but specifying the output file is required by the @command{avconv}
+syntax.
+
+Alternatively you can write the command as:
+@example
+avconv -benchmark -i INPUT -f null -
+@end example
+
+@section nut
+
+@table @option
+@item -syncpoints @var{flags}
+Change the syncpoint usage in nut:
+@table @option
+@item @var{default} use the normal low-overhead seeking aids.
+@item @var{none} do not use the syncpoints at all, reducing the overhead but making the stream non-seekable;
+@item @var{timestamped} extend the syncpoint with a wallclock field.
+@end table
+The @var{none} and @var{timestamped} flags are experimental.
+@end table
+
+@example
+avconv -i INPUT -f_strict experimental -syncpoints none - | processor
+@end example
+
+@section ogg
+
+Ogg container muxer.
+
+@table @option
+@item -page_duration @var{duration}
+Preferred page duration, in microseconds. The muxer will attempt to create
+pages that are approximately @var{duration} microseconds long. This allows the
+user to compromise between seek granularity and container overhead. The default
+is 1 second. A value of 0 will fill all segments, making pages as large as
+possible. A value of 1 will effectively use 1 packet-per-page in most
+situations, giving a small seek granularity at the cost of additional container
+overhead.
+@item -serial_offset @var{value}
+Serial value from which to set the streams serial number.
+Setting it to different and sufficiently large values ensures that the produced
+ogg files can be safely chained.
+
+@end table
+
+@section segment
+
+Basic stream segmenter.
+
+The segmenter muxer outputs streams to a number of separate files of nearly
+fixed duration. Output filename pattern can be set in a fashion similar to
+@ref{image2}.
+
+Every segment starts with a video keyframe, if a video stream is present.
+The segment muxer works best with a single constant frame rate video.
+
+Optionally it can generate a flat list of the created segments, one segment
+per line.
+
+@table @option
+@item segment_format @var{format}
+Override the inner container format, by default it is guessed by the filename
+extension.
+@item segment_time @var{t}
+Set segment duration to @var{t} seconds.
+@item segment_list @var{name}
+Generate also a listfile named @var{name}.
+@item segment_list_type @var{type}
+Select the listing format.
+@table @option
+@item @var{flat} use a simple flat list of entries.
+@item @var{hls} use a m3u8-like structure.
+@end table
+@item segment_list_size @var{size}
+Overwrite the listfile once it reaches @var{size} entries.
+@item segment_list_entry_prefix @var{prefix}
+Prepend @var{prefix} to each entry. Useful to generate absolute paths.
+@item segment_wrap @var{limit}
+Wrap around segment index once it reaches @var{limit}.
+@end table
+
+Make sure to require a closed GOP when encoding and to set the GOP
+size to fit your segment time constraint.
+
+@example
+avconv -i in.mkv -c hevc -flags +cgop -g 60 -map 0 -f segment -list out.list out%03d.nut
+@end example
+
+@c man end MUXERS

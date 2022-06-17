@@ -1,0 +1,208 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 55;
+	objects = {
+
+/* Begin PBXFileReference section */
+		EFBAA847285A031F0027852E /* avconv */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = avconv; sourceTree = "<group>"; };
+		EFBAA848285A031F0027852E /* tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tools; sourceTree = "<group>"; };
+		EFBAA849285A031F0027852E /* compat */ = {isa = PBXFileReference; lastKnownFileType = folder; path = compat; sourceTree = "<group>"; };
+		EFBAA84A285A031F0027852E /* config.asm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm.asm; path = config.asm; sourceTree = "<group>"; };
+		EFBAA84B285A031F0027852E /* INSTALL */ = {isa = PBXFileReference; lastKnownFileType = text; path = INSTALL; sourceTree = "<group>"; };
+		EFBAA84C285A031F0027852E /* libavfilter */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libavfilter; sourceTree = "<group>"; };
+		EFBAA84D285A031F0027852E /* libavutil */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libavutil; sourceTree = "<group>"; };
+		EFBAA84E285A031F0027852E /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		EFBAA84F285A031F0027852E /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
+		EFBAA850285A031F0027852E /* configure */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = configure; sourceTree = "<group>"; };
+		EFBAA851285A031F0027852E /* Changelog */ = {isa = PBXFileReference; lastKnownFileType = text; path = Changelog; sourceTree = "<group>"; };
+		EFBAA852285A031F0027852E /* libavdevice */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libavdevice; sourceTree = "<group>"; };
+		EFBAA853285A031F0027852E /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		EFBAA854285A031F0027852E /* libavformat */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libavformat; sourceTree = "<group>"; };
+		EFBAA855285A031F0027852E /* avbuild */ = {isa = PBXFileReference; lastKnownFileType = folder; path = avbuild; sourceTree = "<group>"; };
+		EFBAA856285A031F0027852E /* libswscale */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libswscale; sourceTree = "<group>"; };
+		EFBAA857285A031F0027852E /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tests; sourceTree = "<group>"; };
+		EFBAA858285A031F0027852E /* COPYING.LGPLv2.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = COPYING.LGPLv2.1; sourceTree = "<group>"; };
+		EFBAA859285A031F0027852E /* RELEASE */ = {isa = PBXFileReference; lastKnownFileType = text; path = RELEASE; sourceTree = "<group>"; };
+		EFBAA85A285A031F0027852E /* avprobe */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = avprobe; sourceTree = "<group>"; };
+		EFBAA85B285A031F0027852E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		EFBAA85C285A031F0027852E /* libavcodec */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libavcodec; sourceTree = "<group>"; };
+		EFBAA85D285A031F0027852E /* libavresample */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libavresample; sourceTree = "<group>"; };
+		EFBAA85E285A031F0027852E /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		EFBAA85F285A031F0027852E /* avtools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = avtools; sourceTree = "<group>"; };
+		EFBAA860285A031F0027852E /* COPYING.GPLv2 */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING.GPLv2; sourceTree = "<group>"; };
+		EFBAA861285A031F0027852E /* .gitattributes */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitattributes; sourceTree = "<group>"; };
+		EFBAA862285A031F0027852E /* .version */ = {isa = PBXFileReference; lastKnownFileType = text; path = .version; sourceTree = "<group>"; };
+		EFBAA863285A031F0027852E /* COPYING.GPLv3 */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING.GPLv3; sourceTree = "<group>"; };
+		EFBAA864285A031F0027852E /* doc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = doc; sourceTree = "<group>"; };
+		EFBAA865285A031F0027852E /* COPYING.LGPLv3 */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING.LGPLv3; sourceTree = "<group>"; };
+		EFBAA866285A031F0027852E /* avversion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = avversion.h; sourceTree = "<group>"; };
+		EFBAA867285A031F0027852E /* .git */ = {isa = PBXFileReference; lastKnownFileType = text; path = .git; sourceTree = "<group>"; };
+		EFBAA868285A031F0027852E /* presets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = presets; sourceTree = "<group>"; };
+		EFBAA869285A031F0027852E /* .travis.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .travis.yml; sourceTree = "<group>"; };
+		EFBAA86A285A031F0027852E /* CREDITS */ = {isa = PBXFileReference; lastKnownFileType = text; path = CREDITS; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		EFBAA841285A031F0027852E = {
+			isa = PBXGroup;
+			children = (
+				EFBAA847285A031F0027852E /* avconv */,
+				EFBAA848285A031F0027852E /* tools */,
+				EFBAA849285A031F0027852E /* compat */,
+				EFBAA84A285A031F0027852E /* config.asm */,
+				EFBAA84B285A031F0027852E /* INSTALL */,
+				EFBAA84C285A031F0027852E /* libavfilter */,
+				EFBAA84D285A031F0027852E /* libavutil */,
+				EFBAA84E285A031F0027852E /* LICENSE */,
+				EFBAA84F285A031F0027852E /* config.h */,
+				EFBAA850285A031F0027852E /* configure */,
+				EFBAA851285A031F0027852E /* Changelog */,
+				EFBAA852285A031F0027852E /* libavdevice */,
+				EFBAA853285A031F0027852E /* Makefile */,
+				EFBAA854285A031F0027852E /* libavformat */,
+				EFBAA855285A031F0027852E /* avbuild */,
+				EFBAA856285A031F0027852E /* libswscale */,
+				EFBAA857285A031F0027852E /* tests */,
+				EFBAA858285A031F0027852E /* COPYING.LGPLv2.1 */,
+				EFBAA859285A031F0027852E /* RELEASE */,
+				EFBAA85A285A031F0027852E /* avprobe */,
+				EFBAA85B285A031F0027852E /* README.md */,
+				EFBAA85C285A031F0027852E /* libavcodec */,
+				EFBAA85D285A031F0027852E /* libavresample */,
+				EFBAA85E285A031F0027852E /* .gitignore */,
+				EFBAA85F285A031F0027852E /* avtools */,
+				EFBAA860285A031F0027852E /* COPYING.GPLv2 */,
+				EFBAA861285A031F0027852E /* .gitattributes */,
+				EFBAA862285A031F0027852E /* .version */,
+				EFBAA863285A031F0027852E /* COPYING.GPLv3 */,
+				EFBAA864285A031F0027852E /* doc */,
+				EFBAA865285A031F0027852E /* COPYING.LGPLv3 */,
+				EFBAA866285A031F0027852E /* avversion.h */,
+				EFBAA867285A031F0027852E /* .git */,
+				EFBAA868285A031F0027852E /* presets */,
+				EFBAA869285A031F0027852E /* .travis.yml */,
+				EFBAA86A285A031F0027852E /* CREDITS */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		EFBAA846285A031F0027852E /* libav */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = EFBAA86B285A031F0027852E /* Build configuration list for PBXLegacyTarget "libav" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = /Users/jiangyiqi99/untrunc/libav;
+			dependencies = (
+			);
+			name = libav;
+			passBuildSettingsInEnvironment = 1;
+			productName = libav;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		EFBAA842285A031F0027852E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+			};
+			buildConfigurationList = EFBAA845285A031F0027852E /* Build configuration list for PBXProject "libav" */;
+			compatibilityVersion = "Xcode 13.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = EFBAA841285A031F0027852E;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EFBAA846285A031F0027852E /* libav */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		EFBAA843285A031F0027852E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx10.6;
+			};
+			name = Debug;
+		};
+		EFBAA844285A031F0027852E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				SDKROOT = macosx10.6;
+			};
+			name = Release;
+		};
+		EFBAA86C285A031F0027852E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = libav;
+			};
+			name = Debug;
+		};
+		EFBAA86D285A031F0027852E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = libav;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		EFBAA845285A031F0027852E /* Build configuration list for PBXProject "libav" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EFBAA843285A031F0027852E /* Debug */,
+				EFBAA844285A031F0027852E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EFBAA86B285A031F0027852E /* Build configuration list for PBXLegacyTarget "libav" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EFBAA86C285A031F0027852E /* Debug */,
+				EFBAA86D285A031F0027852E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = EFBAA842285A031F0027852E /* Project object */;
+}

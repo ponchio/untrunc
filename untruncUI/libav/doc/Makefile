@@ -1,0 +1,84 @@
+ALLMANPAGES = $(AVBASENAMES:%=%.1)
+MANPAGES    = $(AVPROGS-yes:%=doc/%.1)
+PODPAGES    = $(AVPROGS-yes:%=doc/%.pod)
+PROGSHTML   = $(AVPROGS-yes:%=doc/%.html)
+HTMLPAGES   = $(PROGSHTML)                                              \
+              doc/developer.html                                        \
+              doc/faq.html                                              \
+              doc/fate.html                                             \
+              doc/general.html                                          \
+              doc/git-howto.html                                        \
+              doc/libavfilter.html                                      \
+              doc/nut.html                                              \
+              doc/platform.html                                         \
+
+DOCS-$(CONFIG_POD2MAN)                          += $(MANPAGES) $(PODPAGES)
+DOCS-$(CONFIG_TEXI2HTML)                        += $(HTMLPAGES)
+DOCS = $(DOCS-yes)
+
+all: $(DOCS)
+
+apidoc: doc/doxy/html
+documentation: $(DOCS)
+
+TEXIDEP = awk '/^@include/ { printf "$@: $(@D)/%s\n", $$2 }' <$< >$(@:%=%.d)
+
+GENTEXI  = format codec
+GENTEXI := $(GENTEXI:%=doc/avoptions_%.texi)
+
+$(MANPAGES) $(PODPAGES) $(PROGSHTML): $(GENTEXI)
+
+$(GENTEXI): TAG = GENTEXI
+$(GENTEXI): doc/avoptions_%.texi: doc/print_options$(HOSTEXESUF)
+	$(M)doc/print_options $* > $@
+
+doc/%.html: TAG = HTML
+doc/%.html: doc/%.texi $(SRC_PATH)/doc/t2h.init
+	$(Q)$(TEXIDEP)
+	$(M)texi2html -I doc -monolithic --init-file $(SRC_PATH)/doc/t2h.init --output $@ $<
+
+doc/%.pod: TAG = POD
+doc/%.pod: doc/%.texi $(SRC_PATH)/doc/texi2pod.pl
+	$(Q)$(TEXIDEP)
+	$(M)$(SRC_PATH)/doc/texi2pod.pl -Idoc $< $@
+
+doc/%.1: TAG = MAN
+doc/%.1: doc/%.pod
+	$(M)pod2man --section=1 --center=" " --release=" " $< > $@
+
+$(DOCS) doc/doxy/html: | doc/
+
+DOXY_INPUT      = $(addprefix $(SRC_PATH)/, $(INSTHEADERS))
+DOXY_TEMPLATES  = doxy_stylesheet.css footer.html header.html
+DOXY_TEMPLATES := $(addprefix $(SRC_PATH)/doc/doxy/, $(DOXY_TEMPLATES))
+
+doc/doxy/html: $(SRC_PATH)/doc/Doxyfile $(DOXY_INPUT) $(DOXY_TEMPLATES)
+	$(M)$(SRC_PATH)/doc/doxy-wrapper.sh $(SRC_PATH) $< $(DOXY_INPUT)
+
+install-progs-$(CONFIG_POD2MAN): install-man
+install-progs-$(CONFIG_TEXI2HTML): install-doc
+
+install-doc: $(HTMLPAGES)
+	$(Q)mkdir -p "$(DOCDIR)"
+	$(INSTALL) -m 644 $(HTMLPAGES) "$(DOCDIR)"
+
+install-man: $(MANPAGES)
+	$(Q)mkdir -p "$(MANDIR)/man1"
+	$(INSTALL) -m 644 $(MANPAGES) "$(MANDIR)/man1"
+
+uninstall: uninstall-doc uninstall-man
+
+uninstall-doc:
+	$(RM) -r "$(DOCDIR)"
+
+uninstall-man:
+	$(RM) $(addprefix "$(MANDIR)/man1/",$(ALLMANPAGES))
+
+clean::
+	$(RM) $(CLEANSUFFIXES:%=doc/%)
+	$(RM) doc/*.html doc/*.pod doc/*.1 doc/avoptions_*.texi
+	$(RM) -r doc/doxy/html
+
+-include $(wildcard $(DOCS:%=%.d))
+
+.PHONY: apidoc documentation

@@ -1,0 +1,4 @@
+1bf5ee0be63310b567fe01235c6b81d7 *tests/data/fate/vsynth2-dv-411.dv
+7200000 tests/data/fate/vsynth2-dv-411.dv
+653619342dbecd1e1314fa1eed0488fa *tests/data/fate/vsynth2-dv-411.out.rawvideo
+stddev:    3.48 PSNR: 37.28 MAXDIFF:   56 bytes:  7603200/  7603200

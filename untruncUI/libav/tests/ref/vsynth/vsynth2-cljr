@@ -1,0 +1,4 @@
+624a1bcef30a52b39f616d73ded8bb30 *tests/data/fate/vsynth2-cljr.avi
+5075648 tests/data/fate/vsynth2-cljr.avi
+273b2f8fb471602a683049f91f7c4cbb *tests/data/fate/vsynth2-cljr.out.rawvideo
+stddev:    3.69 PSNR: 36.79 MAXDIFF:   36 bytes:  7603200/  7603200

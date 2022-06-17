@@ -1,0 +1,556 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 55;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		EF40693B285A257F00DD4FA8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = EF40693A285A257F00DD4FA8 /* AppDelegate.m */; };
+		EF40693E285A257F00DD4FA8 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = EF40693D285A257F00DD4FA8 /* ViewController.m */; };
+		EF406941285A257F00DD4FA8 /* untruncUI.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = EF40693F285A257F00DD4FA8 /* untruncUI.xcdatamodeld */; };
+		EF406943285A258100DD4FA8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EF406942285A258100DD4FA8 /* Assets.xcassets */; };
+		EF406946285A258100DD4FA8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EF406944285A258100DD4FA8 /* Main.storyboard */; };
+		EF406948285A258100DD4FA8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = EF406947285A258100DD4FA8 /* main.m */; };
+		EF406994285A267E00DD4FA8 /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EF40696B285A267C00DD4FA8 /* libavutil.a */; };
+		EF406995285A267E00DD4FA8 /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EF40696C285A267C00DD4FA8 /* libavcodec.a */; };
+		EF406996285A267E00DD4FA8 /* codec_tmcd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40696D285A267C00DD4FA8 /* codec_tmcd.cpp */; };
+		EF406997285A267E00DD4FA8 /* codec_text.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40696E285A267C00DD4FA8 /* codec_text.cpp */; };
+		EF406998285A267E00DD4FA8 /* codec_mijd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40696F285A267C00DD4FA8 /* codec_mijd.cpp */; };
+		EF406999285A267E00DD4FA8 /* codec_apch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406970285A267C00DD4FA8 /* codec_apch.cpp */; };
+		EF40699A285A267E00DD4FA8 /* libavformat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EF406974285A267C00DD4FA8 /* libavformat.a */; };
+		EF40699B285A267E00DD4FA8 /* codec_gpmd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406977285A267D00DD4FA8 /* codec_gpmd.cpp */; };
+		EF40699D285A267E00DD4FA8 /* libavresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EF406979285A267D00DD4FA8 /* libavresample.a */; };
+		EF40699F285A267E00DD4FA8 /* codecstats.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40697B285A267D00DD4FA8 /* codecstats.cpp */; };
+		EF4069A0285A267E00DD4FA8 /* codec_mp4a.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40697C285A267D00DD4FA8 /* codec_mp4a.cpp */; };
+		EF4069A1285A267E00DD4FA8 /* codec_unknown.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40697D285A267D00DD4FA8 /* codec_unknown.cpp */; };
+		EF4069A2285A267E00DD4FA8 /* codec_pcm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40697E285A267D00DD4FA8 /* codec_pcm.cpp */; };
+		EF4069A3285A267E00DD4FA8 /* codec_mp4v.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40697F285A267D00DD4FA8 /* codec_mp4v.cpp */; };
+		EF4069A4285A267E00DD4FA8 /* file.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406980285A267D00DD4FA8 /* file.cpp */; };
+		EF4069A5285A267E00DD4FA8 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406981285A267D00DD4FA8 /* main.cpp */; };
+		EF4069A6285A267E00DD4FA8 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406983285A267D00DD4FA8 /* log.cpp */; };
+		EF4069A7285A267E00DD4FA8 /* mp4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406984285A267D00DD4FA8 /* mp4.cpp */; };
+		EF4069A8285A267E00DD4FA8 /* codec_fdsc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406985285A267D00DD4FA8 /* codec_fdsc.cpp */; };
+		EF4069A9285A267E00DD4FA8 /* codec_rtp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406986285A267D00DD4FA8 /* codec_rtp.cpp */; };
+		EF4069AA285A267E00DD4FA8 /* codec_mbex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406987285A267D00DD4FA8 /* codec_mbex.cpp */; };
+		EF4069AB285A267E00DD4FA8 /* atom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406989285A267D00DD4FA8 /* atom.cpp */; };
+		EF4069AC285A267E00DD4FA8 /* track.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40698A285A267E00DD4FA8 /* track.cpp */; };
+		EF4069AD285A267E00DD4FA8 /* codec_avc1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40698D285A267E00DD4FA8 /* codec_avc1.cpp */; };
+		EF4069AE285A267E00DD4FA8 /* codec_alac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40698E285A267E00DD4FA8 /* codec_alac.cpp */; };
+		EF4069AF285A267E00DD4FA8 /* codec_hev1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF40698F285A267E00DD4FA8 /* codec_hev1.cpp */; };
+		EF4069B0285A267E00DD4FA8 /* codec_camm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406990285A267E00DD4FA8 /* codec_camm.cpp */; };
+		EF4069B2285A267E00DD4FA8 /* codec.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF406992285A267E00DD4FA8 /* codec.cpp */; };
+		EF4069B5285A282600DD4FA8 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF4069B4285A282600DD4FA8 /* CoreFoundation.framework */; };
+		EF4069B7285A282D00DD4FA8 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF4069B6285A282D00DD4FA8 /* CoreVideo.framework */; };
+		EF4069B9285A283500DD4FA8 /* VideoDecodeAcceleration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF4069B8285A283500DD4FA8 /* VideoDecodeAcceleration.framework */; };
+		EF4069BA285A2A6700DD4FA8 /* mp4.h in Sources */ = {isa = PBXBuildFile; fileRef = EF40698C285A267E00DD4FA8 /* mp4.h */; };
+		EF4069BD285A320800DD4FA8 /* untrunc_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF4069BB285A320800DD4FA8 /* untrunc_main.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		EF406936285A257F00DD4FA8 /* untruncUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = untruncUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EF406939285A257F00DD4FA8 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		EF40693A285A257F00DD4FA8 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		EF40693C285A257F00DD4FA8 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		EF40693D285A257F00DD4FA8 /* ViewController.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = ViewController.m; sourceTree = "<group>"; };
+		EF406940285A257F00DD4FA8 /* untruncUI.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = untruncUI.xcdatamodel; sourceTree = "<group>"; };
+		EF406942285A258100DD4FA8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		EF406945285A258100DD4FA8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		EF406947285A258100DD4FA8 /* main.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = main.m; sourceTree = "<group>"; };
+		EF406949285A258100DD4FA8 /* untruncUI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = untruncUI.entitlements; sourceTree = "<group>"; };
+		EF40696B285A267C00DD4FA8 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libavutil.a; sourceTree = "<group>"; };
+		EF40696C285A267C00DD4FA8 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libavcodec.a; sourceTree = "<group>"; };
+		EF40696D285A267C00DD4FA8 /* codec_tmcd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_tmcd.cpp; sourceTree = "<group>"; };
+		EF40696E285A267C00DD4FA8 /* codec_text.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_text.cpp; sourceTree = "<group>"; };
+		EF40696F285A267C00DD4FA8 /* codec_mijd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_mijd.cpp; sourceTree = "<group>"; };
+		EF406970285A267C00DD4FA8 /* codec_apch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_apch.cpp; sourceTree = "<group>"; };
+		EF406971285A267C00DD4FA8 /* codecstats.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codecstats.h; sourceTree = "<group>"; };
+		EF406972285A267C00DD4FA8 /* avlog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = avlog.h; sourceTree = "<group>"; };
+		EF406973285A267C00DD4FA8 /* file.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = file.h; sourceTree = "<group>"; };
+		EF406974285A267C00DD4FA8 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libavformat.a; sourceTree = "<group>"; };
+		EF406975285A267C00DD4FA8 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = log.h; sourceTree = "<group>"; };
+		EF406976285A267D00DD4FA8 /* osx_endian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = osx_endian.h; sourceTree = "<group>"; };
+		EF406977285A267D00DD4FA8 /* codec_gpmd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_gpmd.cpp; sourceTree = "<group>"; };
+		EF406979285A267D00DD4FA8 /* libavresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libavresample.a; sourceTree = "<group>"; };
+		EF40697B285A267D00DD4FA8 /* codecstats.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codecstats.cpp; sourceTree = "<group>"; };
+		EF40697C285A267D00DD4FA8 /* codec_mp4a.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_mp4a.cpp; sourceTree = "<group>"; };
+		EF40697D285A267D00DD4FA8 /* codec_unknown.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_unknown.cpp; sourceTree = "<group>"; };
+		EF40697E285A267D00DD4FA8 /* codec_pcm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_pcm.cpp; sourceTree = "<group>"; };
+		EF40697F285A267D00DD4FA8 /* codec_mp4v.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_mp4v.cpp; sourceTree = "<group>"; };
+		EF406980285A267D00DD4FA8 /* file.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = file.cpp; sourceTree = "<group>"; };
+		EF406981285A267D00DD4FA8 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		EF406982285A267D00DD4FA8 /* codec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codec.h; sourceTree = "<group>"; };
+		EF406983285A267D00DD4FA8 /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = log.cpp; sourceTree = "<group>"; };
+		EF406984285A267D00DD4FA8 /* mp4.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mp4.cpp; sourceTree = "<group>"; };
+		EF406985285A267D00DD4FA8 /* codec_fdsc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_fdsc.cpp; sourceTree = "<group>"; };
+		EF406986285A267D00DD4FA8 /* codec_rtp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_rtp.cpp; sourceTree = "<group>"; };
+		EF406987285A267D00DD4FA8 /* codec_mbex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_mbex.cpp; sourceTree = "<group>"; };
+		EF406988285A267D00DD4FA8 /* AP_AtomDefinitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AP_AtomDefinitions.h; sourceTree = "<group>"; };
+		EF406989285A267D00DD4FA8 /* atom.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = atom.cpp; sourceTree = "<group>"; };
+		EF40698A285A267E00DD4FA8 /* track.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = track.cpp; sourceTree = "<group>"; };
+		EF40698B285A267E00DD4FA8 /* track.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = track.h; sourceTree = "<group>"; };
+		EF40698C285A267E00DD4FA8 /* mp4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mp4.h; sourceTree = "<group>"; };
+		EF40698D285A267E00DD4FA8 /* codec_avc1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_avc1.cpp; sourceTree = "<group>"; };
+		EF40698E285A267E00DD4FA8 /* codec_alac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_alac.cpp; sourceTree = "<group>"; };
+		EF40698F285A267E00DD4FA8 /* codec_hev1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_hev1.cpp; sourceTree = "<group>"; };
+		EF406990285A267E00DD4FA8 /* codec_camm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec_camm.cpp; sourceTree = "<group>"; };
+		EF406992285A267E00DD4FA8 /* codec.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = codec.cpp; sourceTree = "<group>"; };
+		EF406993285A267E00DD4FA8 /* atom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = atom.h; sourceTree = "<group>"; };
+		EF4069B4285A282600DD4FA8 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		EF4069B6285A282D00DD4FA8 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		EF4069B8285A283500DD4FA8 /* VideoDecodeAcceleration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoDecodeAcceleration.framework; path = System/Library/Frameworks/VideoDecodeAcceleration.framework; sourceTree = SDKROOT; };
+		EF4069BB285A320800DD4FA8 /* untrunc_main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = untrunc_main.cpp; sourceTree = "<group>"; };
+		EF4069BC285A320800DD4FA8 /* untrunc_main.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = untrunc_main.hpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EF406933285A257F00DD4FA8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EF4069B9285A283500DD4FA8 /* VideoDecodeAcceleration.framework in Frameworks */,
+				EF4069B7285A282D00DD4FA8 /* CoreVideo.framework in Frameworks */,
+				EF4069B5285A282600DD4FA8 /* CoreFoundation.framework in Frameworks */,
+				EF40699A285A267E00DD4FA8 /* libavformat.a in Frameworks */,
+				EF40699D285A267E00DD4FA8 /* libavresample.a in Frameworks */,
+				EF406994285A267E00DD4FA8 /* libavutil.a in Frameworks */,
+				EF406995285A267E00DD4FA8 /* libavcodec.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		EF40692D285A257F00DD4FA8 = {
+			isa = PBXGroup;
+			children = (
+				EF406938285A257F00DD4FA8 /* untruncUI */,
+				EF406937285A257F00DD4FA8 /* Products */,
+				EF4069B3285A282600DD4FA8 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		EF406937285A257F00DD4FA8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				EF406936285A257F00DD4FA8 /* untruncUI.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EF406938285A257F00DD4FA8 /* untruncUI */ = {
+			isa = PBXGroup;
+			children = (
+				EF406939285A257F00DD4FA8 /* AppDelegate.h */,
+				EF40693A285A257F00DD4FA8 /* AppDelegate.m */,
+				EF40693C285A257F00DD4FA8 /* ViewController.h */,
+				EF40693D285A257F00DD4FA8 /* ViewController.m */,
+				EF406942285A258100DD4FA8 /* Assets.xcassets */,
+				EF406944285A258100DD4FA8 /* Main.storyboard */,
+				EF406947285A258100DD4FA8 /* main.m */,
+				EF406949285A258100DD4FA8 /* untruncUI.entitlements */,
+				EF40693F285A257F00DD4FA8 /* untruncUI.xcdatamodeld */,
+				EF406988285A267D00DD4FA8 /* AP_AtomDefinitions.h */,
+				EF406989285A267D00DD4FA8 /* atom.cpp */,
+				EF406993285A267E00DD4FA8 /* atom.h */,
+				EF406972285A267C00DD4FA8 /* avlog.h */,
+				EF40698E285A267E00DD4FA8 /* codec_alac.cpp */,
+				EF406970285A267C00DD4FA8 /* codec_apch.cpp */,
+				EF40698D285A267E00DD4FA8 /* codec_avc1.cpp */,
+				EF406990285A267E00DD4FA8 /* codec_camm.cpp */,
+				EF406985285A267D00DD4FA8 /* codec_fdsc.cpp */,
+				EF406977285A267D00DD4FA8 /* codec_gpmd.cpp */,
+				EF40698F285A267E00DD4FA8 /* codec_hev1.cpp */,
+				EF406987285A267D00DD4FA8 /* codec_mbex.cpp */,
+				EF40696F285A267C00DD4FA8 /* codec_mijd.cpp */,
+				EF40697C285A267D00DD4FA8 /* codec_mp4a.cpp */,
+				EF40697F285A267D00DD4FA8 /* codec_mp4v.cpp */,
+				EF40697E285A267D00DD4FA8 /* codec_pcm.cpp */,
+				EF406986285A267D00DD4FA8 /* codec_rtp.cpp */,
+				EF40696E285A267C00DD4FA8 /* codec_text.cpp */,
+				EF40696D285A267C00DD4FA8 /* codec_tmcd.cpp */,
+				EF40697D285A267D00DD4FA8 /* codec_unknown.cpp */,
+				EF406992285A267E00DD4FA8 /* codec.cpp */,
+				EF406982285A267D00DD4FA8 /* codec.h */,
+				EF40697B285A267D00DD4FA8 /* codecstats.cpp */,
+				EF406971285A267C00DD4FA8 /* codecstats.h */,
+				EF406980285A267D00DD4FA8 /* file.cpp */,
+				EF406973285A267C00DD4FA8 /* file.h */,
+				EF40696C285A267C00DD4FA8 /* libavcodec.a */,
+				EF406974285A267C00DD4FA8 /* libavformat.a */,
+				EF406979285A267D00DD4FA8 /* libavresample.a */,
+				EF40696B285A267C00DD4FA8 /* libavutil.a */,
+				EF406983285A267D00DD4FA8 /* log.cpp */,
+				EF406975285A267C00DD4FA8 /* log.h */,
+				EF406981285A267D00DD4FA8 /* main.cpp */,
+				EF406984285A267D00DD4FA8 /* mp4.cpp */,
+				EF40698C285A267E00DD4FA8 /* mp4.h */,
+				EF406976285A267D00DD4FA8 /* osx_endian.h */,
+				EF40698A285A267E00DD4FA8 /* track.cpp */,
+				EF40698B285A267E00DD4FA8 /* track.h */,
+				EF4069BB285A320800DD4FA8 /* untrunc_main.cpp */,
+				EF4069BC285A320800DD4FA8 /* untrunc_main.hpp */,
+			);
+			path = untruncUI;
+			sourceTree = "<group>";
+		};
+		EF4069B3285A282600DD4FA8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				EF4069B8285A283500DD4FA8 /* VideoDecodeAcceleration.framework */,
+				EF4069B6285A282D00DD4FA8 /* CoreVideo.framework */,
+				EF4069B4285A282600DD4FA8 /* CoreFoundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		EF406935285A257F00DD4FA8 /* untruncUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EF406962285A258100DD4FA8 /* Build configuration list for PBXNativeTarget "untruncUI" */;
+			buildPhases = (
+				EF406932285A257F00DD4FA8 /* Sources */,
+				EF406933285A257F00DD4FA8 /* Frameworks */,
+				EF406934285A257F00DD4FA8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = untruncUI;
+			productName = untruncUI;
+			productReference = EF406936285A257F00DD4FA8 /* untruncUI.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		EF40692E285A257F00DD4FA8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1320;
+				TargetAttributes = {
+					EF406935285A257F00DD4FA8 = {
+						CreatedOnToolsVersion = 13.2.1;
+					};
+				};
+			};
+			buildConfigurationList = EF406931285A257F00DD4FA8 /* Build configuration list for PBXProject "untruncUI" */;
+			compatibilityVersion = "Xcode 13.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = EF40692D285A257F00DD4FA8;
+			productRefGroup = EF406937285A257F00DD4FA8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EF406935285A257F00DD4FA8 /* untruncUI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		EF406934285A257F00DD4FA8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EF406943285A258100DD4FA8 /* Assets.xcassets in Resources */,
+				EF406946285A258100DD4FA8 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		EF406932285A257F00DD4FA8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EF406999285A267E00DD4FA8 /* codec_apch.cpp in Sources */,
+				EF40693E285A257F00DD4FA8 /* ViewController.m in Sources */,
+				EF4069AE285A267E00DD4FA8 /* codec_alac.cpp in Sources */,
+				EF406941285A257F00DD4FA8 /* untruncUI.xcdatamodeld in Sources */,
+				EF406948285A258100DD4FA8 /* main.m in Sources */,
+				EF406996285A267E00DD4FA8 /* codec_tmcd.cpp in Sources */,
+				EF4069A9285A267E00DD4FA8 /* codec_rtp.cpp in Sources */,
+				EF40699B285A267E00DD4FA8 /* codec_gpmd.cpp in Sources */,
+				EF4069AD285A267E00DD4FA8 /* codec_avc1.cpp in Sources */,
+				EF4069A0285A267E00DD4FA8 /* codec_mp4a.cpp in Sources */,
+				EF4069AB285A267E00DD4FA8 /* atom.cpp in Sources */,
+				EF40699F285A267E00DD4FA8 /* codecstats.cpp in Sources */,
+				EF4069BA285A2A6700DD4FA8 /* mp4.h in Sources */,
+				EF4069A4285A267E00DD4FA8 /* file.cpp in Sources */,
+				EF4069A7285A267E00DD4FA8 /* mp4.cpp in Sources */,
+				EF4069AF285A267E00DD4FA8 /* codec_hev1.cpp in Sources */,
+				EF40693B285A257F00DD4FA8 /* AppDelegate.m in Sources */,
+				EF406997285A267E00DD4FA8 /* codec_text.cpp in Sources */,
+				EF406998285A267E00DD4FA8 /* codec_mijd.cpp in Sources */,
+				EF4069A1285A267E00DD4FA8 /* codec_unknown.cpp in Sources */,
+				EF4069A2285A267E00DD4FA8 /* codec_pcm.cpp in Sources */,
+				EF4069A5285A267E00DD4FA8 /* main.cpp in Sources */,
+				EF4069BD285A320800DD4FA8 /* untrunc_main.cpp in Sources */,
+				EF4069A6285A267E00DD4FA8 /* log.cpp in Sources */,
+				EF4069A8285A267E00DD4FA8 /* codec_fdsc.cpp in Sources */,
+				EF4069AA285A267E00DD4FA8 /* codec_mbex.cpp in Sources */,
+				EF4069B0285A267E00DD4FA8 /* codec_camm.cpp in Sources */,
+				EF4069AC285A267E00DD4FA8 /* track.cpp in Sources */,
+				EF4069A3285A267E00DD4FA8 /* codec_mp4v.cpp in Sources */,
+				EF4069B2285A267E00DD4FA8 /* codec.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		EF406944285A258100DD4FA8 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				EF406945285A258100DD4FA8 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		EF406960285A258100DD4FA8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "../**";
+			};
+			name = Debug;
+		};
+		EF406961285A258100DD4FA8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				USER_HEADER_SEARCH_PATHS = "../**";
+			};
+			name = Release;
+		};
+		EF406963285A258100DD4FA8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CODE_SIGN_ENTITLEMENTS = untruncUI/untruncUI.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_INPUT_FILETYPE = automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/untruncUI",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-lpthread",
+					"-lz",
+					"-lbz2",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.Eternal.untruncUI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		EF406964285A258100DD4FA8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CODE_SIGN_ENTITLEMENTS = untruncUI/untruncUI.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_INPUT_FILETYPE = automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/untruncUI",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-lpthread",
+					"-lz",
+					"-lbz2",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.Eternal.untruncUI;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		EF406931285A257F00DD4FA8 /* Build configuration list for PBXProject "untruncUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EF406960285A258100DD4FA8 /* Debug */,
+				EF406961285A258100DD4FA8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EF406962285A258100DD4FA8 /* Build configuration list for PBXNativeTarget "untruncUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EF406963285A258100DD4FA8 /* Debug */,
+				EF406964285A258100DD4FA8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		EF40693F285A257F00DD4FA8 /* untruncUI.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				EF406940285A257F00DD4FA8 /* untruncUI.xcdatamodel */,
+			);
+			currentVersion = EF406940285A257F00DD4FA8 /* untruncUI.xcdatamodel */;
+			path = untruncUI.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
+	};
+	rootObject = EF40692E285A257F00DD4FA8 /* Project object */;
+}

@@ -1,0 +1,4 @@
+3c8a93fa645574f5b11eb51cf0efd227 *tests/data/fate/vsynth1-wmv2.avi
+659162 tests/data/fate/vsynth1-wmv2.avi
+2d61f24836d54766e8d370f243d83dcd *tests/data/fate/vsynth1-wmv2.out.rawvideo
+stddev:    7.97 PSNR: 30.09 MAXDIFF:  105 bytes:  7603200/  7603200
