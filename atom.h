@@ -33,17 +33,17 @@ extern "C" {
 
 class Atom {
 public:
-	int64_t start;       //including 8 header bytes
-	int64_t content_start; //after the name and eventually the extended 64 bit size;
-    int64_t length;      //including 8 header bytes
-    char    name[5];
-    char    head[4];
-    char    version[4];
+	int64_t start = 0;       //including 8 header bytes
+	int64_t content_start = 0; //after the name and eventually the extended 64 bit size;
+    int64_t length = 0;      //including 8 header bytes
+    char    name[5] = "";
+    char    head[4] = "";
+    char    version[4] = "";
     std::vector<unsigned char> content;
     std::vector<Atom *> children;
 	bool length64 = false;
 
-    Atom();
+	Atom() {};
     virtual ~Atom();
 
     void parseHeader  (File &file); //read just name and length

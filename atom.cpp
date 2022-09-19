@@ -101,9 +101,6 @@ AtomDefinition definition(const char *id) {
 
 
 
-// Atom
-Atom::Atom() : start(0), content_start(0), length(0), name(""), head(""), version("") { }
-
 Atom::~Atom() {
 	for(unsigned int i = 0; i < children.size(); i++)
 		delete children[i];
