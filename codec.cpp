@@ -87,6 +87,7 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 
 	} else if(name == "mp4a") {
 		return mp4aMatch(start, maxlength);
+
 	} else if(name == "mp4v") {
 		return mp4vMatch(start, maxlength);
 

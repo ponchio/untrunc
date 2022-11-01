@@ -1,4 +1,5 @@
 #include "codec.h"
+#include "log.h"
 
 
 using namespace std;
@@ -90,7 +91,7 @@ bool H265NalInfo::parseNal(const unsigned char *buffer, uint32_t maxlength) {
 		data_ = buffer+2;
 		isInNewFrame = *data_ >> 7;
 	}
-
+	Log::debug << "NAL Type :" << nal_type_  << endl;
 	return true;
 }
 
@@ -99,12 +100,22 @@ Match Codec::hev1Match(const unsigned char *start, int maxlength) {
 	Match match;
 
 	const unsigned char *pos = start;
-
+	int iter=0;
+	
 	H265NalInfo previous_nal;
 
 	while(1) {
+		iter++;
+		Log::debug << "In While loop [" << iter << "] :" << (void *) pos  << '\n';
 		H265NalInfo nal_info(pos, maxlength);
-		if(!nal_info.is_ok)
+#ifdef __GEAR360__
+		// I never have more than 2 iterations in this test for Gear 360
+		// In case I find 3 iteratinons that this leads to an error in 
+		// content parsing
+		if((!nal_info.is_ok)|| (iter >=2 ))
+#else
+		if (!nal_info.is_ok)
+#endif
 			return match;
 
 		if (nal_info.isKeyFrame())

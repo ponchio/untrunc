@@ -70,6 +70,9 @@ public:
 	void simulate(MdatStrategy strategy, int64_t begin);
 
     static bool makeStreamable(std::string filename, std::string output_filename);
+#ifdef __GEAR360__
+	int align_128bit (int input);
+#endif
 
 protected:
     std::string file_name;
