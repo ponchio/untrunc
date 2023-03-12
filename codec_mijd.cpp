@@ -35,9 +35,9 @@ Match Codec::mijdMatch(const unsigned char *start, int maxlength) {
 	return match;
 }
 
-Match Codec::mijdSearch(const unsigned char *start, int maxlength) {
+Match Codec::mijdSearch(const unsigned char *start, int maxlength, int maxskip) {
 	Match match;
-	const unsigned char *end = start + maxlength - 8;
+	const unsigned char *end = start + maxskip;
 	const  unsigned char *current = start;
 	while(current < end) {
 		uint32_t word = *(uint32_t *)start;

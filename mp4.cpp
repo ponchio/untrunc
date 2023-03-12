@@ -510,12 +510,12 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 	//sample time analysis
 	vector<ChunkTime> chunktimes;
 
-	for(unsigned int t = 0; t < tracks.size(); ++t) {
+	for(unsigned int trackId = 0; trackId < tracks.size(); ++trackId) {
 
-		if(analyze_track != -1 && t != analyze_track)
+		if(analyze_track != -1 && trackId != analyze_track)
 			continue;
-		Log::info << "\n\nTrack " << t << endl;
-		Track &track = tracks[t];
+		Log::info << "\n\nTrack " << trackId << endl;
+		Track &track = tracks[trackId];
 
 		if(track.hint_track) {
 			Log::info << "Hint track for track: " << track.hinted_id << "\n";
@@ -591,7 +591,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 			chunktime.offset = chunk.offset;
 			chunktime.nsamples = chunk.nsamples;
 			chunktime.size = chunk.size;
-			chunktime.track = t;
+			chunktime.track = trackId;
 			chunktime.sample_time = 0;
 
 			int64_t offset = chunk.offset - mdat->content_start;
@@ -599,6 +599,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 				int64_t size = track.getSize(chunk.first_sample + k);
 				if(track.codec.pcm)
 					size = chunk.size;
+
 				int64_t extendedsize = std::min(mdat->contentSize() - offset, size + 200000);
 				unsigned char *start = mdat->getFragment(offset, extendedsize); //&(mdat->content[offset]);
 				int32_t begin = mdat->readInt(offset);
@@ -608,10 +609,24 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 									  << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next <<  dec << '\n';
 
 				chunktime.sample_time += track.default_time ? track.default_time : track.times[sample];
+
+				Match match = track.codec.match(start, extendedsize);
+
+				MatchGroup matches = this->match(offset, mdat);
+				Match &best = matches.back();
+				if(best.id !=  trackId) {
+					Log::error << "Wrong track matches with higher score";
+
+				}
+
+				if(track.codec.pcm)
+					break;
+
 				sample++;
 				offset += size;
 
-				Match match = track.codec.match(start, extendedsize);
+
+
 				if(match.length == size)
 					continue;
 
@@ -733,7 +748,8 @@ void Mp4::simulate(Mp4::MdatStrategy strategy, int64_t begin) {
 					<< "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << "\n";
 
 		MatchGroup matches = match(offset, mdat);
-		Match &best = matches[0];
+		Match &best = matches.back();
+
 
 		for(Match m: matches) {
 			Log::debug << "Match for: " << m.id << " (" << codecs[m.id] << ") chances: " << m.chances << " length: " << m.length << "\n";
@@ -787,7 +803,7 @@ MatchGroup Mp4::match(int64_t offset, BufferedAtom *mdat) {
 		group.push_back(m);
 	}
 
-	sort(group.begin(), group.end(), [](const Match &m1, const Match &m2) { return m1.chances > m2.chances; });
+	sort(group.begin(), group.end());//, [](const Match &m1, const Match &m2) { return m1.chances > m2.chances; });
 	return group;
 }
 
@@ -934,7 +950,6 @@ int64_t Mp4::findMdat(BufferedAtom *mdat, Mp4::MdatStrategy strategy) {
 //if it's less than 8 bytes dont (might be alac?)
 //otherwise we need to search for the actual begin using matches.
 int zeroskip(BufferedAtom *mdat, unsigned char *start, int64_t maxlength) {
-	return 0;
 	int64_t block_size = std::min(int64_t(1<<10), maxlength);
 
 	//skip 4 bytes at a time.
@@ -949,6 +964,8 @@ int zeroskip(BufferedAtom *mdat, unsigned char *start, int64_t maxlength) {
 	if(k < 16)
 		return 0;
 
+
+
 	//play conservative of non aligned zero blocks
 	if(k < block_size)
 		k -= 4;
@@ -959,7 +976,7 @@ int zeroskip(BufferedAtom *mdat, unsigned char *start, int64_t maxlength) {
 	return k;
 }
 
-int Mp4::searchNext(BufferedAtom *mdat, int64_t offset) {
+int Mp4::searchNext(BufferedAtom *mdat, int64_t offset, int maxskip) {
 	int64_t maxlength64 = mdat->contentSize() - offset;
 	if(maxlength64 > MaxFrameLength)
 		maxlength64 = MaxFrameLength;
@@ -969,8 +986,11 @@ int Mp4::searchNext(BufferedAtom *mdat, int64_t offset) {
 	best.chances = 0;
 	best.offset = 0;
 	for(Track &track: tracks) {
-		Match m = track.codec.search(start, maxlength);
-		if(m.chances != 0 && (best.chances == 0 || m.offset < best.offset))
+		Match m = track.codec.search(start, maxlength, maxskip);
+		if(m.chances != 0 &&
+		   (best.chances == 0 ||
+			m.chances > best.chances ||
+			m.offset < best.offset))
 			best = m;
 	}
 	return best.offset;
@@ -1111,17 +1131,25 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 
 		Log::debug << "Offset: " << setw(10) << (mdat->file_begin + offset)
 					   << "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << '\n';
-//		cout.flush();
 
 
 		//zeros in pcm are possible, if mixed with zero padding it becames impossible to correctly detect the start.
 		if(begin == 0 && !haspcm) {
+
 			int skipped = zeroskip(mdat, start, maxlength64);
-			if(skipped) {
+/*			if(skipped) {
 				Log::debug << "Skipping " << skipped << " zeroes!" << endl;
 				offset += skipped;
 				continue;
-			}
+			} */
+
+			cout << (offset + skipped + mdat->file_begin) << " vs: " << (offset + skipped + mdat->file_begin) % 256 << endl;
+			while((offset + skipped + mdat->file_begin) % 256)
+				skipped++;
+			Log::debug << "Skipped: " << skipped << endl;
+			offset += skipped;
+			continue;
+
 		}
 
 
@@ -1178,7 +1206,10 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		//search for a beginning
 		//backtrace otherwise
 
-		MatchGroup group;
+		MatchGroup group = match(offset, mdat);
+		Match &best = group.back();
+
+		/*MatchGroup group;
 		group.offset = offset;
 		for(unsigned int i = 0; i < tracks.size(); ++i) {
 			Track &track = tracks[i];
@@ -1191,7 +1222,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		}
 		sort(group.begin(), group.end());
 
-		Match &best = group.back();
+		Match &best = group.back(); */
 		//no hope!
 		if(best.chances == 0.0f) {
 
@@ -1201,7 +1232,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 			}
 
 			//maybe the lenght is almost correct just a few padding bytes.
-			int next = searchNext(mdat, offset);
+			int next = searchNext(mdat, offset, 16);
 			if(next  < 16 && next != 0) {
 				offset += next;
 				continue;
@@ -1265,7 +1296,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 
 		} else {
 
-			best.length = searchNext(mdat, offset);
+			best.length = searchNext(mdat, offset, 8192);
 			Log::debug << "Unknown length, search for next beginning, guessed as: " << best.length << endl;
 			if(!best.length) {
 				Log::error << "Could not guess length of best match" << endl;

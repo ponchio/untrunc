@@ -51,17 +51,19 @@ public:
 	void clear();
 
 	Match match(const unsigned char *start, int maxlength);
-	Match search(const unsigned char *start, int maxlength);
+	Match search(const unsigned char *start, int maxlength, int maxskip);
 
 	//sometimes (maybe) rtp info is present without a track
 static	Match rtpMatch(const unsigned char *start, int maxlength);
 
 	Match avc1Match(const unsigned char *start, int maxlength);
-	Match avc1Search(const unsigned char *start, int maxlength);
+	Match avc1Search(const unsigned char *start, int maxlength, int makskip);
 
 	Match mp4aMatch(const unsigned char *start, int maxlength);
+	Match mp4aSearch(const unsigned char *start, int maxlength, int makskip);
+
 	Match mp4vMatch(const unsigned char *start, int maxlength);
-	Match mp4vSearch(const unsigned char *start, int maxlength);
+	Match mp4vSearch(const unsigned char *start, int maxlength, int maxskip);
 
 	Match alacMatch(const unsigned char *start, int maxlength);
 	Match mbexMatch(const unsigned char *start, int maxlength);
@@ -69,23 +71,23 @@ static	Match rtpMatch(const unsigned char *start, int maxlength);
 	Match textMatch(const unsigned char *start, int maxlength);
 
 	Match fdscMatch(const unsigned char *start, int maxlength); //GOPRO proprietary codec, still has problems.
-	Match fdscSearch(const unsigned char *start, int maxlength);
+	Match fdscSearch(const unsigned char *start, int maxlength, int maxskip);
 
 	Match apchMatch(const unsigned char *start, int maxlength);
-	Match apchSearch(const unsigned char *start, int maxlength);
+	Match apchSearch(const unsigned char *start, int maxlength, int maxskip);
 
 	Match hev1Match(const unsigned char *start, int maxlength);
 
 	Match tmcdMatch(const unsigned char *start, int maxlength);
 
 	Match gpmdMatch(const unsigned char *start, int maxlength);
-	Match gpmdSearch(const unsigned char *start, int maxlength);
+	Match gpmdSearch(const unsigned char *start, int maxlength, int maxskip);
 
 	Match cammMatch(const unsigned char *start, int maxlength);
-	Match cammSearch(const unsigned char *start, int maxlength);
+	Match cammSearch(const unsigned char *start, int maxlength, int maxskip);
 
 	Match mijdMatch(const unsigned char *start, int maxlength);
-	Match mijdSearch(const unsigned char *start, int maxlength);
+	Match mijdSearch(const unsigned char *start, int maxlength, int maxskip);
 
 	//we just hope statistics on beginning and lenght is enough
 	Match unknownMatch(const unsigned char *start, int maxlength);

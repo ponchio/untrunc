@@ -2,7 +2,22 @@
 #include "log.h"
 #include "avlog.h"
 
+extern "C" {
+	#include <libavcodec/mpegaudiodecheader.h>
+}
 using namespace std;
+
+//orrid.
+Match Codec::mp4aSearch(const unsigned char *start, int maxlength, int maxskip) {
+	for(int i = 0; i < maxskip; i++) {
+		Match m = mp4aMatch(start + i, maxlength - i);
+		if(m.chances > 0) {
+			m.offset = i;
+			return m;
+		}
+	}
+	return Match();
+}
 
 Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 
@@ -11,6 +26,21 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 
 	if(!context)
 		return match;
+
+	if(strcmp(context->codec->name, "mp3") == 0) {
+		MPADecodeHeader *s = (MPADecodeHeader *)context->priv_data;
+		uint32_t header = AV_RB32(start);
+
+		int ret = avpriv_mpegaudio_decode_header(s, header);
+		if (ret < 0) { //wrong header
+			return match;
+		} else if(ret == 1) { //no way to compute size (that I know of)
+			return match;
+		}
+		match.length = s->frame_size;
+		match.chances = 100;
+		return match;
+	}
 
 
 	// XXX Horrible Hack: These values might need to be changed depending on the file. XXX
@@ -40,6 +70,8 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 		int got_frame = 0;
 		consumed = avcodec_decode_audio4(context, frame, &got_frame, &avp);
 
+		int frame_size =  *(int *)context->priv_data;
+		cout << frame_size << endl;
 
 		if(consumed >= 0) {
 			if(frame->nb_samples > 0)
@@ -69,13 +101,16 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 	} else if(consumed < 0) {
 		match.chances = 0.0f;
 		consumed = 0;
-	} else if(consumed == 6)
-        match.chances = 32000;
+	} else if(consumed == 6) {
+		match.chances = 32000;
+	} else if (consumed < 6) {
+		return match;
+	}
 
 //actually below 200 is pretty common! l
 //TODO use actual length of the good packets to assess a probability
 	else if(consumed < 400)
-		match.chances = 3;
+		match.chances = 50;
 	else
 		match.chances = 100;
 

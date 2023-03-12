@@ -16,6 +16,14 @@
 Match Codec::textMatch(const unsigned char *start, int maxlength) {
 	Match match;
 
+	int32_t begin = readBE<int32_t>(start);
+	if(stats.fixed_size && stats.beginnings32.size() == 1) {
+		if(stats.beginnings32.count(begin)) {
+			match.chances = 1<<20;
+			match.length = stats.fixed_size;
+		}
+		return match;
+	}
 
 	//TODO find more sensible values for these maxes
 	uint32_t max_text_length = std::min(maxlength, 4096);
@@ -40,7 +48,6 @@ Match Codec::textMatch(const unsigned char *start, int maxlength) {
 
 	//TODO if text is ascii changes might be significantly higher!
 	//small text or already seen beginnings.
-	int32_t begin = readBE<int32_t>(start);
 	if(size < 128 || stats.beginnings32.count(begin)) {
 		match.chances = stats.beginnings32[begin];
 		match.length = size+2;

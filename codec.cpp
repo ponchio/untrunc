@@ -125,19 +125,21 @@ Match Codec::match(const unsigned char *start, int maxlength) {
 	//throw "Usnupported codec\n";
 }
 
-Match Codec::search(const unsigned char *start, int maxlength) {
+Match Codec::search(const unsigned char *start, int maxlength, int maxskip) {
 	if(name == "apch") {
-		return apchSearch(start, maxlength);
+		return apchSearch(start, maxlength, maxskip);
 	} else if(name == "avc1") {
-		return avc1Search(start, maxlength);
+		return avc1Search(start, maxlength, maxskip);
+	} else if(name == "mp4a") {
+		return mp4aSearch(start, maxlength, maxskip);
 	} else if(name == "mp4v") {
-		return mp4vSearch(start, maxlength);
+		return mp4vSearch(start, maxlength, maxskip);
 	} else if(name == "gpmd") {
-		return gpmdSearch(start, maxlength);
+		return gpmdSearch(start, maxlength, maxskip);
 	} else if(name == "camm") {
-		return gpmdSearch(start, maxlength);
+		return gpmdSearch(start, maxlength, maxskip);
 	} else if(name == "fdsc") {
-		return fdscSearch(start, maxlength);
+		return fdscSearch(start, maxlength, maxskip);
 	}
 
 	Match match;

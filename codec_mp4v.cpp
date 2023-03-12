@@ -4,9 +4,9 @@
 
 using namespace std;
 
-Match Codec::mp4vSearch(const unsigned char *start, int maxlength) {
+Match Codec::mp4vSearch(const unsigned char *start, int maxlength, int maxskip) {
 	Match match;
-	for(int offset = 0; offset < maxlength - 8; offset++) {
+	for(int offset = 0; offset < maxskip; offset++) {
 		int32_t begin32 = readBE<int32_t>(start + offset);
 		if(begin32 == 0x1b3 || begin32 == 0x1b6) {
 			match.offset = offset;

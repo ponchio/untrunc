@@ -339,7 +339,16 @@ bool NalInfo::getNalInfo(const H264sps &sps, uint32_t maxlength, const uint8_t *
 
 
 
-Match Codec::avc1Search(const unsigned char *start, int maxlength) {
+Match Codec::avc1Search(const unsigned char *start, int maxlength, int makskip) {
+	for(int i = 0; i < makskip; i++) {
+		Match m = mp4aMatch(start + i, maxlength - i);
+		if(m.chances > 0) {
+			m.offset = i;
+			return m;
+		}
+	}
+	return Match();
+	/*
 	Match match;
 	for(int offset = 0; offset < maxlength - 8; offset++) {
 		if(start[offset] != 0)
@@ -360,7 +369,7 @@ Match Codec::avc1Search(const unsigned char *start, int maxlength) {
 		match.chances = 10;
 		return match;
 	}
-	return match;
+	return match; */
 }
 
 

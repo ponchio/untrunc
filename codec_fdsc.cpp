@@ -16,9 +16,9 @@
 #include <iostream>
 using namespace std;
 
-Match Codec::fdscSearch(const unsigned char *start, int maxlength) {
+Match Codec::fdscSearch(const unsigned char *start, int maxlength, int maxskip) {
 	Match match;
-	const unsigned char *end = start + maxlength - 8;
+	const unsigned char *end = start + maxskip;
 	const  unsigned char *current = start;
 
 	while(current < end) {

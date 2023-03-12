@@ -55,7 +55,7 @@ public:
 	int64_t findMdat(BufferedAtom *mdat,  MdatStrategy strategy = FIRST);
 	BufferedAtom *findMdat(std::string filename, MdatStrategy strategy);
 	int64_t contentStart();
-	int searchNext(BufferedAtom *mdat, int64_t offset);
+	int searchNext(BufferedAtom *mdat, int64_t offset, int maxskip);
 	BufferedAtom *bufferedMdat(Atom *mdat);
 
 

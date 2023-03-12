@@ -16,9 +16,9 @@ Match Codec::gpmdMatch(const unsigned char *start, int maxlength) {
 	return match;
 }
 
-Match Codec::gpmdSearch(const unsigned char *start, int maxlength) {
+Match Codec::gpmdSearch(const unsigned char *start, int maxlength, int maxskip) {
 	Match match;
-	const unsigned char *end = start + maxlength - 8;
+	const unsigned char *end = start + maxskip;
 	const  unsigned char *current = start;
 
 	set<string> fourcc =  {"DEVC", "DVID", "DVNM", "STRM", "STNM", "RMRK",  "SCAL",
