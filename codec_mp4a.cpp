@@ -70,8 +70,15 @@ Match Codec::mp4aMatch(const unsigned char *start, int maxlength) {
 		int got_frame = 0;
 		consumed = avcodec_decode_audio4(context, frame, &got_frame, &avp);
 
+		if(consumed < 0)
+			return match;
+
+		if(consumed <= 4) {
+			avp.data += consumed;
+			consumed = avcodec_decode_audio4(context, frame, &got_frame, &avp);
+		}
+
 		int frame_size =  *(int *)context->priv_data;
-		cout << frame_size << endl;
 
 		if(consumed >= 0) {
 			if(frame->nb_samples > 0)

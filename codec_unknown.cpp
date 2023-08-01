@@ -13,6 +13,7 @@ Match Codec::unknownMatch(const unsigned char *start, int maxlength) {
 		if(stats.beginnings32.count(begin32))
 			match.chances = 10*stats.beginnings32[begin32];
 		match.length = 1024;
+//		match.length = 5120; sometimes found with this size (use stats!)
 		return match;
 	}
 	//probably no samples

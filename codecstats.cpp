@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 
+#include <math.h>
 #include "log.h"
 using namespace std;
 
@@ -23,6 +24,25 @@ int GCD(int a, int b) {
 
 
 void CodecStats::init(Track &track, BufferedAtom *mdat) {
+
+	variance = 0;
+
+	if(track.default_time) {
+		average_time = min_time = max_time = track.default_time;
+		average_time = 0;
+	} else {
+		for(int t: track.times) {
+			average_time += t;
+			min_time = std::min(min_time, t);
+			max_time = std::max(max_time, t);
+		}
+		average_time /= (double)track.times.size();
+		for(int t: track.times) {
+			variance += pow(t - average_time, 2.0);
+		}
+		variance /= (double)track.times.size();
+		variance = sqrt(variance);
+	}
 	std::vector<Track::Chunk> &chunks = track.chunks;
 	if(!chunks.size())
 		return;

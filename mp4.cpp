@@ -471,6 +471,7 @@ bool Mp4::save(string output_filename) {
 //used for variable sample time attempt to guess
 class ChunkTime: public Track::Chunk {
 public:
+	int sample;
 	int sample_time;
 	int track;
 	bool operator<(const ChunkTime &c) const { return offset < c.offset; }
@@ -1331,9 +1332,12 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		track.offsets.push_back(group.offset);
 		if(track.default_size) {
 			//if number of samples per chunk is variable, encode each sample in a different chunk.
-			if(track.default_chunk_nsamples == 0)
-				track.nsamples += match.length/(track.default_size*track.codec.pcm_bytes_per_sample);
-			else
+			if(track.default_chunk_nsamples == 0) {
+				if(track.codec.pcm)
+					track.nsamples += match.length/(track.default_size*track.codec.pcm_bytes_per_sample);
+				else //probably not audio or video, no way to guess time drifting.
+					track.nsamples += track.chunks[0].nsamples;
+			} else
 				track.nsamples += track.default_chunk_nsamples;
 		} else {
 			//might be wrong for variable number of samples per chunk.
@@ -1415,6 +1419,65 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 	return true;
 }
 void Mp4::fixTiming() {
+	int leading_track =0;
+	double leading_variance = 1e20;
+	bool need_fixing = false;
+	vector<ChunkTime> chunktimes;
+	for(int i = 0; i < tracks.size(); i++) {
+		Track &track = tracks[i];
+		double variance = track.codec.stats.variance;
+		need_fixing |= variance > 0;
+
+		int sample = 0;
+		for(Track::Chunk &chunk: track.chunks) {
+
+			ChunkTime chunktime;
+			chunktime.offset = chunk.offset;
+			chunktime.nsamples = chunk.nsamples; //should always be 1
+			chunktime.size = chunk.size;
+			chunktime.track = i;
+			chunktime.sample_time = 0;
+
+
+			for(int k = 0; k < chunk.nsamples; k++) {
+				chunktime.sample = sample;
+				chunktime.sample_time += track.default_time ? track.default_time : (int)track.codec.stats.average_time;
+				chunktime.offset++; //just to keep them ordered.
+				chunktimes.push_back(chunktime);
+				sample++;
+			}
+		}
+		if((track.type == string("vide") || track.type == string("soun")) &&
+			(track.default_time || variance < leading_variance)) {
+			leading_track = i;
+			leading_variance = variance;
+		}
+	}
+	if(!need_fixing)
+		return;
+
+	//sort all packages by position in mdat.
+	sort(chunktimes.begin(), chunktimes.end());
+	std::vector<double> current_time(tracks.size());
+	for(ChunkTime &timing: chunktimes) {
+		Track &track = tracks[timing.track];
+
+		if(!track.default_time) {
+			double delay = (current_time[timing.track] - current_time[leading_track]);
+			int corrected = timing.sample_time;
+			if(delay*track.timescale > 4*track.codec.stats.average_time) {
+				corrected = track.codec.stats.average_time/2;
+			} else if(delay*track.timescale < -4*track.codec.stats.average_time) {
+				corrected = track.codec.stats.average_time*2;
+			}
+			timing.sample_time = track.times[timing.sample] = corrected;
+		}
+		current_time[timing.track] += timing.sample_time/(double)track.timescale;
+	}
+
+	return;
+
+
 	//check if some track has variable timing and some has fixed timing,
 	int best_fixed = -1;
 	int best_fixed_size = 0;
@@ -1428,6 +1491,8 @@ void Mp4::fixTiming() {
 		}
 	}
 	if(best_fixed != -1 && variables.size()) {
+		//1: inspect working video for packet timing variability and max out of sync.
+		//2:keep the two stream as much in sync as possible withing variability.
 
 		//create index of offset and timings for fixed one
 		Track &fixed = tracks[best_fixed];

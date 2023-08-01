@@ -12,6 +12,12 @@ class CodecStats {
 public:
 	void init(Track &track, BufferedAtom *mdat);
 
+	//keep track of min and max timing, useful for variable timing.
+	int min_time = 0xffffff;
+	int max_time = 0;
+	double average_time = 0;
+	double variance = 0;
+
 	//this is most useful for pcm, assuming we are lucky.
 	int fixed_size = 0; //zero we don't know
 	//if we don't know how to parse a codec, but we know the begin we can still ideintify it.
