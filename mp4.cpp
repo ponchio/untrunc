@@ -1361,7 +1361,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 #endif
 
 //this time 4 tracks interleaved and video is first track
-#define QUADAUDIO
+//#define QUADAUDIO
 #ifdef QUADAUDIO
 
 
