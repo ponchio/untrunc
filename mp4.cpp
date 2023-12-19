@@ -709,6 +709,20 @@ void Mp4::simulate(Mp4::MdatStrategy strategy, int64_t begin) {
 		} else {
 			Log::debug << "Track " << t << " packets: " << track.offsets.size() << endl;
 
+			for(unsigned int i = 0; i < track.chunks.size(); ++i) {
+				Track::Chunk &chunk = track.chunks[i];
+				uint64_t offset = chunk.offset;
+				for(int k = 0; k < chunk.nsamples; k++) {
+					Match match;
+					match.id = t;
+					match.offset = offset;
+					match.length = track.getSize(chunk.first_sample + k);
+					match.duration = track.getTimes(k);
+					packets.push_back(match);
+					offset += match.length;
+				}
+			}
+/*
 			for(unsigned int i = 0; i < track.offsets.size(); ++i) {
 				Match match;
 
@@ -717,7 +731,7 @@ void Mp4::simulate(Mp4::MdatStrategy strategy, int64_t begin) {
 				match.length = track.chunk_sizes[i];
 				match.duration = track.default_time? track.default_time : track.times[i];
 				packets.push_back(match);
-			}
+			}*/
 		}
 	}
 	std::sort(packets.begin(), packets.end(), [](const Match &m1, const Match &m2) { return m1.offset < m2.offset; });
@@ -1208,6 +1222,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		//backtrace otherwise
 
 		MatchGroup group = match(offset, mdat);
+
 		Match &best = group.back();
 
 		/*MatchGroup group;
@@ -1314,6 +1329,62 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 
 	if(matches.size() < 4) //to few packets.
 		return false;
+
+//#define DOUBLEAUDIO
+#ifdef DOUBLEAUDIO
+
+
+	int start = -1;
+	for(int i = 0; i < matches.size(); i++) {
+		MatchGroup &g = matches[i];
+		Match &m = g.back();
+		if(m.id != 0 && start == -1)
+			start = i;
+		if(m.id == 0) {
+
+
+			if(start != -1) {
+				int tot_audio = i - start;
+				for(int k = start; k < start + tot_audio/2; k++) {
+					assert(matches[k].back().id != 0);
+					matches[k].back().id = 1;
+				}
+				for(int k = start + tot_audio/2; k < start + tot_audio; k++) {
+					assert(matches[k].back().id != 0);
+					matches[k].back().id = 2;
+				}
+			}
+			start = -1;
+		}
+
+	}
+#endif
+
+//this time 4 tracks interleaved and video is first track
+#define QUADAUDIO
+#ifdef QUADAUDIO
+
+
+		int start = -1;
+		for(int i = 0; i < matches.size(); i++) {
+			MatchGroup &g = matches[i];
+			Match &m = g.back();
+			if(m.id != 0 && start == -1)
+				start = i;
+			if(m.id == 0) {
+
+				if(start != -1) {
+					int tot_audio = i - start;
+					for(int k = 0; k < tot_audio; k++) {
+						assert(matches[k + start].back().id != 0);
+						matches[k+start].back().id = (k%4)+1;
+					}
+				}
+				start = -1;
+			}
+
+		}
+#endif
 
 
 	//copy matches into tracks
