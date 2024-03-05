@@ -617,7 +617,7 @@ void Mp4::analyze(int analyze_track, bool interactive) {
 				Match &best = matches.back();
 				if(best.id !=  trackId) {
 					Log::error << "Wrong track matches with higher score";
-
+					MatchGroup rematches = this->match(offset, mdat);
 				}
 
 				if(track.codec.pcm)
@@ -665,7 +665,6 @@ void Mp4::simulate(Mp4::MdatStrategy strategy, int64_t begin) {
 	//TODO remove duplicated code with analyze.
 	Log::info << "Simulate:\n";
 
-	Log::info << "Analyze:\n";
 	if(!root) {
 		Log::error << "No file opened.\n";
 		return;
@@ -759,7 +758,7 @@ void Mp4::simulate(Mp4::MdatStrategy strategy, int64_t begin) {
 		unsigned char *start = mdat->getFragment(offset, 8);
 		unsigned int begin = readBE<int>(start);
 		unsigned int next  = readBE<int>(start + 4);
-		Log::debug << "\n" << codecs[m.id] << " offset: " << setw(10) << (m.offset) << " Length: " << m.length
+		Log::debug << "\n" << codecs[m.id] << " (" << m.id << ") offset: " << setw(10) << (m.offset) << " Length: " << m.length
 					<< "  begin: " << hex << setw(8) << begin << ' ' << setw(8) << next << dec << "\n";
 
 		MatchGroup matches = match(offset, mdat);
@@ -1330,8 +1329,11 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 	if(matches.size() < 4) //to few packets.
 		return false;
 
-//#define DOUBLEAUDIO
-#ifdef DOUBLEAUDIO
+
+/* multiple audio in stream, we expect to have 1 video n audio1 and n audio2 then 1 video again,
+ * where n can vary, we find out how big n is looking for the next video packet */
+//#define DOUBLEAUDIO_ALTERNATE
+#ifdef DOUBLEAUDIO_ALTERNATE
 
 
 	int start = -1;
@@ -1359,6 +1361,25 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 
 	}
 #endif
+
+/*Here we expect v a1 a2 a1 a2 v a1 a2 v a1 a2 a1 a2 a1 a2 v
+ * audio just alternate.
+ * we also assume track 0 is video audio 1 and audio 2 (to be fixed) */
+
+//#define DOUBLEAUDIO_INTERLEAVED
+#ifdef DOUBLEAUDIO_INTERLEAVED
+
+	bool first = true;
+	for(int i = 0; i < matches.size(); i++) {
+		MatchGroup &g = matches[i];
+		Match &m = g.back();
+		if(m.id == 0)
+			continue;
+		first ? m.id = 1 : m.id = 2;
+		first = !first;
+	}
+#endif
+
 
 //this time 4 tracks interleaved and video is first track
 //#define QUADAUDIO

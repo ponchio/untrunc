@@ -436,8 +436,8 @@ Match Codec::avc1Match(const unsigned char *start, int maxlength) {
 		return match;
 	// The other values are really uncommon on cameras...
 	if(nal_type > 12) {
-		Log::debug << "avc1: No match because of NAL type: " << nal_type << '\n';
-		return match;
+		Log::debug << "avc1: Possibly No match because of NAL type: " << nal_type << '\n';
+//		return match;
 	}
 	if(nal_type > 29) {
 		//if(nal_type != 1 && !(nal_type >= 5 && nal_type <= 12)) {
