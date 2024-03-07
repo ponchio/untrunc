@@ -24,7 +24,7 @@ cd untrunc/libav
 make
 cd ..
 g++ -o untrunc -I./libav file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav/libavformat -lavformat -L./libav/libavcodec -lavcodec -L./libav/libavresample -lavresample -L./libav/libavutil -lavutil -lpthread -lz -std=c++11
-sudo install -vpm 755 ./untrunc /usr/local/bin/ 
+sudo install -vpm 755 ./untrunc /usr/local/bin/
 which -a untrunc
 ```
 
@@ -55,7 +55,7 @@ Unzip the Untrunc source code:
 
     unzip master.zip
 
-    
+
 Unzip the Libav source code into the Untrunc source directory with either:
 
     tar -xJf libav-12.3.tar.xz -C untrunc-master
