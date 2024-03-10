@@ -16,7 +16,7 @@ You need:
 
 ## Installing from git
 
-Type the folling commands to build from git :
+Type the following commands to build from git :
 ```bash
 git clone --recurse-submodules https://github.com/ponchio/untrunc
 cd untrunc/libav
@@ -35,8 +35,8 @@ Depending on your system and Libav configure options you might need to add extra
 - add `-lvdpau` for errors like `undefined reference to 'VDPAU...'`,
 - add `-ldl`    for errors like `undefined reference to 'dlopen'`.
 
-On macOS add the following (tested on OSX 10.12.6):
-- add `-framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration`.
+On macOS add the following (tested on OSX 12.2.1):
+- add `-framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration -std=c++11`.
 
 ## Installing from zip files
 
@@ -71,7 +71,7 @@ Go into the libav directory and build it:
     cd ..
 
 Depending on your system you may need to install additional packages if configure complains about them (eg. libz, libbz2, liblzma, libdl, libvdpau, libX11)
-If `configure` complains about `nasm/yasm not found`, you can either install Nasm or Yasm or tell `configure` not to use a stand-alone assembler with `--disable-yasm`.
+If `configure` complains about `nasm/yasm not found`, you can either install Nasm or Yasm (eg. with `brew install yasm` on macOS with Homebrew installed) or tell `configure` not to use a stand-alone assembler with `--disable-yasm`.
 
 Build the untrunc executable:
 
