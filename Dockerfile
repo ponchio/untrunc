@@ -2,8 +2,9 @@
 FROM ubuntu:bionic as build
 
 # install packaged dependencies
-RUN apt-get update && \
+RUN apt-get update && apt-get upgrade -y && \
     apt-get -y install \
+    fonts-dejavu-core \
     libavformat-dev \
     libavcodec-dev \
     libavutil-dev \
