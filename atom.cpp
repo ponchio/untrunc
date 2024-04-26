@@ -466,7 +466,7 @@ void Atom::prune(string name) {
 void Atom::updateLength() {
 	length = 8;
 	length += content.size();
-	if(length >= 1L<<32) {
+	if(length >= 1ULL<<32) {
 		length64 = true;
 		length += 8;
 	}
@@ -592,7 +592,7 @@ void BufferedAtom::flush() {
 void BufferedAtom::updateLength() {
 	length  = 8;
 	length += file_end - file_begin;
-	if(length >= 1L<<32) {
+	if(length >= 1ULL<<32) {
 		length64 = true;
 		length += 8;
 	}
