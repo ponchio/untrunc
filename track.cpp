@@ -323,7 +323,7 @@ void Track::getSampleSizes(Atom *t) {
 		throw string("Missing 'Sample Sizes' atom (stsz)");
 
 	nsamples      = stsz->readInt(8);
-	default_size = stsz->readInt(4);
+	default_size = stsz->readInt(4); 
 
 	if(default_size == 0) {
 		for(int i = 0; i < nsamples; i++)
@@ -388,7 +388,7 @@ void Track::getSampleToChunk(Atom *t){
 
 			if(default_size) {
 				//assert(codec.pcm_bytes_per_sample > 0);
-				chunks[k].size = chunks[k].nsamples * default_size*codec.pcm_bytes_per_sample;
+				chunks[k].size = chunks[k].nsamples * codec.pcm_bytes_per_sample;
 				count += chunks[k].nsamples ;
 
 			} else {
@@ -514,7 +514,11 @@ void Track::saveSampleToChunk() {
 		stsc->writeInt(chunk_sizes.size(),  4);
 		for(int i = 0; i < chunk_sizes.size(); i++) {
 			stsc->writeInt(i+1,  8 + 12*i);                  //first chunk (1 based)
-			int chunk_nsamples = chunk_sizes[i]/ default_size;
+			int chunk_nsamples;
+			if(codec.pcm)
+				chunk_nsamples = chunk_sizes[i]/ codec.pcm_bytes_per_sample;
+			else
+				chunk_nsamples = chunk_sizes[i]/ default_size;
 			stsc->writeInt(chunk_nsamples, 12 + 12*i);
 			stsc->writeInt(1, 16 + 12*i);                  //id 1 (WHAT IS THIS!)
 		}

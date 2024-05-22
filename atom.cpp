@@ -561,8 +561,10 @@ unsigned char *BufferedAtom::getFragment(int64_t offset, int64_t size) {
 	assert(size >= 0);
 	if(offset < 0)
 		throw string("Offset set before beginning of buffer");
-	if(offset + size > file_end - file_begin)
+	if(offset >= file_end)
 		throw string("Out of buffer");
+	if(offset + size > file_end - file_begin)
+		size = file_end - offset;
 
 	if(buffer) {
 		if(buffer_begin <= offset && buffer_end >= offset + size)

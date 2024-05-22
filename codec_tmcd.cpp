@@ -53,7 +53,8 @@ Match Codec::tmcdMatch(const unsigned char *start, int maxlength) {
 
 	Match match;
 
-	if(tmcd_seen)
+//tmcd is problematic.. usually is at the beginning, it's just easier to move mdat begin later
+//	if(tmcd_seen) 
 		return match;
 
 	unsigned int timestamp = readBE<unsigned int>(start);

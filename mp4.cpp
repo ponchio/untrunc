@@ -1220,6 +1220,9 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		//search for a beginning
 		//backtrace otherwise
 
+		if(offset + mdat->content_start == 52087808)
+			cout << "AHGH" << endl;
+
 		MatchGroup group = match(offset, mdat);
 
 		Match &best = group.back();
@@ -1426,7 +1429,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 			//if number of samples per chunk is variable, encode each sample in a different chunk.
 			if(track.default_chunk_nsamples == 0) {
 				if(track.codec.pcm)
-					track.nsamples += match.length/(track.default_size*track.codec.pcm_bytes_per_sample);
+					track.nsamples += match.length/track.codec.pcm_bytes_per_sample;
 				else //probably not audio or video, no way to guess time drifting.
 					track.nsamples += track.chunks[0].nsamples;
 			} else
@@ -1656,4 +1659,7 @@ void Mp4::fixTiming() {
 	}
 }
 
+void Mp4::printSequence() {
+
+} //print ordered sequence of tracks.
 // vim:set ts=4 sw=4 sts=4 noet:
