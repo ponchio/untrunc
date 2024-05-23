@@ -3,8 +3,6 @@
 #include <string.h>
 #include "avlog.h"
 
-#include "avlog.h"
-
 #include <iostream>
 using namespace std;
 //#include <get_bits.h>

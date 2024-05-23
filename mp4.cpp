@@ -1659,7 +1659,4 @@ void Mp4::fixTiming() {
 	}
 }
 
-void Mp4::printSequence() {
-
-} //print ordered sequence of tracks.
 // vim:set ts=4 sw=4 sts=4 noet:

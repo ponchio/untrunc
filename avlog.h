@@ -27,10 +27,8 @@ extern "C" {
 #include <libavformat/avformat.h>
 //#include <libavutil/log.h>
 
-// WARNING: Including internal headers!
-#if (LIBAVCODEC_VERSION_MAJOR != 56)    // Ubuntu 16.04
 # include <config.h>
-#endif
+
 // XXX Horrible Hack: Suppress C99 keywords that are not in C++, like 'restrict' and '_Atomic'! XXX
 #undef  restrict    // Harmless; don't restrict memory access.
 #define restrict
