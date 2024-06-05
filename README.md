@@ -23,7 +23,7 @@ cd untrunc/libav
 ./configure
 make
 cd ..
-g++ -o untrunc -I./libav file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav/libavformat -lavformat -L./libav/libavcodec -lavcodec -L./libav/libavresample -lavresample -L./libav/libavutil -lavutil -lpthread -lz -std=c++11
+g++ -o untrunc -I./libav file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -L./libav/libavformat -lavformat -L./libav/libavcodec -lavcodec -L./libav/libavresample -lavresample -L./libav/libavutil -lavutil -lpthread -lz -lbz2 -std=c++11
 sudo install -vpm 755 ./untrunc /usr/local/bin/ 
 which -a untrunc
 ```
