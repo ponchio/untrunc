@@ -89,9 +89,15 @@ On macOS add the following (tested on OSX 10.12.6):
 
 ### Mac OSX
 
-Follow the above steps for "Installing on other operating system", but use the following g++ command:
+Follow the above steps for "Installing on other operating system", but:
 
-	g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -I./libav-12.3 -L./libav-12.3/libavformat -lavformat -L./libav-12.3/libavcodec -lavcodec -L./libav-12.3/libavresample -lavresample -L./libav-12.3/libavutil -lavutil -lpthread -lz -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration -lbz2 -DOSX
+  * when building `libavutil` sub-directory:
+    - Add `-Wno-incompatible-function-pointer-types ` to `CFLAGS=  ` in `libavutil/config.mak`
+  * for root `untrunc` project, use the following g++ command (adjust the `ffmpeg/include` path if needed, I obtained it from `brew --prefix ffmpeg`):
+
+```bash
+g++ -o untrunc file.cpp main.cpp track.cpp atom.cpp codec_*.cpp codecstats.cpp codec.cpp mp4.cpp log.cpp -I./libav -L./libav/libavformat -lavformat -L./libav/libavcodec -lavcodec -L./libav/libavresample -lavresample -L./libav/libavutil -lavutil -lpthread -lz -framework CoreFoundation -framework CoreVideo -framework VideoDecodeAcceleration -lbz2 -DOSX -I/opt/homebrew/opt/ffmpeg/include -L/opt/homebrew/opt/ffmpeg/include -std=c++11
+````
 
 ## Arch package
 
