@@ -219,7 +219,7 @@ void Mp4::open(string filename) {
 	duration  = mvhd->readInt(16);
 
 	{  // Setup AV library.
-		AvLog useAvLog();
+		AvLog useAvLog{};
 		// Register all formats and codecs.
 		av_register_all();
 		// Open video file.
@@ -1189,7 +1189,7 @@ bool Mp4::repair(string corrupt_filename, Mp4::MdatStrategy strategy, int64_t md
 		}
 
 		//skip RTP:
-		if(begin && 0xff00ffff) { // && readBE<uint16_t>(start);
+		if(begin & 0xff00ffff) { // & readBE<uint16_t>(start);
 			if((mdat->file_begin + offset) == 129770)
 				Log::debug << "RTP test\n";
 			//testing up to

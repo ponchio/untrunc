@@ -83,7 +83,7 @@ void CodecStats::init(Track &track, BufferedAtom *mdat) {
 			int32_t begin32 = readBE<int32_t>(start);
 			if(track.codec.name == "avc1") {
 				begin64 = readBE<int32_t>(start + 4);
-				begin32 = readBE<int32_t>(start + 4) && 0x0000ffff;
+				begin32 = readBE<int32_t>(start + 4) & 0x0000ffff;
 			}
 
 			if(!beginnings64.count(begin64)) {

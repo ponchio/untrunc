@@ -37,11 +37,11 @@ void usage() {
 		 << "	-m: use the same offset for mdat beginning\n"
 		 << "	-M: search for probable packet starts for mdat\n"
 		 << "	-b: specify initial byte for mdat content\n"
-		 << "	-N: don't skip zeros. (useful for pcm audio)"
-		 << "	-d: attepmt to fix audio/video drifting"
+		 << "	-N: don't skip zeros. (useful for pcm audio)\n"
+		 << "	-d: attempt to fix audio/video drifting\n"
 		 << "	-q: silent\n"
 		 << "	-e: error\n"
-		 << "	-v; verbose\n"
+		 << "	-v: verbose\n"
 		 << "	-w: debug info\n\n";
 }
 
@@ -52,7 +52,7 @@ void searchFile(std::string ok, std::vector<uint8_t> search) {
 		return;
 	}
 	int batch = 1<<20;
-	uint8_t buffer[batch];
+	uint8_t *buffer = (uint8_t *)malloc(batch);
 	size_t pos = 0;
 	while(1) {
 		int readed = fread(buffer, 1, batch, fp);
@@ -71,6 +71,7 @@ void searchFile(std::string ok, std::vector<uint8_t> search) {
 		pos += readed - search.size();
 		fseek(fp, - search.size(), SEEK_CUR);
 	}
+	free(buffer);
 }
 
 

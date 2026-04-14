@@ -34,7 +34,7 @@ Match Codec::mp4vMatch(const unsigned char *start, int maxlength) {
 	int consumed = -1;
 
 	{
-		AvLog useAvLog();
+		AvLog useAvLog{};
 		av_log_set_level(0);
 
 		static AVPacket* packet = av_packet_alloc();

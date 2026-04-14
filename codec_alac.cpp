@@ -60,7 +60,7 @@ Match Codec::alacMatch(const unsigned char *start, int maxlength) {
 	uint32_t duration = 0;
 
 
-	AvLog useAvLog();
+	AvLog useAvLog{};
 	av_log_set_level(0);
 	AVFrame *frame = av_frame_alloc();
 	if(!frame)
