@@ -139,7 +139,7 @@ bool Track::parse(Atom *t) {
 	if(!codec.context)
 		throw string("No codec context.");
 	{
-		AvLog useAvLog();
+		AvLog useAvLog{};
 		codec.codec = avcodec_find_decoder(codec.context->codec_id);
 		if(!codec.codec) {
 			Log::info <<  "No codec found for track of type: " << type << "\n";
